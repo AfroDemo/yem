@@ -1,5 +1,5 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   createEvent,
   getAllEvents,
   getEventById,
@@ -7,8 +7,8 @@ import {
   deleteEvent,
   getUpcomingEvents,
   searchEvents
-} from '../controllers/eventController';
-import { auth, mentorAuth } from '../middleware/auth';
+} = require('../controllers/eventController');
+const { auth, mentorAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -33,4 +33,4 @@ router.get('/upcoming', getUpcomingEvents);
 // Search events
 router.get('/search', searchEvents);
 
-export default router;
+module.exports = router;

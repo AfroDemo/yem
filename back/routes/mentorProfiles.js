@@ -1,13 +1,13 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   createMentorProfile, 
   getAllMentorProfiles, 
   getMentorProfileById, 
   updateMentorProfile, 
   getFeaturedMentors, 
   searchMentorsByExpertise 
-} from '../controllers/mentorProfileController';
-import { auth, mentorAuth } from '../middleware/auth';
+} = require('../controllers/mentorProfileController');
+const { auth, mentorAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -29,4 +29,4 @@ router.get('/featured', getFeaturedMentors);
 // Search mentors by expertise
 router.get('/search', searchMentorsByExpertise);
 
-export default router;
+module.exports = router;

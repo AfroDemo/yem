@@ -1,13 +1,13 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   createSuccessStory,
   getAllSuccessStories,
   getSuccessStoryById,
   updateSuccessStory,
   deleteSuccessStory,
   getFeaturedSuccessStories
-} from '../controllers/successStoryController';
-import { auth, adminAuth } from '../middleware/auth';
+} = require('../controllers/successStoryController');
+const { auth, adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -29,4 +29,4 @@ router.delete('/:id', auth, deleteSuccessStory);
 // Get featured success stories
 router.get('/featured', getFeaturedSuccessStories);
 
-export default router;
+module.exports = router;

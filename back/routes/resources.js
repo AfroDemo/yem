@@ -1,5 +1,5 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   createResource,
   getAllResources,
   getResourceById,
@@ -7,8 +7,8 @@ import {
   deleteResource,
   getFeaturedResources,
   searchResources
-} from '../controllers/resourceController';
-import { auth, mentorAuth } from '../middleware/auth';
+} = require('../controllers/resourceController');
+const { auth, mentorAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -33,4 +33,4 @@ router.get('/featured', getFeaturedResources);
 // Search resources
 router.get('/search', searchResources);
 
-export default router;
+module.exports = router;

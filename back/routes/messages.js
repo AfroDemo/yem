@@ -1,11 +1,11 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   sendMessage,
   getMessagesByConversation,
   deleteMessage,
   markMessageAsRead
-} from '../controllers/messageController';
-import { auth } from '../middleware/auth';
+} = require('../controllers/messageController');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -21,4 +21,4 @@ router.delete('/:id', auth, deleteMessage);
 // Mark message as read
 router.put('/:id/read', auth, markMessageAsRead);
 
-export default router;
+module.exports = router;

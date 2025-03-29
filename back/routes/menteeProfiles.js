@@ -1,11 +1,11 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   createMenteeProfile, 
   getAllMenteeProfiles, 
   getMenteeProfileById, 
   updateMenteeProfile 
-} from '../controllers/menteeProfileController';
-import { auth } from '../middleware/auth';
+} = require('../controllers/menteeProfileController');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -21,4 +21,4 @@ router.get('/:id', auth, getMenteeProfileById);
 // Update mentee profile
 router.put('/:id', auth, updateMenteeProfile);
 
-export default router;
+module.exports = router;

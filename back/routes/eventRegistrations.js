@@ -1,12 +1,12 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   registerForEvent,
   getRegistrationsByEvent,
   getRegistrationsByUser,
   cancelRegistration,
   updateRegistrationStatus
-} from '../controllers/eventRegistrationController';
-import { auth } from '../middleware/auth';
+} = require('../controllers/eventRegistrationController');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -25,4 +25,4 @@ router.put('/:id/cancel', auth, cancelRegistration);
 // Update registration status (for organizers)
 router.put('/:id/status', auth, updateRegistrationStatus);
 
-export default router;
+module.exports = router;
