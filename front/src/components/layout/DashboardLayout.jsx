@@ -13,7 +13,7 @@ export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-muted/20">
+    <div className="flex max-h-screen overflow-scroll bg-muted/20">
       {/* Sidebar */}
       <aside
         className={`${
@@ -55,7 +55,7 @@ export default function DashboardLayout() {
             label="Settings"
           />
         </nav>
-        <div className="p-4 border-t">
+        <div className="p-4 absolute bottom-0 border-t">
           <div className="flex items-center space-x-3">
             <img
               src="/placeholder.svg?height=40&width=40"
