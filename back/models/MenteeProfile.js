@@ -35,6 +35,9 @@ module.exports = (sequelize) => {
       workExperience: {
         type: DataTypes.STRING,
       },
+      skills: {
+        type: DataTypes.JSON, // Store array of skills
+      },
     },
     {
       tableName: "mentee_profiles",
