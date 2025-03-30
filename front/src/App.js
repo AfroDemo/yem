@@ -29,6 +29,7 @@ import MessagesPage from "./pages/Message/Messages";
 import NetworkPage from "./pages/Network/Network";
 import ResourcesPage from "./pages/Resources/Resource";
 import SettingsPage from "./pages/Settings/Setting";
+import NewMessagePage from "./pages/Message/Create";
 
 // Protected route component
 const ProtectedRoute = () => {
@@ -89,6 +90,7 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/events" element={<EventsPage />} />
                 <Route path="/dashboard/messages" element={<MessagesPage />} />
+                <Route path="/dashboard/messages/new" element={<NewMessagePage />} />
                 <Route path="/dashboard/network" element={<NetworkPage />} />
                 <Route path="/dashboard/resources" element={<ResourcesPage />} />
                 <Route path="/dashboard/settings" element={<SettingsPage />} />
