@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -16,15 +17,21 @@ import Resources from "./pages/Resources";
 import Events from "./pages/Events";
 import Contact from "./pages/Contact";
 import SuccessStories from "./pages/SuccessStories";
+import About from "./pages/About";
+import Dashboard from "./pages/Dashboard";
+import EventsPage from "./pages/Event/Events";
 
 // Layout components
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import About from "./pages/About";
-import Dashboard from "./pages/Dashboard";
+import DashboardLayout from "./components/layout/DashboardLayout";
+import MessagesPage from "./pages/Message/Messages";
+import NetworkPage from "./pages/Network/Network";
+import ResourcesPage from "./pages/Resources/Resource";
+import SettingsPage from "./pages/Settings/Setting";
 
 // Protected route component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -35,75 +42,63 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
-
-  return children;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
-const AuthRedirectRoute = ({ children }) => {
+const AuthRedirectRoute = () => {
   const { isAuthenticated } = useAuth();
-
-  if (isAuthenticated) {
-    return <Navigate to="/home" />; // Redirect to home/dashboard if logged in
-  }
-
-  return children;
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
 };
+
+// Main layout component
+const MainLayout = () => (
+  <>
+    <Navbar />
+    <main className="flex-grow">
+      <Outlet />
+    </main>
+    <Footer />
+  </>
+);
 
 function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <AuthProvider>
         <Router>
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-
-              {/* If user is logged in, redirect to homepage */}
-              <Route
-                path="/login"
-                element={
-                  <AuthRedirectRoute>
-                    <Login />
-                  </AuthRedirectRoute>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <AuthRedirectRoute>
-                    <Register />
-                  </AuthRedirectRoute>
-                }
-              />
-
-              <Route
-                path="/for-mentees"
-                element={
-                  <ProtectedRoute>
-                    <ForMentees />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+          <Routes>
+            {/* Routes with main layout */}
+            <Route element={<MainLayout />}>
+              <Route index element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/events" element={<Events />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/success-stories" element={<SuccessStories />} />
-            </Routes>
-          </main>
-          <Footer />
+
+              {/* Auth routes with redirect */}
+              <Route element={<AuthRedirectRoute />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </Route>
+            </Route>
+
+            {/* Protected dashboard routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/events" element={<EventsPage />} />
+                <Route path="/dashboard/messages" element={<MessagesPage />} />
+                <Route path="/dashboard/network" element={<NetworkPage />} />
+                <Route path="/dashboard/resources" element={<ResourcesPage />} />
+                <Route path="/dashboard/settings" element={<SettingsPage />} />
+                <Route path="/for-mentees" element={<ForMentees />} />
+              </Route>
+            </Route>
+
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </Router>
       </AuthProvider>
     </div>

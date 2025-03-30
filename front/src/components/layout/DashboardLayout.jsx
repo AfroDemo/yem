@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Outlet, Link } from "react-router-dom";
 import {
   BookOpen,
   Calendar,
@@ -8,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -24,32 +25,32 @@ export default function DashboardLayout({ children }) {
         </div>
         <nav className="flex-1 p-4 space-y-2">
           <NavItem
-            href="/dashboard"
+            to="/dashboard"
             icon={<Home className="h-5 w-5" />}
             label="Dashboard"
           />
           <NavItem
-            href="/dashboard/events"
+            to="/dashboard/events"
             icon={<Calendar className="h-5 w-5" />}
             label="Events"
           />
           <NavItem
-            href="/dashboard/resources"
+            to="/dashboard/resources"
             icon={<BookOpen className="h-5 w-5" />}
             label="Resources"
           />
           <NavItem
-            href="/dashboard/network"
+            to="/dashboard/network"
             icon={<Users className="h-5 w-5" />}
             label="Network"
           />
           <NavItem
-            href="/dashboard/messages"
+            to="/dashboard/messages"
             icon={<MessageSquare className="h-5 w-5" />}
             label="Messages"
           />
           <NavItem
-            href="/dashboard/settings"
+            to="/dashboard/settings"
             icon={<Settings className="h-5 w-5" />}
             label="Settings"
           />
@@ -96,21 +97,23 @@ export default function DashboardLayout({ children }) {
           </button>
         </header>
 
-        {/* Main content */}
-        <main className="flex-1 p-6">{children}</main>
+        {/* Main content - Replaced children with Outlet */}
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
 }
 
-function NavItem({ href, icon, label }) {
+function NavItem({ to, icon, label }) {
   return (
-    <a
-      href={href}
+    <Link
+      to={to}
       className="flex items-center space-x-3 w-full p-2 text-left hover:bg-gray-200 rounded-md"
     >
       {icon}
       <span>{label}</span>
-    </a>
+    </Link>
   );
 }
