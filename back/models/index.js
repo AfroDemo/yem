@@ -21,7 +21,7 @@ if (config.use_env_variable) {
   );
 }
 
-// Load all models automatically
+// Modified model loading to handle both styles of model definition
 fs.readdirSync(__dirname)
   .filter((file) => {
     return (
@@ -32,56 +32,26 @@ fs.readdirSync(__dirname)
     );
   })
   .forEach((file) => {
-    const model = require(path.join(__dirname, file)); // Just require it, no need to invoke
-    if (model instanceof Sequelize.Model) {
-      db[model.name] = model; // Save the model to db object
+    const model = require(path.join(__dirname, file));
+    // Support both functional and class-based model definitions
+    if (typeof model === 'function' && model.prototype instanceof Sequelize.Model) {
+      // It's already a Sequelize model class
+      db[model.name] = model;
+    } else if (typeof model === 'function') {
+      // It's a model initialization function
+      const modelInstance = model(sequelize, Sequelize.DataTypes);
+      db[modelInstance.name] = modelInstance;
+    } else {
+      // It's a direct model export
+      db[model.name] = model;
     }
   });
 
-// Set up associations
+// Set up associations after all models are loaded
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
-});
-
-// Manual associations for models that need special handling
-db.User.hasOne(db.MenteeProfile, { foreignKey: "userId", as: "menteeProfile" });
-db.User.hasOne(db.MentorProfile, { foreignKey: "userId", as: "mentorProfile" });
-db.Event.belongsTo(db.User, { foreignKey: "hostId", as: "eventHost" });
-db.User.hasMany(db.EventRegistration, {
-  foreignKey: "userId",
-  as: "eventRegistrations",
-});
-db.User.hasMany(db.Message, { foreignKey: "senderId", as: "sentMessages" });
-db.User.hasMany(db.Message, {
-  foreignKey: "receiverId",
-  as: "receivedMessages",
-});
-db.User.hasMany(db.Resource, {
-  foreignKey: "createdById",
-  as: "createdResources",
-});
-db.User.hasMany(db.SuccessStory, {
-  foreignKey: "menteeId",
-  as: "menteeSuccessStories",
-});
-db.User.hasMany(db.SuccessStory, {
-  foreignKey: "mentorId",
-  as: "mentorSuccessStories",
-});
-
-db.Event.hasMany(db.EventRegistration, {
-  foreignKey: "eventId",
-  as: "registrations",
-});
-db.Event.belongsTo(db.User, { foreignKey: "hostId", as: "host" });
-
-db.Mentorship.belongsTo(db.User, { foreignKey: "mentorId", as: "mentor" });
-db.Mentorship.belongsTo(db.User, { foreignKey: "menteeId", as: "mentee" });
-db.Mentorship.hasMany(db.MentorshipProgress, {
-  foreignKey: "mentorshipId",
-  as: "progressNotes",
 });
 
 db.sequelize = sequelize;
