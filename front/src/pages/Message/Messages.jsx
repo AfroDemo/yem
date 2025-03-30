@@ -1,10 +1,18 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowRight, Edit, MoreHorizontal, Paperclip, Search, Send, Smile } from "lucide-react"
+import { useState } from "react";
+import {
+  ArrowRight,
+  Edit,
+  MoreHorizontal,
+  Paperclip,
+  Search,
+  Send,
+  Smile,
+} from "lucide-react";
 
 export default function MessagesPage() {
-  const [selectedConversation, setSelectedConversation] = useState(null)
+  const [selectedConversation, setSelectedConversation] = useState(null);
 
   const conversations = [
     {
@@ -43,31 +51,35 @@ export default function MessagesPage() {
       id: 5,
       name: "Jessica Williams",
       avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "The workshop was really helpful. Thanks for recommending it!",
+      lastMessage:
+        "The workshop was really helpful. Thanks for recommending it!",
       time: "Sunday",
       unread: false,
     },
-  ]
+  ];
 
   const messages = [
     {
       id: 1,
       sender: "Emily Chen",
-      content: "Hi there! I wanted to ask for your feedback on my startup pitch deck. I'm presenting to investors next week.",
+      content:
+        "Hi there! I wanted to ask for your feedback on my startup pitch deck. I'm presenting to investors next week.",
       time: "10:30 AM",
       isMe: false,
     },
     {
       id: 2,
       sender: "Me",
-      content: "Hey Emily! I'd be happy to take a look. Send it over and I'll review it today.",
+      content:
+        "Hey Emily! I'd be happy to take a look. Send it over and I'll review it today.",
       time: "10:32 AM",
       isMe: true,
     },
     {
       id: 3,
       sender: "Emily Chen",
-      content: "That would be amazing! I've attached the deck. I'm particularly concerned about the market analysis section.",
+      content:
+        "That would be amazing! I've attached the deck. I'm particularly concerned about the market analysis section.",
       time: "10:35 AM",
       isMe: false,
       attachment: "Startup_Pitch_Deck_v2.pdf",
@@ -75,41 +87,47 @@ export default function MessagesPage() {
     {
       id: 4,
       sender: "Me",
-      content: "Just reviewed it. Overall it looks great! For the market analysis, I'd suggest adding more specific data points about your target demographic and perhaps a competitive analysis chart.",
+      content:
+        "Just reviewed it. Overall it looks great! For the market analysis, I'd suggest adding more specific data points about your target demographic and perhaps a competitive analysis chart.",
       time: "10:40 AM",
       isMe: true,
     },
     {
       id: 5,
       sender: "Emily Chen",
-      content: "Thanks for the advice on my pitch deck! That makes a lot of sense. I'll update it and send you the revised version later today.",
+      content:
+        "Thanks for the advice on my pitch deck! That makes a lot of sense. I'll update it and send you the revised version later today.",
       time: "10:42 AM",
       isMe: false,
     },
-  ]
+  ];
 
-  const [activeTab, setActiveTab] = useState('all')
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [messageInput, setMessageInput] = useState('')
+  const [activeTab, setActiveTab] = useState("all");
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [messageInput, setMessageInput] = useState("");
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col bg-gray-50">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-white border-b">
         <h1 className="text-2xl font-bold text-gray-800">Messages</h1>
-        <button 
+        <a
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          onClick={() => {/* New message logic */}}
+          href="/dashboard/messages/new"
         >
           <Edit className="h-4 w-4" />
           <span>New Message</span>
-        </button>
+        </a>
       </div>
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Conversation List */}
-        <div className={`${showMobileMenu ? 'block' : 'hidden'} md:block w-full md:w-1/3 bg-white border-r`}>
+        <div
+          className={`${
+            showMobileMenu ? "block" : "hidden"
+          } md:block w-full md:w-1/3 bg-white border-r`}
+        >
           {/* Search Bar */}
           <div className="p-4 border-b">
             <div className="relative">
@@ -125,14 +143,22 @@ export default function MessagesPage() {
           {/* Tabs */}
           <div className="flex border-b">
             <button
-              className={`flex-1 py-3 text-center font-medium ${activeTab === 'all' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-              onClick={() => setActiveTab('all')}
+              className={`flex-1 py-3 text-center font-medium ${
+                activeTab === "all"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-500"
+              }`}
+              onClick={() => setActiveTab("all")}
             >
               All
             </button>
             <button
-              className={`flex-1 py-3 text-center font-medium ${activeTab === 'unread' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-              onClick={() => setActiveTab('unread')}
+              className={`flex-1 py-3 text-center font-medium ${
+                activeTab === "unread"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-500"
+              }`}
+              onClick={() => setActiveTab("unread")}
             >
               Unread
             </button>
@@ -141,29 +167,43 @@ export default function MessagesPage() {
           {/* Conversation Items */}
           <div className="divide-y">
             {conversations
-              .filter(conv => activeTab === 'all' || conv.unread)
+              .filter((conv) => activeTab === "all" || conv.unread)
               .map((conversation) => (
                 <div
                   key={conversation.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer flex items-start gap-3 ${selectedConversation === conversation.id ? 'bg-gray-100' : ''}`}
+                  className={`p-4 hover:bg-gray-50 cursor-pointer flex items-start gap-3 ${
+                    selectedConversation === conversation.id
+                      ? "bg-gray-100"
+                      : ""
+                  }`}
                   onClick={() => {
-                    setSelectedConversation(conversation.id)
-                    setShowMobileMenu(false)
+                    setSelectedConversation(conversation.id);
+                    setShowMobileMenu(false);
                   }}
                 >
                   <div className="flex-shrink-0">
-                    <img 
-                      src={conversation.avatar} 
+                    <img
+                      src={conversation.avatar}
                       alt={conversation.name}
                       className="h-10 w-10 rounded-full object-cover"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900 truncate">{conversation.name}</h4>
-                      <span className="text-xs text-gray-500">{conversation.time}</span>
+                      <h4 className="font-medium text-gray-900 truncate">
+                        {conversation.name}
+                      </h4>
+                      <span className="text-xs text-gray-500">
+                        {conversation.time}
+                      </span>
                     </div>
-                    <p className={`text-sm truncate ${conversation.unread ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                    <p
+                      className={`text-sm truncate ${
+                        conversation.unread
+                          ? "font-medium text-gray-900"
+                          : "text-gray-500"
+                      }`}
+                    >
                       {conversation.lastMessage}
                     </p>
                   </div>
@@ -176,22 +216,37 @@ export default function MessagesPage() {
         </div>
 
         {/* Message Thread */}
-        <div className={`${!selectedConversation && 'hidden'} md:block flex-1 flex flex-col bg-white`}>
+        <div
+          className={`${
+            !selectedConversation && "hidden"
+          } md:block flex-1 flex flex-col bg-white`}
+        >
           {selectedConversation ? (
             <>
               {/* Message Header */}
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img 
-                    src={conversations.find(c => c.id === selectedConversation)?.avatar}
-                    alt={conversations.find(c => c.id === selectedConversation)?.name}
+                  <img
+                    src={
+                      conversations.find((c) => c.id === selectedConversation)
+                        ?.avatar
+                    }
+                    alt={
+                      conversations.find((c) => c.id === selectedConversation)
+                        ?.name
+                    }
                     className="h-10 w-10 rounded-full object-cover"
                   />
                   <div>
                     <h4 className="font-medium text-gray-900">
-                      {conversations.find(c => c.id === selectedConversation)?.name}
+                      {
+                        conversations.find((c) => c.id === selectedConversation)
+                          ?.name
+                      }
                     </h4>
-                    <p className="text-xs text-gray-500">Last active 5 minutes ago</p>
+                    <p className="text-xs text-gray-500">
+                      Last active 5 minutes ago
+                    </p>
                   </div>
                 </div>
                 <div className="relative">
@@ -205,9 +260,18 @@ export default function MessagesPage() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      message.isMe ? "justify-end" : "justify-start"
+                    }`}
+                  >
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${message.isMe ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        message.isMe
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
                     >
                       <p className="text-sm">{message.content}</p>
                       {message.attachment && (
@@ -219,7 +283,11 @@ export default function MessagesPage() {
                           </button>
                         </div>
                       )}
-                      <div className={`mt-1 text-xs ${message.isMe ? 'text-blue-100' : 'text-gray-500'} text-right`}>
+                      <div
+                        className={`mt-1 text-xs ${
+                          message.isMe ? "text-blue-100" : "text-gray-500"
+                        } text-right`}
+                      >
                         {message.time}
                       </div>
                     </div>
@@ -243,11 +311,11 @@ export default function MessagesPage() {
                     <button className="p-2 rounded-full hover:bg-gray-100">
                       <Smile className="h-4 w-4 text-gray-500" />
                     </button>
-                    <button 
+                    <button
                       className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700"
                       onClick={() => {
                         // Send message logic
-                        setMessageInput('')
+                        setMessageInput("");
                       }}
                     >
                       <Send className="h-4 w-4" />
@@ -274,50 +342,23 @@ export default function MessagesPage() {
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Your Messages</h3>
-              <p className="text-gray-500 mb-4">Select a conversation or start a new one</p>
-              <button 
+              <h3 className="text-xl font-medium text-gray-900 mb-2">
+                Your Messages
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Select a conversation or start a new one
+              </p>
+              <a
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={() => {/* New message logic */}}
+                href="/dashboard/messages/new"
               >
                 <Edit className="h-4 w-4" />
                 <span>New Message</span>
-              </button>
+              </a>
             </div>
           )}
         </div>
-
-        {/* Mobile Empty State */}
-        {!selectedConversation && (
-          <div className="md:hidden flex flex-1 items-center justify-center flex-col p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-8 w-8 text-gray-400"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Your Messages</h3>
-            <p className="text-gray-500 mb-4">Select a conversation or start a new one</p>
-            <button 
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              onClick={() => setShowMobileMenu(true)}
-            >
-              <Edit className="h-4 w-4" />
-              <span>New Message</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
-  )
+  );
 }

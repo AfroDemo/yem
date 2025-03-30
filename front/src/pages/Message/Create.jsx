@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, Paperclip, Send, X } from "lucide-react"
+import { Link } from "react-router-dom"
 
 // Custom Button component with Tailwind
 const Button = ({ children, variant = 'default', size = 'default', className = '', asChild = false, ...props }) => {
