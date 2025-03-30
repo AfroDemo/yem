@@ -28,6 +28,7 @@ module.exports = (sequelize) => {
       },
       role: {
         type: DataTypes.ENUM("mentee", "mentor", "admin"),
+        defaultValue: "mentee",
         allowNull: false,
       },
       profileImage: {
