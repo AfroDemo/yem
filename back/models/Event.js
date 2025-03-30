@@ -1,6 +1,4 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
-const User = require("./User"); // Assuming User model exists
 
 module.exports = (sequelize) => {
   const Event = sequelize.define(
