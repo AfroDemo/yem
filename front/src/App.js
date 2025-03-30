@@ -21,6 +21,7 @@ import SuccessStories from "./pages/SuccessStories";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import About from "./pages/About";
+import Dashboard from "./pages/Dashboard";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -41,6 +42,16 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const AuthRedirectRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Navigate to="/home" />; // Redirect to home/dashboard if logged in
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -50,13 +61,38 @@ function App() {
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+
+              {/* If user is logged in, redirect to homepage */}
+              <Route
+                path="/login"
+                element={
+                  <AuthRedirectRoute>
+                    <Login />
+                  </AuthRedirectRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <AuthRedirectRoute>
+                    <Register />
+                  </AuthRedirectRoute>
+                }
+              />
+
               <Route
                 path="/for-mentees"
                 element={
                   <ProtectedRoute>
                     <ForMentees />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
                   </ProtectedRoute>
                 }
               />

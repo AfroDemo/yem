@@ -1,9 +1,15 @@
+// src/components/layout/Navbar.js
 import React, { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { Bars3Icon as MenuIcon, XMarkIcon as XIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon as MenuIcon,
+  XMarkIcon as XIcon,
+} from "@heroicons/react/24/outline";
+import { useAuth } from "../../context/AuthContext"; // Import the Auth context
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuth(); // Get isAuthenticated and logout from context
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -15,6 +21,38 @@ const Navbar = () => {
     { name: "Contact", path: "/contact" },
   ];
 
+  const authNavItems = isAuthenticated ? (
+    <div className="ml-4 flex items-center space-x-2">
+      <RouterLink
+        to="/dashboard"
+        className="px-4 py-2 border border-blue-600 text-sm font-medium text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+      >
+        Dashboard
+      </RouterLink>
+      <button
+        onClick={logout}
+        className="px-4 py-2 bg-red-600 text-sm font-medium text-white rounded-md hover:bg-red-700 transition-colors"
+      >
+        Logout
+      </button>
+    </div>
+  ) : (
+    <div className="ml-4 flex items-center space-x-2">
+      <RouterLink
+        to="/login"
+        className="px-4 py-2 border border-blue-600 text-sm font-medium text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+      >
+        Login
+      </RouterLink>
+      <RouterLink
+        to="/register"
+        className="px-4 py-2 bg-blue-600 text-sm font-medium text-white rounded-md hover:bg-blue-700 transition-colors"
+      >
+        Register
+      </RouterLink>
+    </div>
+  );
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,7 +62,7 @@ const Navbar = () => {
             to="/"
             className="text-xl font-bold text-gray-900 hover:text-blue-600 flex-grow"
           >
-            Youth Entrepreneur Mentorship
+            YEM
           </RouterLink>
 
           {/* Desktop Navigation */}
@@ -38,21 +76,7 @@ const Navbar = () => {
                 {item.name}
               </RouterLink>
             ))}
-
-            <div className="ml-4 flex items-center space-x-2">
-              <RouterLink
-                to="/login"
-                className="px-4 py-2 border border-blue-600 text-sm font-medium text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
-              >
-                Login
-              </RouterLink>
-              <RouterLink
-                to="/register"
-                className="px-4 py-2 bg-blue-600 text-sm font-medium text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Register
-              </RouterLink>
-            </div>
+            {authNavItems} {/* Display Login/Register or Profile/Logout */}
           </nav>
 
           {/* Mobile menu button */}
@@ -83,22 +107,7 @@ const Navbar = () => {
               {item.name}
             </RouterLink>
           ))}
-          <div className="pt-2 border-t border-gray-200">
-            <RouterLink
-              to="/login"
-              className="block w-full px-4 py-2 mt-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"
-              onClick={() => setMobileOpen(false)}
-            >
-              Login
-            </RouterLink>
-            <RouterLink
-              to="/register"
-              className="block w-full px-4 py-2 mt-2 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-              onClick={() => setMobileOpen(false)}
-            >
-              Register
-            </RouterLink>
-          </div>
+          {authNavItems} {/* Display Login/Register or Profile/Logout */}
         </div>
       </div>
     </header>

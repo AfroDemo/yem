@@ -7,6 +7,7 @@ import {
   EyeSlashIcon,
   UserPlusIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "../context/AuthContext";
 
 const validationSchema = yup.object({
   firstName: yup.string().required("First name is required"),
@@ -33,6 +34,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const { registerHandler, error } = useAuth();
 
   const steps = [
     "Account Information",
@@ -54,8 +56,8 @@ const Register = () => {
       agreeToTerms: false,
     },
     validationSchema: validationSchema,
-    onSubmit: (values) => {
-      console.log("Registration form submitted:", values);
+    onSubmit: async (values) => {
+      registerHandler(values);
     },
   });
 
@@ -79,6 +81,8 @@ const Register = () => {
               Create an Account
             </h1>
           </div>
+
+          {error && <div className="error">{error}</div>}
 
           {/* Stepper */}
           <div className="mb-8">

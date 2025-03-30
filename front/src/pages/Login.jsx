@@ -1,33 +1,34 @@
-import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { useFormik } from 'formik';
-import * as yup from 'yup';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { useFormik } from "formik";
+import * as yup from "yup";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { useAuth } from "../context/AuthContext";
 
 const validationSchema = yup.object({
   email: yup
     .string()
-    .email('Enter a valid email')
-    .required('Email is required'),
+    .email("Enter a valid email")
+    .required("Email is required"),
   password: yup
     .string()
-    .min(8, 'Password should be at least 8 characters')
-    .required('Password is required'),
+    .min(8, "Password should be at least 8 characters")
+    .required("Password is required"),
 });
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const {loginHandler,error}=useAuth();
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
       remember: false,
     },
     validationSchema: validationSchema,
-    onSubmit: (values) => {
-      console.log('Login form submitted:', values);
-      // TODO: Implement actual login functionality
+    onSubmit: async (values) => {
+      loginHandler(values);
     },
   });
 
@@ -56,10 +57,15 @@ const Login = () => {
           </h2>
         </div>
 
+        {error && <div className="error">{error}</div>}
+
         <form className="mt-8 space-y-6" onSubmit={formik.handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <input
@@ -68,28 +74,41 @@ const Login = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className={`mt-1 block w-full px-3 py-2 border ${formik.touched.email && formik.errors.email ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                className={`mt-1 block w-full px-3 py-2 border ${
+                  formik.touched.email && formik.errors.email
+                    ? "border-red-300"
+                    : "border-gray-300"
+                } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
               />
               {formik.touched.email && formik.errors.email && (
-                <p className="mt-2 text-sm text-red-600">{formik.errors.email}</p>
+                <p className="mt-2 text-sm text-red-600">
+                  {formik.errors.email}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className={`block w-full px-3 py-2 border ${formik.touched.password && formik.errors.password ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`block w-full px-3 py-2 border ${
+                    formik.touched.password && formik.errors.password
+                      ? "border-red-300"
+                      : "border-gray-300"
+                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                   value={formik.values.password}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -109,7 +128,9 @@ const Login = () => {
                 </div>
               </div>
               {formik.touched.password && formik.errors.password && (
-                <p className="mt-2 text-sm text-red-600">{formik.errors.password}</p>
+                <p className="mt-2 text-sm text-red-600">
+                  {formik.errors.password}
+                </p>
               )}
             </div>
           </div>
@@ -124,7 +145,10 @@ const Login = () => {
                 checked={formik.values.remember}
                 onChange={formik.handleChange}
               />
-              <label htmlFor="remember" className="ml-2 block text-sm text-gray-900">
+              <label
+                htmlFor="remember"
+                className="ml-2 block text-sm text-gray-900"
+              >
                 Remember me
               </label>
             </div>
@@ -155,9 +179,7 @@ const Login = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Or
-              </span>
+              <span className="px-2 bg-white text-gray-500">Or</span>
             </div>
           </div>
 
