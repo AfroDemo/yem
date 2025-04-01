@@ -2,6 +2,9 @@ const db = require("../models");
 const User = db.User;
 const MentorProfile = db.MentorProfile;
 const { Op } = require("sequelize");
+const { processProfileImage } = require("../services/imageProcessor");
+const upload = require("../utils/upload");
+const path = require("path");
 
 // Get all users (admin only)
 exports.getAllUsers = async (req, res) => {
@@ -189,33 +192,70 @@ exports.deleteUser = async (req, res) => {
 // Upload profile image
 exports.uploadProfileImage = async (req, res) => {
   try {
-    // In a real application, you would:
-    // 1. Handle file upload using multer or similar
-    // 2. Store the file in a cloud storage service
-    // 3. Update the user's profileImage field with the URL
+    // 1. Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
 
+    // 2. Find the user
     const user = await User.findById(req.params.id);
     if (!user) {
+      // Clean up the uploaded file if user not found
+      fs.unlinkSync(req.file.path);
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if user is authorized to update this profile
-    if (req.user?.id !== req.params.id && req.user?.role !== "admin") {
+    // 3. Authorization check - user can only update their own profile unless admin
+    if (req.user.id !== req.params.id && req.user.role !== "admin") {
+      fs.unlinkSync(req.file.path); // Clean up file
       return res
         .status(403)
-        .json({ message: "Not authorized to update this user" });
+        .json({ message: "Not authorized to update this profile" });
     }
 
-    // For this demo, we'll just update with a placeholder URL
-    user.profileImage = req.body.imageUrl || "https://via.placeholder.com/150";
+    // 4. Process the image (resize and convert to webp)
+    const uploadsDir = path.join(__dirname, "../public/uploads");
+    const filename = `profile-${user._id}-${Date.now()}.webp`;
+    const outputPath = path.join(uploadsDir, filename);
+
+    await sharp(req.file.path)
+      .resize(500, 500)
+      .webp({ quality: 80 })
+      .toFile(outputPath);
+
+    // 5. Delete the original uploaded file
+    fs.unlinkSync(req.file.path);
+
+    // 6. Delete old profile image if exists
+    if (user.profileImage) {
+      const oldImagePath = path.join(__dirname, "../public", user.profileImage);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // 7. Update user profile with new image path
+    user.profileImage = `/uploads/${filename}`;
     await user.save();
 
+    // 8. Return success response
     res.json({
-      message: "Profile image updated successfully",
+      success: true,
+      message: "Profile image uploaded successfully",
       imageUrl: user.profileImage,
     });
   } catch (error) {
-    console.error("Upload profile image error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Profile upload error:", error);
+
+    // Clean up any uploaded files if error occurred
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload profile image",
+      error: error.message,
+    });
   }
 };

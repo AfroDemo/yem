@@ -8,6 +8,6 @@ router.get('/', auth, adminAuth, getAllUsers);
 router.get('/:id', auth, getUserById);
 router.put('/:id', auth, updateUser);
 router.delete('/:id', auth, adminAuth, deleteUser);
-router.put('/:id/profile-image', auth, uploadProfileImage);
+router.put('/:id/upload', auth, upload.single('profileImage'), uploadProfileImage);
 
 module.exports = router;
