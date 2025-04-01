@@ -60,6 +60,26 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: true,
       },
+      industries: {
+        type: Sequelize.JSON,
+        allowNull:true
+      },
+      businessStage:{
+        type: Sequelize.STRING,
+        allowNull:true
+      },
+      preferredBusinessStages: {
+        type: Sequelize.JSON,
+        allowNull: true
+      },
+      experienceYears: {
+        type: Sequelize.INTEGER,
+        allowNull: true
+      },
+      availability: {
+        type: Sequelize.JSON,
+        allowNull: true
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

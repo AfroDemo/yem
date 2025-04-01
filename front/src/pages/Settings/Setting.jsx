@@ -33,6 +33,7 @@ export default function SettingsPage() {
   const [newInterest, setNewInterest] = useState("");
   const [newSkill, setNewSkill] = useState("");
   const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const [interestSuggestions, setInterestSuggestions] = useState([]);
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -45,18 +46,31 @@ export default function SettingsPage() {
     interests: user.interests || "",
   });
   const commonSkills = [
-    "JavaScript",
-    "React",
-    "Node.js",
-    "Python",
-    "Java",
-    "UI/UX Design",
-    "Graphic Design",
-    "Marketing",
-    "SEO",
-    "Project Management",
-    "Leadership",
-    "Public Speaking",
+    "Fundraising",
+    "Product Development",
+    "Marketing Strategy",
+    "Sales",
+    "Operations",
+    "Financial Planning",
+    "Team Building",
+    "Legal & Compliance",
+    "Technology Architecture",
+    "UX/UI Design",
+    "Customer Acquisition",
+    "Supply Chain",
+    "International Expansion",
+  ];
+
+  const commonInterests = [
+    "Scaling Business",
+    "Funding Opportunities",
+    "Product Innovation",
+    "Marketing Strategy",
+    "Leadership Development",
+    "Technical Skills",
+    "Industry Networking",
+    "Business Model Optimization",
+    "Market Research",
   ];
 
   const handleInputChange = (e) => {
@@ -110,7 +124,6 @@ export default function SettingsPage() {
 
   const handleRemoveInterest = (interestToRemove) => {
     const updatedInterests = formData.interests
-      .replace(/"/g, "")
       .split(",")
       .map((i) => i.trim())
       .filter((i) => i !== interestToRemove)
@@ -273,7 +286,6 @@ export default function SettingsPage() {
                   <div className="border rounded-md p-4">
                     <div className="flex flex-wrap gap-2 mb-3">
                       {formData.interests
-                        .replace(/"/g, "")
                         .split(",")
                         .filter((i) => i.trim()) // Filter out empty strings
                         .map((interest, index) => (
@@ -293,10 +305,20 @@ export default function SettingsPage() {
                           </div>
                         ))}
                     </div>
+                    <div className="relative">
                     <div className="flex gap-2">
                       <Input
                         value={newInterest}
-                        onChange={(e) => setNewInterest(e.target.value)}
+                        onChange={(e) => {
+                          setNewInterest(e.target.value);
+                          setInterestSuggestions(
+                            commonInterests.filter((interest) =>
+                              interest
+                                .toLowerCase()
+                                .includes(e.target.value.toLowerCase())
+                            )
+                          );
+                        }}
                         placeholder="Add an interest..."
                         className="h-8"
                       />
@@ -304,6 +326,23 @@ export default function SettingsPage() {
                         Add
                       </Button>
                     </div>
+                    {newInterest && interestSuggestions.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+                        {interestSuggestions.map((interest, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                            onClick={() => {
+                              setNewInterest(interest);
+                              setInterestSuggestions([]);
+                            }}
+                          >
+                            {interest}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   </div>
                 </div>
 

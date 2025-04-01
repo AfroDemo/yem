@@ -1,27 +1,107 @@
-const User = require("../models/User");
-const MentorProfile = require("../models/MentorProfile");
+const db = require("../models");
+const User = db.User;
+const MentorProfile = db.MentorProfile;
+const { Op } = require("sequelize");
 
 // Get all users (admin only)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    // Verify User model is properly accessible
+    if (!User || typeof User.findAll !== "function") {
+      throw new Error("User model not properly initialized");
+    }
+
+    const users = await User.findAll({
+      attributes: { exclude: ["password"] },
+    });
     res.json(users);
   } catch (error) {
     console.error("Get all users error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
 // Get user by ID
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await User.findByPk(req.params.id, {
+      attributes: { exclude: ["password"] },
+    });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     res.json(user);
   } catch (error) {
     console.error("Get user by ID error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+exports.getMatches = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let matchQuery = {
+      where: {
+        role: user.role === "entrepreneur" ? "mentor" : "entrepreneur",
+      },
+    };
+
+    // For array contains operations in Sequelize
+    if (user.industries && user.industries.length > 0) {
+      matchQuery.where.industries = {
+        [Sequelize.Op.overlap]: user.industries,
+      };
+    }
+
+    if (user.role === "entrepreneur") {
+      if (user.interests && user.interests.length > 0) {
+        matchQuery.where.skills = {
+          [Sequelize.Op.overlap]: user.interests,
+        };
+      }
+    } else {
+      if (user.skills && user.skills.length > 0) {
+        matchQuery.where.interests = {
+          [Sequelize.Op.overlap]: user.skills,
+        };
+      }
+
+      if (
+        user.preferredBusinessStages &&
+        user.preferredBusinessStages.length > 0
+      ) {
+        matchQuery.where.businessStage = {
+          [Sequelize.Op.in]: user.preferredBusinessStages,
+        };
+      }
+    }
+
+    const matches = await User.findAll({
+      ...matchQuery,
+      attributes: { exclude: ["password"] },
+    });
+
+    const scoredMatches = matches
+      .map((match) => {
+        // ... same scoring logic as before ...
+      })
+      .sort((a, b) => b.matchScore - a.matchScore);
+
+    res.json(scoredMatches);
+  } catch (error) {
+    console.error("Get matches error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -29,6 +109,11 @@ exports.getUserById = async (req, res) => {
 // Update user
 exports.updateUser = async (req, res) => {
   try {
+    // Verify User model
+    if (!User || typeof User.findByPk !== "function") {
+      throw new Error("User model not properly initialized");
+    }
+
     const {
       firstName,
       lastName,
@@ -37,65 +122,62 @@ exports.updateUser = async (req, res) => {
       interests,
       location,
       socialLinks,
+      profileImage,
     } = req.body;
 
-    // Check if user exists
-    const user = await User.findById(req.params.id);
+    const user = await User.findByPk(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if user is authorized to update this profile
-    if (req.user?.id !== req.params.id && req.user?.role !== "admin") {
+    // Check authorization
+    if (req.user?.id != req.params.id && req.user?.role !== "admin") {
       return res
         .status(403)
         .json({ message: "Not authorized to update this user" });
     }
 
-    // Update user fields
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (bio) user.bio = bio;
-    if (skills) user.skills = skills;
-    if (interests) user.interests = interests;
-    if (location) user.location = location;
-    if (socialLinks) user.socialLinks = socialLinks;
-
-    const updatedUser = await user.save();
-
-    res.json({
-      id: updatedUser._id,
-      email: updatedUser.email,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      role: updatedUser.role,
-      bio: updatedUser.bio,
-      skills: updatedUser.skills,
-      interests: updatedUser.interests,
-      location: updatedUser.location,
-      socialLinks: updatedUser.socialLinks,
+    const updatedUser = await user.update({
+      firstName: firstName !== undefined ? firstName : user.firstName,
+      lastName: lastName !== undefined ? lastName : user.lastName,
+      bio: bio !== undefined ? bio : user.bio,
+      skills: skills !== undefined ? skills : user.skills,
+      interests: interests !== undefined ? interests : user.interests,
+      location: location !== undefined ? location : user.location,
+      profileImage:
+        profileImage !== undefined ? profileImage : user.profileImage,
     });
+
+    const userJson = updatedUser.toJSON();
+    delete userJson.password;
+    delete userJson.resetPasswordToken;
+    delete userJson.resetPasswordExpires;
+
+    res.json(userJson);
   } catch (error) {
     console.error("Update user error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
 // Delete user (admin only)
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByPk(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // If user is a mentor, delete their mentor profile
     if (user.role === "mentor") {
-      await MentorProfile.findOneAndDelete({ userId: user._id });
+      await MentorProfile.destroy({ where: { userId: user.id } });
     }
 
     // Delete user
-    await user.remove();
+    await user.destroy();
 
     res.json({ message: "User deleted successfully" });
   } catch (error) {

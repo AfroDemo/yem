@@ -61,6 +61,11 @@ module.exports = (sequelize) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      industries: { type: DataTypes.JSON },
+      businessStage: { type: DataTypes.STRING },
+      preferredBusinessStages: { type: DataTypes.JSON },
+      experienceYears: { type: DataTypes.INTEGER },
+      availability: { type: DataTypes.JSON },
     },
     {
       tableName: "users",
@@ -68,7 +73,6 @@ module.exports = (sequelize) => {
     }
   );
 
-  // Define associations here
   User.associate = function (models) {
     User.hasOne(models.MenteeProfile, {
       foreignKey: "userId",
@@ -104,6 +108,8 @@ module.exports = (sequelize) => {
       as: "mentorSuccessStories",
     });
   };
+
+  User.toString=()=>'User'
 
   return User;
 };

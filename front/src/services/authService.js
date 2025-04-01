@@ -1,84 +1,185 @@
 import api from "../utils/api";
+import { EventEmitter } from "events";
+
+// Create an event emitter for auth state changes
+const authEmitter = new EventEmitter();
 
 const storage = {
-  set: (key, value) => localStorage.setItem(key, JSON.stringify(value)),
+  set: (key, value) => {
+    // Only stringify if value is an object
+    const toStore = typeof value === "string" ? value : JSON.stringify(value);
+    localStorage.setItem(key, toStore);
+  },
   get: (key) => {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
+    if (!item) return null;
+
+    // Try to parse as JSON, if fails return raw string (for JWT tokens)
+    try {
+      return JSON.parse(item);
+    } catch (e) {
+      return item; // Return the raw string if not valid JSON
+    }
   },
   remove: (key) => localStorage.removeItem(key),
+  clear: () => localStorage.clear(),
 };
 
-// Register user
+// Token management
+const token = {
+  get: () => localStorage.getItem("token"), // Directly get the string
+  set: (newToken) => localStorage.setItem("token", newToken), // Store as plain string
+  remove: () => localStorage.removeItem("token"),
+  exists: () => !!localStorage.getItem("token"),
+};
+
+// User data management (still needs JSON parsing)
+const user = {
+  get: () => {
+    const userData = localStorage.getItem("user");
+    return userData ? JSON.parse(userData) : null;
+  },
+  set: (userData) => localStorage.setItem("user", JSON.stringify(userData)),
+  remove: () => localStorage.removeItem("user"),
+};
+
+// Register user with email verification support
 export const register = async (userData) => {
   try {
     const response = await api.post("/auth/register", userData);
+
+    // For immediate login after registration (if your API supports it)
+    if (response.data.token) {
+      token.set(response.data.token);
+      user.set(response.data.user);
+      authEmitter.emit("login", response.data.user);
+    }
+
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || "Registration failed";
+    const message = error.response?.data?.message || "Registration failed";
+    authEmitter.emit("error", { action: "register", error: message });
+    throw message;
   }
 };
 
-// Login user
-export const login = async (userData) => {
+// Login with token refresh support
+export const login = async (credentials) => {
   try {
-    const response = await api.post("/auth/login", userData);
+    const response = await api.post("/auth/login", credentials);
 
-    // Save token and user data to localStorage
-    localStorage.setItem("token", response.data.token);
-    localStorage.setItem("user", JSON.stringify(response.data.user));
+    token.set(response.data.token);
+    user.set(response.data.user);
 
+    // Schedule token refresh before expiration
+    scheduleTokenRefresh();
+
+    authEmitter.emit("login", response.data.user);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || "Login failed";
+    const message = error.response?.data?.message || "Login failed";
+    authEmitter.emit("error", { action: "login", error: message });
+    throw message;
   }
 };
 
-// Logout user
+// Enhanced logout with event emission
 export const logout = () => {
-  storage.remove("token");
-  storage.remove("user");
+  authEmitter.emit("beforeLogout", user.get());
+  storage.clear();
+  authEmitter.emit("logout");
+  cancelTokenRefresh();
 };
 
-// Get current user
-export const getCurrentUser = async () => {
-  const cachedUser = storage.get("user");
+// Current user with cache invalidation
+export const getCurrentUser = async (forceRefresh = false) => {
+  const cachedUser = user.get();
 
-  if (cachedUser) {
-    // Return cached user immediately while fetching fresh data
-    refreshUserData();
+  if (!forceRefresh && cachedUser) {
+    // Refresh in background without waiting
+    refreshUserData().catch(console.error);
     return cachedUser;
-  } else {
-    return await refreshUserData();
+  }
+
+  return await refreshUserData();
+};
+
+// Token refresh scheduler
+let refreshTimeout;
+const scheduleTokenRefresh = () => {
+  cancelTokenRefresh();
+
+  // Refresh token 1 minute before expiration (adjust based on your token expiry)
+  const jwt = parseJwt(token.get());
+  if (jwt?.exp) {
+    const expiresIn = jwt.exp * 1000 - Date.now() - 60000;
+    if (expiresIn > 0) {
+      refreshTimeout = setTimeout(() => {
+        refreshToken().catch(console.error);
+      }, expiresIn);
+    }
   }
 };
 
-// Refresh user data from API
-export const refreshUserData = async () => {
+const cancelTokenRefresh = () => {
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+  }
+};
+
+// JWT parser helper
+const parseJwt = (token) => {
   try {
-    const response = await api.get("/auth/me");
-    storage.set("user", response.data);
-    return response.data;
-  } catch (error) {
-    logout(); // Logout if session is invalid
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
     return null;
   }
 };
 
-// Forgot password
+// Token refresh implementation
+const refreshToken = async () => {
+  try {
+    const response = await api.post("/auth/refresh-token", {
+      token: token.get(),
+    });
+
+    token.set(response.data.token);
+    scheduleTokenRefresh();
+    return response.data;
+  } catch (error) {
+    // If refresh fails, logout the user
+    logout();
+    throw error.response?.data?.message || "Session expired";
+  }
+};
+
+// Enhanced user data refresh
+export const refreshUserData = async () => {
+  try {
+    const response = await api.get("/auth/me");
+    user.set(response.data);
+    authEmitter.emit("userUpdated", response.data);
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      logout();
+    }
+    throw error.response?.data?.message || "Failed to refresh user data";
+  }
+};
+
+// Password reset flows
 export const forgotPassword = async (email) => {
   try {
     const response = await api.post("/auth/forgot-password", { email });
     return response.data;
   } catch (error) {
-    throw (
-      error.response?.data?.message ||
-      "Failed to process forgot password request"
-    );
+    const message = error.response?.data?.message || "Password reset failed";
+    authEmitter.emit("error", { action: "forgotPassword", error: message });
+    throw message;
   }
 };
 
-// Reset password
 export const resetPassword = async (token, newPassword) => {
   try {
     const response = await api.post("/auth/reset-password", {
@@ -87,39 +188,71 @@ export const resetPassword = async (token, newPassword) => {
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || "Failed to reset password";
+    const message = error.response?.data?.message || "Password reset failed";
+    authEmitter.emit("error", { action: "resetPassword", error: message });
+    throw message;
   }
 };
 
-// Verify email
-export const verifyEmail = async (token) => {
+// Email verification
+export const verifyEmail = async (verificationToken) => {
   try {
-    const response = await api.post("/auth/verify-email", { token });
+    const response = await api.post("/auth/verify-email", {
+      token: verificationToken,
+    });
+
+    // Update user verification status if logged in
+    if (isAuthenticated()) {
+      const currentUser = user.get();
+      if (currentUser) {
+        user.set({ ...currentUser, isVerified: true });
+      }
+    }
+
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || "Failed to verify email";
+    const message =
+      error.response?.data?.message || "Email verification failed";
+    authEmitter.emit("error", { action: "verifyEmail", error: message });
+    throw message;
   }
 };
 
-// Check if user is authenticated
-export const isAuthenticated = () => {
-  return localStorage.getItem("token") !== null;
+// Auth state utilities
+export const isAuthenticated = () => token.exists();
+export const getUserRole = () => user.get()?.role;
+export const getUserId = () => user.get()?.id;
+export const isAdmin = () => user.isAdmin();
+
+// Event subscription
+export const onAuthChange = (callback) => {
+  authEmitter.on("login", (user) => callback({ isAuthenticated: true, user }));
+  authEmitter.on("logout", () =>
+    callback({ isAuthenticated: false, user: null })
+  );
+  authEmitter.on("userUpdated", (user) =>
+    callback({ isAuthenticated: true, user })
+  );
+
+  // Return unsubscribe function
+  return () => {
+    authEmitter.off("login", callback);
+    authEmitter.off("logout", callback);
+    authEmitter.off("userUpdated", callback);
+  };
 };
 
-// Get user role
-export const getUserRole = () => {
-  const user = localStorage.getItem("user");
-  if (user) {
-    return JSON.parse(user).role;
+// Initialize auth state
+export const initAuth = async () => {
+  if (isAuthenticated()) {
+    try {
+      await refreshUserData();
+      scheduleTokenRefresh();
+    } catch (error) {
+      logout();
+    }
   }
-  return null;
 };
 
-// Get user ID
-export const getUserId = () => {
-  const user = localStorage.getItem("user");
-  if (user) {
-    return JSON.parse(user).id;
-  }
-  return null;
-};
+// Initialize on import
+initAuth().catch(console.error);
