@@ -30,8 +30,20 @@ import { updateUser } from "../../services/userService";
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const user = useUser();
+  const [newInterest, setNewInterest] = useState("");
   const [newSkill, setNewSkill] = useState("");
   const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const [formData, setFormData] = useState({
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+    headline: user.role
+      ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}`
+      : "",
+    bio: user.bio || "",
+    location: user.location || "",
+    skills: user.skills || "",
+    interests: user.interests || "",
+  });
   const commonSkills = [
     "JavaScript",
     "React",
@@ -47,26 +59,82 @@ export default function SettingsPage() {
     "Public Speaking",
   ];
 
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
   const handleAddSkill = () => {
-    if (newSkill.trim() && !user.skills?.includes(newSkill.trim())) {
-      // Add the new skill to user's skills
-      const updatedSkills = user.skills
-        ? `${user.skills}, ${newSkill.trim()}`
+    if (newSkill.trim() && !formData.skills?.includes(newSkill.trim())) {
+      const updatedSkills = formData.skills
+        ? `${formData.skills}, ${newSkill.trim()}`
         : newSkill.trim();
-      // Update user context or make API call
-      updateUser({ skills: updatedSkills });
+      setFormData((prev) => ({
+        ...prev,
+        skills: updatedSkills,
+      }));
       setNewSkill("");
     }
   };
 
   const handleRemoveSkill = (skillToRemove) => {
-    const updatedSkills = user.skills
+    const updatedSkills = formData.skills
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s !== skillToRemove)
       .join(", ");
-    // Update user context or make API call
-    updateUser({ skills: updatedSkills || null });
+    setFormData((prev) => ({
+      ...prev,
+      skills: updatedSkills || "",
+    }));
+  };
+
+  const handleAddInterest = () => {
+    if (
+      newInterest.trim() &&
+      !formData.interests?.includes(newInterest.trim())
+    ) {
+      const updatedInterests = formData.interests
+        ? `${formData.interests}, ${newInterest.trim()}`
+        : newInterest.trim();
+      setFormData((prev) => ({
+        ...prev,
+        interests: updatedInterests,
+      }));
+      setNewInterest("");
+    }
+  };
+
+  const handleRemoveInterest = (interestToRemove) => {
+    const updatedInterests = formData.interests
+      .replace(/"/g, "")
+      .split(",")
+      .map((i) => i.trim())
+      .filter((i) => i !== interestToRemove)
+      .join(", ");
+    setFormData((prev) => ({
+      ...prev,
+      interests: updatedInterests || "",
+    }));
+  };
+
+  const handleSaveChanges = () => {
+    // Prepare the data to be sent to the API
+    const updateData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      role: formData.headline.toLowerCase(),
+      bio: formData.bio,
+      location: formData.location,
+      skills: formData.skills,
+      interests: formData.interests,
+    };
+
+    // Call updateUser with all the changes
+    updateUser(user.id, updateData);
   };
 
   return (
@@ -149,17 +217,19 @@ export default function SettingsPage() {
                   <div className="flex-1 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="first-name">First name</Label>
+                        <Label htmlFor="firstName">First name</Label>
                         <Input
-                          id="first-name"
-                          defaultValue={user.firstName || ""}
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="last-name">Last name</Label>
+                        <Label htmlFor="lastName">Last name</Label>
                         <Input
-                          id="last-name"
-                          defaultValue={user.lastName || ""}
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={handleInputChange}
                         />
                       </div>
                     </div>
@@ -167,14 +237,8 @@ export default function SettingsPage() {
                       <Label htmlFor="headline">Professional Headline</Label>
                       <Input
                         id="headline"
-                        defaultValue={
-                          user.role
-                            ? `${
-                                user.role.charAt(0).toUpperCase() +
-                                user.role.slice(1)
-                              }`
-                            : ""
-                        }
+                        value={formData.headline}
+                        onChange={handleInputChange}
                       />
                     </div>
                   </div>
@@ -182,7 +246,12 @@ export default function SettingsPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="bio">Bio</Label>
-                  <Textarea id="bio" rows={4} defaultValue={user.bio || ""} />
+                  <Textarea
+                    id="bio"
+                    rows={4}
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                  />
                   <p className="text-xs text-gray-500">
                     Brief description of yourself for your profile.
                   </p>
@@ -191,47 +260,59 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <Input id="location" defaultValue={user.location || ""} />
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
 
-                {user.interests && (
-                  <div className="space-y-2">
-                    <Label>Interests</Label>
-                    <div className="border rounded-md p-4">
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {user.interests
-                          .replace(/"/g, "")
-                          .split(",")
-                          .map((interest, index) => (
-                            <div
-                              key={index}
-                              className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                <div className="space-y-2">
+                  <Label>Interests</Label>
+                  <div className="border rounded-md p-4">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {formData.interests
+                        .replace(/"/g, "")
+                        .split(",")
+                        .filter((i) => i.trim()) // Filter out empty strings
+                        .map((interest, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                          >
+                            {interest.trim()}
+                            <button
+                              onClick={() =>
+                                handleRemoveInterest(interest.trim())
+                              }
+                              className="ml-2 text-gray-500 hover:text-gray-900"
                             >
-                              {interest.trim()}
-                              <button className="ml-2 text-gray-500 hover:text-gray-900">
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add an interest..."
-                          className="h-8"
-                        />
-                        <Button size="sm">Add</Button>
-                      </div>
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newInterest}
+                        onChange={(e) => setNewInterest(e.target.value)}
+                        placeholder="Add an interest..."
+                        className="h-8"
+                      />
+                      <Button size="sm" onClick={handleAddInterest}>
+                        Add
+                      </Button>
                     </div>
                   </div>
-                )}
+                </div>
 
                 <div className="space-y-2">
                   <Label>Skills & Expertise</Label>
                   <div className="border rounded-md p-4">
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {user.skills ? (
-                        user.skills.split(",").map((skill, index) => (
+                      {formData.skills ? (
+                        formData.skills.split(",").map((skill, index) => (
                           <div
                             key={index}
                             className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
@@ -294,7 +375,7 @@ export default function SettingsPage() {
               </CardContent>
               <CardFooter className="flex justify-end gap-2">
                 <Button variant="outline">Cancel</Button>
-                <Button>Save Changes</Button>
+                <Button onClick={handleSaveChanges}>Save Changes</Button>
               </CardFooter>
             </Card>
 
@@ -410,11 +491,7 @@ export default function SettingsPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    defaultValue={user.email}
-                  />
+                  <Input id="email" type="email" defaultValue={user.email} />
                 </div>
                 {/* <div className="flex items-center justify-between">
                   <div className="space-y-0.5">

@@ -13,6 +13,7 @@ export const getUserById = async (userId) => {
 // Update user
 export const updateUser = async (userId, userData) => {
   try {
+    console.log(userData)
     const response = await api.put(`/users/${userId}`, userData);
     return response.data;
   } catch (error) {
