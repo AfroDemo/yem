@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
   BookOpen,
@@ -8,9 +8,32 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { getCurrentUser } from "../../services/authService";
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch user", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="flex max-h-screen overflow-scroll bg-muted/20">
@@ -18,7 +41,7 @@ export default function DashboardLayout() {
       <aside
         className={`${
           isMobileMenuOpen ? "block" : "hidden"
-        } md:flex w-64 flex-col border-r bg-card md:block`}
+        } w-64 flex-col border-r bg-card md:block`}
       >
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold">YE Platform</h2>
@@ -63,7 +86,9 @@ export default function DashboardLayout() {
               className="h-10 w-10 rounded-full"
             />
             <div>
-              <p className="font-medium">John Doe</p>
+              <p className="font-medium">
+                {user.firstName} {user.lastName}
+              </p>
               <p className="text-xs text-muted-foreground">Pro Member</p>
             </div>
           </div>

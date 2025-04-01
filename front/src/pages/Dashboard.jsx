@@ -1,6 +1,7 @@
 import { Bell, BookOpen, Calendar, MessageSquare, Users } from "lucide-react";
-import DashboardLayout from "../components/layout/DashboardLayout";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getCurrentUser } from "../services/authService";
 
 export default function Dashboard() {
   return (

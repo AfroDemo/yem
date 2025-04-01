@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const db = require("../models");  // Import the db object
-const User = db.User;  
+const db = require("../models"); // Import the db object
+const User = db.User;
 const dotenv = require("dotenv");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
@@ -23,11 +23,25 @@ const transporter = nodemailer.createTransport({
 // Register a new user
 const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role } = req.body;
+    const {
+      email,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      role,
+      bio,
+      location,
+      agreeToTerms,
+      interests,
+    } = req.body;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
+    }
+    if (password!==confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -39,6 +53,10 @@ const register = async (req, res) => {
       firstName,
       lastName,
       role,
+      bio,
+      location,
+      agreeToTerms,
+      interests,
     });
 
     const token = jwt.sign({ id: newUser.id, role: newUser.role }, JWT_SECRET, {

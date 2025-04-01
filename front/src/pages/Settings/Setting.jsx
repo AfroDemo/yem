@@ -1,104 +1,13 @@
 import { CreditCard } from "lucide-react";
 import { useState } from "react";
-
-// Reusable components
-const Badge = ({ children, variant = "default", className = "" }) => {
-  const baseClasses =
-    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
-  const variantClasses = {
-    default:
-      "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-    outline:
-      "border-border bg-background hover:bg-accent hover:text-accent-foreground",
-    destructive:
-      "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-  }[variant];
-
-  return (
-    <span className={`${baseClasses} ${variantClasses} ${className}`}>
-      {children}
-    </span>
-  );
-};
-
-const Button = ({
-  children,
-  variant = "default",
-  size = "default",
-  className = "",
-  ...props
-}) => {
-  const baseClasses =
-    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
-  const variantClasses = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90",
-    destructive:
-      "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-    outline: "border border-input hover:bg-accent hover:text-accent-foreground",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    link: "underline-offset-4 hover:underline text-primary",
-  }[variant];
-  const sizeClasses = {
-    default: "h-10 py-2 px-4",
-    sm: "h-9 px-3 rounded-md",
-    lg: "h-11 px-8 rounded-md",
-    icon: "h-10 w-10",
-  }[size];
-
-  return (
-    <button
-      className={`${baseClasses} ${variantClasses} ${sizeClasses} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Card = ({ children, className = "" }) => {
-  return (
-    <div
-      className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const CardHeader = ({ children, className = "" }) => {
-  return (
-    <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
-      {children}
-    </div>
-  );
-};
-
-const CardTitle = ({ children, className = "" }) => {
-  return (
-    <h3
-      className={`text-2xl font-semibold leading-none tracking-tight ${className}`}
-    >
-      {children}
-    </h3>
-  );
-};
-
-const CardDescription = ({ children, className = "" }) => {
-  return (
-    <p className={`text-sm text-muted-foreground ${className}`}>{children}</p>
-  );
-};
-
-const CardContent = ({ children, className = "" }) => {
-  return <div className={`p-6 pt-0 ${className}`}>{children}</div>;
-};
-
-const CardFooter = ({ children, className = "" }) => {
-  return (
-    <div className={`flex items-center p-6 pt-0 ${className}`}>{children}</div>
-  );
-};
+import Card from "../../components/card/card";
+import CardTitle from "../../components/card/cardTitle";
+import CardDescription from "../../components/card/cardDescription";
+import Button from "../../components/ui/button";
+import Badge from "../../components/ui/badge";
+import CardHeader from "../../components/card/cardHeader";
+import CardContent from "../../components/card/cardContent";
+import CardFooter from "../../components/card/cardFooter";
 
 const Input = ({ className = "", ...props }) => {
   return (
