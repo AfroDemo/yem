@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, createContext } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
   BookOpen,
@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { getCurrentUser } from "../../services/authService";
+import { UserContext } from "../../context/UserContext"; // Import context
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -20,7 +21,6 @@ export default function DashboardLayout() {
       try {
         const userData = await getCurrentUser();
         setUser(userData);
-        setLoading(false);
       } catch (error) {
         console.error("Failed to fetch user", error);
       } finally {
@@ -36,98 +36,100 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="flex max-h-screen overflow-scroll bg-muted/20">
-      {/* Sidebar */}
-      <aside
-        className={`${
-          isMobileMenuOpen ? "block" : "hidden"
-        } w-64 flex-col border-r bg-card md:block`}
-      >
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold">YE Platform</h2>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <NavItem
-            to="/dashboard"
-            icon={<Home className="h-5 w-5" />}
-            label="Dashboard"
-          />
-          <NavItem
-            to="/dashboard/events"
-            icon={<Calendar className="h-5 w-5" />}
-            label="Events"
-          />
-          <NavItem
-            to="/dashboard/resources"
-            icon={<BookOpen className="h-5 w-5" />}
-            label="Resources"
-          />
-          <NavItem
-            to="/dashboard/network"
-            icon={<Users className="h-5 w-5" />}
-            label="Network"
-          />
-          <NavItem
-            to="/dashboard/messages"
-            icon={<MessageSquare className="h-5 w-5" />}
-            label="Messages"
-          />
-          <NavItem
-            to="/dashboard/settings"
-            icon={<Settings className="h-5 w-5" />}
-            label="Settings"
-          />
-        </nav>
-        <div className="p-4 absolute bottom-0 border-t">
-          <div className="flex items-center space-x-3">
-            <img
-              src="/placeholder.svg?height=40&width=40"
-              alt="User avatar"
-              className="h-10 w-10 rounded-full"
+    <UserContext.Provider value={user}>
+      <div className="flex max-h-screen overflow-scroll bg-muted/20">
+        {/* Sidebar */}
+        <aside
+          className={`${
+            isMobileMenuOpen ? "block" : "hidden"
+          } w-64 flex-col border-r bg-card md:block`}
+        >
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-bold">YE Platform</h2>
+          </div>
+          <nav className="flex-1 p-4 space-y-2">
+            <NavItem
+              to="/dashboard"
+              icon={<Home className="h-5 w-5" />}
+              label="Dashboard"
             />
-            <div>
-              <p className="font-medium">
-                {user.firstName} {user.lastName}
-              </p>
-              <p className="text-xs text-muted-foreground">Pro Member</p>
+            <NavItem
+              to="/dashboard/events"
+              icon={<Calendar className="h-5 w-5" />}
+              label="Events"
+            />
+            <NavItem
+              to="/dashboard/resources"
+              icon={<BookOpen className="h-5 w-5" />}
+              label="Resources"
+            />
+            <NavItem
+              to="/dashboard/network"
+              icon={<Users className="h-5 w-5" />}
+              label="Network"
+            />
+            <NavItem
+              to="/dashboard/messages"
+              icon={<MessageSquare className="h-5 w-5" />}
+              label="Messages"
+            />
+            <NavItem
+              to="/dashboard/settings"
+              icon={<Settings className="h-5 w-5" />}
+              label="Settings"
+            />
+          </nav>
+          <div className="p-4 absolute bottom-0 border-t">
+            <div className="flex items-center space-x-3">
+              <img
+                src="/placeholder.svg?height=40&width=40"
+                alt="User avatar"
+                className="h-10 w-10 rounded-full"
+              />
+              <div>
+                <p className="font-medium">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-xs text-muted-foreground">Pro Member</p>
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      {/* Mobile header */}
-      <div className="flex flex-col flex-1">
-        <header className="md:hidden flex items-center justify-between p-4 border-b bg-card">
-          <h2 className="text-xl font-bold">YE Platform</h2>
-          <button
-            className="p-2 border rounded-md"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-menu"
+        {/* Mobile header */}
+        <div className="flex flex-col flex-1">
+          <header className="md:hidden flex items-center justify-between p-4 border-b bg-card">
+            <h2 className="text-xl font-bold">YE Platform</h2>
+            <button
+              className="p-2 border rounded-md"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <line x1="4" x2="20" y1="12" y2="12" />
-              <line x1="4" x2="20" y1="6" y2="6" />
-              <line x1="4" x2="20" y1="18" y2="18" />
-            </svg>
-          </button>
-        </header>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-menu"
+              >
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+              </svg>
+            </button>
+          </header>
 
-        {/* Main content - Replaced children with Outlet */}
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
+          {/* Main content - Now all child components can access `user` */}
+          <main className="flex-1 p-6">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </UserContext.Provider>
   );
 }
 

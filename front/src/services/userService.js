@@ -1,7 +1,7 @@
 import api from '../utils/api';
 
 // Get user by ID
-export const getUserById = async (userId: string) => {
+export const getUserById = async (userId) => {
   try {
     const response = await api.get(`/users/${userId}`);
     return response.data;
@@ -11,19 +11,7 @@ export const getUserById = async (userId: string) => {
 };
 
 // Update user
-export const updateUser = async (userId: string, userData: {
-  firstName?: string;
-  lastName?: string;
-  bio?: string;
-  skills?: string[];
-  interests?: string[];
-  location?: string;
-  socialLinks?: {
-    linkedin?: string;
-    twitter?: string;
-    website?: string;
-  };
-}) => {
+export const updateUser = async (userId, userData) => {
   try {
     const response = await api.put(`/users/${userId}`, userData);
     return response.data;
@@ -33,7 +21,7 @@ export const updateUser = async (userId: string, userData: {
 };
 
 // Upload profile image
-export const uploadProfileImage = async (userId: string, imageUrl: string) => {
+export const uploadProfileImage = async (userId, imageUrl) => {
   try {
     const response = await api.put(`/users/${userId}/profile-image`, { imageUrl });
     return response.data;
@@ -53,7 +41,7 @@ export const getAllUsers = async () => {
 };
 
 // Delete user (admin only)
-export const deleteUser = async (userId: string) => {
+export const deleteUser = async (userId) => {
   try {
     const response = await api.delete(`/users/${userId}`);
     return response.data;

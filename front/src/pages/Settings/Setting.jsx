@@ -3,173 +3,72 @@ import { useState } from "react";
 import Card from "../../components/card/card";
 import CardTitle from "../../components/card/cardTitle";
 import CardDescription from "../../components/card/cardDescription";
-import Button from "../../components/ui/button";
-import Badge from "../../components/ui/badge";
+import Button from "../../components/button";
+import Badge from "../../components/badge";
 import CardHeader from "../../components/card/cardHeader";
 import CardContent from "../../components/card/cardContent";
 import CardFooter from "../../components/card/cardFooter";
+import TabsList from "../../components/tab/TabsList";
+import TabsTrigger from "../../components/tab/TabsTrigger";
+import TabsContent from "../../components/tab/TabsContent";
+import Label from "../../components/Label";
+import Avatar from "../../components/avatar/Avatar";
+import AvatarImage from "../../components/avatar/AvatarImage";
+import AvatarFallback from "../../components/avatar/AvatarFallback";
+import Input from "../../components/Input";
+import Textarea from "../../components/Textarea";
+import Select from "../../components/select/select";
+import SelectTrigger from "../../components/select/SelectTrigger";
+import SelectValue from "../../components/select/SelectValue";
+import SelectContent from "../../components/select/SelectContent";
+import SelectItem from "../../components/select/SelectItem";
+import Separator from "../../components/separator";
+import Switch from "../../components/Switch";
+import { useUser } from "../../context/UserContext";
+import { updateUser } from "../../services/userService";
 
-const Input = ({ className = "", ...props }) => {
-  return (
-    <input
-      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    />
-  );
-};
-
-const Label = ({ children, className = "", htmlFor }) => {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
-    >
-      {children}
-    </label>
-  );
-};
-
-const Tabs = ({ defaultValue, children, className = "" }) => {
-  return (
-    <div className={`${className}`} defaultValue={defaultValue}>
-      {children}
-    </div>
-  );
-};
-
-const TabsList = ({ children, className = "" }) => {
-  return (
-    <div
-      className={`inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const TabsTrigger = ({ children, value, active, onClick, className = "" }) => {
-  return (
-    <button
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-        active ? "bg-white text-foreground shadow-sm" : "text-muted-foreground"
-      } ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-};
-
-const TabsContent = ({ children, value, className = "" }) => {
-  return (
-    <div
-      className={`mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const Textarea = ({ className = "", ...props }) => {
-  return (
-    <textarea
-      className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    />
-  );
-};
-
-const Switch = ({ className = "", ...props }) => {
-  return (
-    <button
-      type="button"
-      className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input ${className}`}
-      role="switch"
-      {...props}
-    >
-      <span className="pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0" />
-    </button>
-  );
-};
-
-const Avatar = ({ children, className = "" }) => {
-  return (
-    <div
-      className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const AvatarImage = ({ src, alt, className = "" }) => {
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={`aspect-square h-full w-full ${className}`}
-    />
-  );
-};
-
-const AvatarFallback = ({ children, className = "" }) => {
-  return (
-    <div
-      className={`flex h-full w-full items-center justify-center rounded-full bg-muted ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const Select = ({ children, defaultValue, className = "" }) => {
-  return <div className={`relative ${className}`}>{children}</div>;
-};
-
-const SelectTrigger = ({ children, className = "" }) => {
-  return (
-    <button
-      className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-    >
-      {children}
-    </button>
-  );
-};
-
-const SelectValue = ({ placeholder, className = "" }) => {
-  return <span className={`${className}`}>{placeholder}</span>;
-};
-
-const SelectContent = ({ children, className = "" }) => {
-  return (
-    <div
-      className={`absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-80 ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const SelectItem = ({ children, value, className = "" }) => {
-  return (
-    <div
-      className={`relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 ${className}`}
-      data-value={value}
-    >
-      {children}
-    </div>
-  );
-};
-
-const Separator = ({ className = "" }) => {
-  return (
-    <div className={`shrink-0 bg-border h-[1px] w-full my-4 ${className}`} />
-  );
-};
-
-// Main component
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
+  const user = useUser();
+  const [newSkill, setNewSkill] = useState("");
+  const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const commonSkills = [
+    "JavaScript",
+    "React",
+    "Node.js",
+    "Python",
+    "Java",
+    "UI/UX Design",
+    "Graphic Design",
+    "Marketing",
+    "SEO",
+    "Project Management",
+    "Leadership",
+    "Public Speaking",
+  ];
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !user.skills?.includes(newSkill.trim())) {
+      // Add the new skill to user's skills
+      const updatedSkills = user.skills
+        ? `${user.skills}, ${newSkill.trim()}`
+        : newSkill.trim();
+      // Update user context or make API call
+      updateUser({ skills: updatedSkills });
+      setNewSkill("");
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove) => {
+    const updatedSkills = user.skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s !== skillToRemove)
+      .join(", ");
+    // Update user context or make API call
+    updateUser({ skills: updatedSkills || null });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -232,10 +131,16 @@ export default function SettingsPage() {
                   <div className="flex flex-col items-center space-y-3">
                     <Avatar className="h-24 w-24">
                       <AvatarImage
-                        src="/placeholder.svg?height=96&width=96"
+                        src={
+                          user.profileImage ||
+                          "/placeholder.svg?height=96&width=96"
+                        }
                         alt="Profile picture"
                       />
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarFallback>
+                        {user.firstName?.[0]}
+                        {user.lastName?.[0]}
+                      </AvatarFallback>
                     </Avatar>
                     <Button variant="outline" size="sm">
                       Change Photo
@@ -245,18 +150,31 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="first-name">First name</Label>
-                        <Input id="first-name" defaultValue="John" />
+                        <Input
+                          id="first-name"
+                          defaultValue={user.firstName || ""}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="last-name">Last name</Label>
-                        <Input id="last-name" defaultValue="Doe" />
+                        <Input
+                          id="last-name"
+                          defaultValue={user.lastName || ""}
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="headline">Professional Headline</Label>
                       <Input
                         id="headline"
-                        defaultValue="Tech Entrepreneur & Startup Founder"
+                        defaultValue={
+                          user.role
+                            ? `${
+                                user.role.charAt(0).toUpperCase() +
+                                user.role.slice(1)
+                              }`
+                            : ""
+                        }
                       />
                     </div>
                   </div>
@@ -264,11 +182,7 @@ export default function SettingsPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    rows={4}
-                    defaultValue="Passionate tech entrepreneur with 5 years of experience in SaaS startups. Currently building innovative solutions for small businesses."
-                  />
+                  <Textarea id="bio" rows={4} defaultValue={user.bio || ""} />
                   <p className="text-xs text-gray-500">
                     Brief description of yourself for your profile.
                   </p>
@@ -276,87 +190,104 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company/Business Name</Label>
-                    <Input id="company" defaultValue="TechNova Solutions" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role/Position</Label>
-                    <Input id="role" defaultValue="Founder & CEO" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="industry">Industry</Label>
-                    <Select defaultValue="technology">
-                      <SelectTrigger id="industry">
-                        <SelectValue placeholder="Select industry" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="technology">Technology</SelectItem>
-                        <SelectItem value="ecommerce">E-commerce</SelectItem>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="health">
-                          Health & Wellness
-                        </SelectItem>
-                        <SelectItem value="education">Education</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <Input id="location" defaultValue="San Francisco, CA" />
+                    <Input id="location" defaultValue={user.location || ""} />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    defaultValue="https://example.com"
-                  />
-                </div>
+                {user.interests && (
+                  <div className="space-y-2">
+                    <Label>Interests</Label>
+                    <div className="border rounded-md p-4">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {user.interests
+                          .replace(/"/g, "")
+                          .split(",")
+                          .map((interest, index) => (
+                            <div
+                              key={index}
+                              className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                            >
+                              {interest.trim()}
+                              <button className="ml-2 text-gray-500 hover:text-gray-900">
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add an interest..."
+                          className="h-8"
+                        />
+                        <Button size="sm">Add</Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Skills & Expertise</Label>
                   <div className="border rounded-md p-4">
                     <div className="flex flex-wrap gap-2 mb-3">
-                      <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center">
-                        Entrepreneurship
-                        <button className="ml-2 text-gray-500 hover:text-gray-900">
-                          ×
-                        </button>
-                      </div>
-                      <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center">
-                        Product Management
-                        <button className="ml-2 text-gray-500 hover:text-gray-900">
-                          ×
-                        </button>
-                      </div>
-                      <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center">
-                        Business Strategy
-                        <button className="ml-2 text-gray-500 hover:text-gray-900">
-                          ×
-                        </button>
-                      </div>
-                      <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center">
-                        Marketing
-                        <button className="ml-2 text-gray-500 hover:text-gray-900">
-                          ×
-                        </button>
-                      </div>
-                      <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center">
-                        Fundraising
-                        <button className="ml-2 text-gray-500 hover:text-gray-900">
-                          ×
-                        </button>
-                      </div>
+                      {user.skills ? (
+                        user.skills.split(",").map((skill, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                          >
+                            {skill.trim()}
+                            <button
+                              onClick={() => handleRemoveSkill(skill.trim())}
+                              className="ml-2 text-gray-500 hover:text-gray-900"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No skills added yet
+                        </p>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <Input placeholder="Add a skill..." className="h-8" />
-                      <Button size="sm">Add</Button>
+                    <div className="relative">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newSkill}
+                          onChange={(e) => {
+                            setNewSkill(e.target.value);
+                            setSkillSuggestions(
+                              commonSkills.filter((skill) =>
+                                skill
+                                  .toLowerCase()
+                                  .includes(e.target.value.toLowerCase())
+                              )
+                            );
+                          }}
+                          placeholder="Add a skill (e.g., JavaScript, Design, Marketing)"
+                          className="h-8"
+                        />
+                        <Button size="sm" onClick={handleAddSkill}>
+                          Add
+                        </Button>
+                      </div>
+                      {newSkill && skillSuggestions.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+                          {skillSuggestions.map((skill, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              onClick={() => {
+                                setNewSkill(skill);
+                                setSkillSuggestions([]);
+                              }}
+                            >
+                              {skill}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -482,10 +413,10 @@ export default function SettingsPage() {
                   <Input
                     id="email"
                     type="email"
-                    defaultValue="john.doe@example.com"
+                    defaultValue={user.email}
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Email Verification</Label>
                     <p className="text-sm text-gray-500">
@@ -512,7 +443,7 @@ export default function SettingsPage() {
                       Verified
                     </span>
                   </div>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
 
