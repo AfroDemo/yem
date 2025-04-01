@@ -162,7 +162,7 @@ export default function SettingsPage() {
           >
             Account
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
             value="notifications"
             active={activeTab === "notifications"}
             onClick={() => setActiveTab("notifications")}
@@ -182,7 +182,7 @@ export default function SettingsPage() {
             onClick={() => setActiveTab("billing")}
           >
             Billing
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         {activeTab === "profile" && (
@@ -599,7 +599,7 @@ export default function SettingsPage() {
           </TabsContent>
         )}
 
-        {activeTab === "notifications" && (
+        {/* {activeTab === "notifications" && (
           <TabsContent value="notifications" className="space-y-4">
             <Card>
               <CardHeader>
@@ -1101,7 +1101,7 @@ export default function SettingsPage() {
               </CardFooter>
             </Card>
           </TabsContent>
-        )}
+        )} */}
       </div>
     </div>
   );
