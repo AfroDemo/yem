@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { sequelize, testConnection } = require("./config/db");
+const path = require('path');
 
 // Route imports
 const authRoutes = require("./routes/auth");
@@ -18,6 +19,12 @@ const successStoryRoutes = require("./routes/successStories");
 
 // Initialize express app
 const app = express();
+// Debugging middleware for static files
+app.use('/uploads', (req, res, next) => {
+  console.log('Request for:', req.path);
+  console.log('Looking in:', path.join(__dirname, 'public/uploads', req.path));
+  next();
+});
 const PORT = process.env.PORT || 5000;
 
 // Middleware

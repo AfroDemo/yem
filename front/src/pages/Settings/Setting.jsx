@@ -1,10 +1,8 @@
-import { CreditCard } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Card from "../../components/card/card";
 import CardTitle from "../../components/card/cardTitle";
 import CardDescription from "../../components/card/cardDescription";
 import Button from "../../components/button";
-import Badge from "../../components/badge";
 import CardHeader from "../../components/card/cardHeader";
 import CardContent from "../../components/card/cardContent";
 import CardFooter from "../../components/card/cardFooter";
@@ -17,15 +15,10 @@ import AvatarImage from "../../components/avatar/AvatarImage";
 import AvatarFallback from "../../components/avatar/AvatarFallback";
 import Input from "../../components/Input";
 import Textarea from "../../components/Textarea";
-import Select from "../../components/select/select";
-import SelectTrigger from "../../components/select/SelectTrigger";
-import SelectValue from "../../components/select/SelectValue";
-import SelectContent from "../../components/select/SelectContent";
-import SelectItem from "../../components/select/SelectItem";
-import Separator from "../../components/separator";
-import Switch from "../../components/Switch";
 import { useUser } from "../../context/UserContext";
-import { updateUser } from "../../services/userService";
+import { updateUser, uploadProfileImage } from "../../services/userService";
+import toast from "react-hot-toast";
+import { Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -34,6 +27,8 @@ export default function SettingsPage() {
   const [newSkill, setNewSkill] = useState("");
   const [skillSuggestions, setSkillSuggestions] = useState([]);
   const [interestSuggestions, setInterestSuggestions] = useState([]);
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -45,6 +40,9 @@ export default function SettingsPage() {
     skills: user.skills || "",
     interests: user.interests || "",
   });
+
+  console.log(user)
+
   const commonSkills = [
     "Fundraising",
     "Product Development",
@@ -150,6 +148,43 @@ export default function SettingsPage() {
     updateUser(user.id, updateData);
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type and size
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a JPEG, PNG, WEBP, or GIF image.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB
+      toast.error("Please upload an image smaller than 5MB.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+
+      const result=await uploadProfileImage(user.id, file);
+
+      // setUser(prev => ({ ...prev, profileImage: result.profileImage }));
+
+      toast.success(result.message);
+    } catch (error) {
+      toast.error(error.message || "Failed to update profile image");
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -213,7 +248,7 @@ export default function SettingsPage() {
                     <Avatar className="h-24 w-24">
                       <AvatarImage
                         src={
-                          user.profileImage ||
+                          "http://localhost:5000"+user.profileImage ||
                           "/placeholder.svg?height=96&width=96"
                         }
                         alt="Profile picture"
@@ -223,8 +258,30 @@ export default function SettingsPage() {
                         {user.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" size="sm">
-                      Change Photo
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/jpeg, image/png, image/webp, image/gif"
+                      className="hidden"
+                      disabled={isUploading}
+                    />
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        "Change Photo"
+                      )}
                     </Button>
                   </div>
                   <div className="flex-1 space-y-4">
@@ -306,43 +363,43 @@ export default function SettingsPage() {
                         ))}
                     </div>
                     <div className="relative">
-                    <div className="flex gap-2">
-                      <Input
-                        value={newInterest}
-                        onChange={(e) => {
-                          setNewInterest(e.target.value);
-                          setInterestSuggestions(
-                            commonInterests.filter((interest) =>
-                              interest
-                                .toLowerCase()
-                                .includes(e.target.value.toLowerCase())
-                            )
-                          );
-                        }}
-                        placeholder="Add an interest..."
-                        className="h-8"
-                      />
-                      <Button size="sm" onClick={handleAddInterest}>
-                        Add
-                      </Button>
-                    </div>
-                    {newInterest && interestSuggestions.length > 0 && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
-                        {interestSuggestions.map((interest, index) => (
-                          <div
-                            key={index}
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                            onClick={() => {
-                              setNewInterest(interest);
-                              setInterestSuggestions([]);
-                            }}
-                          >
-                            {interest}
-                          </div>
-                        ))}
+                      <div className="flex gap-2">
+                        <Input
+                          value={newInterest}
+                          onChange={(e) => {
+                            setNewInterest(e.target.value);
+                            setInterestSuggestions(
+                              commonInterests.filter((interest) =>
+                                interest
+                                  .toLowerCase()
+                                  .includes(e.target.value.toLowerCase())
+                              )
+                            );
+                          }}
+                          placeholder="Add an interest..."
+                          className="h-8"
+                        />
+                        <Button size="sm" onClick={handleAddInterest}>
+                          Add
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                      {newInterest && interestSuggestions.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+                          {interestSuggestions.map((interest, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              onClick={() => {
+                                setNewInterest(interest);
+                                setInterestSuggestions([]);
+                              }}
+                            >
+                              {interest}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

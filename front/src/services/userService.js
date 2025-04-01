@@ -65,20 +65,44 @@ export const updateUser = async (userId, userData) => {
 // Upload profile image with progress tracking
 export const uploadProfileImage = async (userId, imageFile) => {
   try {
+    // Validate file before upload
+    if (!imageFile) {
+      throw new Error("No image file provided");
+    }
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(imageFile.type)) {
+      throw new Error("Invalid file type. Please upload JPEG, PNG, or GIF");
+    }
+
+    if (imageFile.size > 5 * 1024 * 1024) {
+      // 5MB limit
+      throw new Error("File size exceeds 5MB limit");
+    }
+
     const formData = new FormData();
     formData.append("profileImage", imageFile);
 
-    const response = await api.put(`/users/${userId}/profile-image`, formData, {
+    // Add upload progress tracking
+    const config = {
       headers: {
         "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
       },
       onUploadProgress: (progressEvent) => {
         const percentCompleted = Math.round(
           (progressEvent.loaded * 100) / progressEvent.total
         );
         console.log(`Upload progress: ${percentCompleted}%`);
+        // You could dispatch this to a progress state if needed
       },
-    });
+    };
+
+    const response = await api.put(`/users/${userId}/upload`, formData, config);
+
+    if (!response.data?.profileImage) {
+      throw new Error("Server response missing profile image URL");
+    }
 
     // Update cache if exists
     if (userCache.has(userId)) {
@@ -89,12 +113,36 @@ export const uploadProfileImage = async (userId, imageFile) => {
       });
     }
 
-    return response.data;
+    // Update localStorage if it's the current user
+    const currentUser = JSON.parse(localStorage.getItem("user"));
+    if (currentUser && currentUser.id === userId) {
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...currentUser,
+          profileImage: response.data.profileImage,
+        })
+      );
+    }
+
+    return {
+      success: true,
+      profileImage: response.data.profileImage,
+      message: "Profile image updated successfully",
+    };
   } catch (error) {
-    const errorMessage =
-      error.response?.data?.message || "Failed to upload profile image";
-    console.error(`Error uploading image for user ${userId}:`, errorMessage);
-    throw new Error(errorMessage);
+    console.error("Profile image upload error:", error);
+
+    // Clean up cache on error
+    if (userCache.has(userId)) {
+      userCache.delete(userId);
+    }
+
+    throw new Error(
+      error.response?.data?.message ||
+        error.message ||
+        "Failed to upload profile image"
+    );
   }
 };
 
