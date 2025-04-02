@@ -475,7 +475,7 @@ export default function SettingsPage() {
               </CardFooter>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Social Profiles</CardTitle>
                 <CardDescription>
@@ -571,7 +571,7 @@ export default function SettingsPage() {
                   <Button size="sm">Connect</Button>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </TabsContent>
         )}
 
