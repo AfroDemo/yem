@@ -5,16 +5,12 @@ const fs = require("fs");
 // Configure storage to save directly to final uploads location
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, "../public/uploads");
-    fs.mkdirSync(uploadDir, { recursive: true }); // Create directory if needed
-    cb(null, uploadDir); // Save directly to uploads (no temp)
+    const tempDir = path.join(__dirname, "../temp-uploads");
+    fs.mkdirSync(tempDir, { recursive: true });
+    cb(null, tempDir);
   },
   filename: function (req, file, cb) {
-    // Verify we have the user ID
-    if (!req.params.id) {
-      return cb(new Error("User ID is required for file upload"));
-    }
-    cb(null, `profile-${req.params.id}-${Date.now()}.webp`);
+    cb(null, `upload-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 

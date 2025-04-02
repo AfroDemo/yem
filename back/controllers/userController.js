@@ -1,7 +1,7 @@
 const db = require("../models");
 const User = db.User;
 const MentorProfile = db.MentorProfile;
-const fs = require('fs');
+const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 
@@ -191,112 +191,62 @@ exports.deleteUser = async (req, res) => {
 // Upload profile image
 exports.uploadProfileImage = async (req, res) => {
   try {
-    // 1. Check if file was uploaded
     if (!req.file) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'No image file provided' 
-      });
+      return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // 2. Find the user
     const user = await User.findByPk(req.params.id);
     if (!user) {
-      // Clean up the uploaded file if user not found
-      if (req.file.path) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (err) {
-          console.error('Error deleting uploaded file:', err);
-        }
-      }
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
+      fs.unlinkSync(req.file.path); // Clean up uploaded file
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // 3. Authorization check
-    if (req.user?.id != req.params.id && req.user?.role != 'admin') {
-      // Clean up file if unauthorized
-      if (req.file.path) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (err) {
-          console.error('Error deleting uploaded file:', err);
-        }
-      }
-      return res.status(403).json({ 
-        success: false,
-        message: 'Not authorized to update this user' 
-      });
-    }
+    // Generate new filename
+    const filename = `profile-${user.id}-${Date.now()}.webp`;
+    const outputPath = path.join(__dirname, "../public/uploads", filename);
 
-    // 4. Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(__dirname, '../public/uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    // Process image to memory first, then save
+    const processedImage = await sharp(req.file.path)
+      .resize(500, 500)
+      .webp({ quality: 80 })
+      .toBuffer();
 
-    // 5. Process the image (resize and convert to webp)
-    const filename = `profile-${user._id}-${Date.now()}.webp`;
-    const outputPath = path.join(uploadsDir, filename);
+    // Save processed image
+    await sharp(processedImage).toFile(outputPath);
 
-    try {
-      await sharp(req.file.path)
-        .resize(500, 500, { fit: 'cover' }) // Crop to square
-        .webp({ quality: 80 }) // Convert to webp with 80% quality
-        .toFile(outputPath);
-    } catch (err) {
-      console.error('Image processing error:', err);
-      throw new Error('Failed to process image');
-    }
+    // Delete original uploaded file
+    fs.unlinkSync(req.file.path);
 
-    // 6. Delete the original uploaded file
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (err) {
-      console.error('Error deleting temporary file:', err);
-    }
-
-    // 7. Delete old profile image if exists
+    // Delete old profile image if exists
     if (user.profileImage) {
-      const oldImagePath = path.join(__dirname, '../public', user.profileImage);
+      const oldImagePath = path.join(
+        __dirname,
+        "../public",
+        user.profileImage
+      );
       if (fs.existsSync(oldImagePath)) {
-        try {
-          fs.unlinkSync(oldImagePath);
-        } catch (err) {
-          console.error('Error deleting old profile image:', err);
-        }
+        fs.unlinkSync(oldImagePath);
       }
     }
 
-    // 8. Update user profile with new image path
-    user.profileImage = `/uploads/temp/${filename}`;
-    await user.save();
+    // Update user with new image path
+    const imageUrl = `/uploads/${filename}`;
+    await user.update({ profileImage: imageUrl });
 
-    // 9. Return success response
-    res.json({
+    return res.json({
       success: true,
-      message: 'Profile image updated successfully',
-      profileImage: user.profileImage
+      profileImage: imageUrl,
     });
-
   } catch (error) {
-    console.error('Profile image upload error:', error);
-    
+    console.error("Upload error:", error);
+
     // Clean up any files if error occurred
     if (req.file?.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {
-        console.error('Error cleaning up file:', err);
-      }
+      fs.unlinkSync(req.file.path);
     }
-    
-    res.status(500).json({ 
-      success: false,
-      message: error.message || 'Failed to upload profile image' 
+
+    return res.status(500).json({
+      error: error.message || "Failed to upload profile image",
     });
   }
 };

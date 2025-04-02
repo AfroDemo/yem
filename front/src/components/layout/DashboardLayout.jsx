@@ -82,8 +82,12 @@ export default function DashboardLayout() {
           <div className="p-4 absolute bottom-0 border-t">
             <div className="flex items-center space-x-3">
               <img
-                src="/placeholder.svg?height=40&width=40"
-                alt="User avatar"
+                src={
+                  user.profileImage
+                    ? `http://localhost:5000${user.profileImage}`
+                    : "/placeholder.svg?height=96&width=96"
+                }
+                alt="Profile picture"
                 className="h-10 w-10 rounded-full"
               />
               <div>

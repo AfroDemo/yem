@@ -191,7 +191,10 @@ function ConnectionCard({ name, role, image, mutualConnections }) {
   return (
     <div className="flex flex-col items-center text-center p-4 rounded-lg border">
       <img
-        src={image || "/placeholder.svg"}
+        src={
+          "http://localhost:5000"+image ||
+          "/placeholder.svg?height=96&width=96"
+        }
         alt={name}
         className="h-20 w-20 rounded-full mb-4"
       />
