@@ -63,10 +63,15 @@ export const AuthProvider = ({ children }) => {
   // Login handler
   const loginHandler = async (data) => {
     try {
-      const response = await post("/auth/login", data );
+      const response = await post("/auth/login", data);
       const { token, user } = response.data;
       login(token, user);
-      window.location.href = "/dashboard"; // Optionally redirect to the dashboard
+
+      if (user.role == "mentor") {
+        window.location.href = "/mentor";
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch (error) {
       console.error("Login failed:", error);
       setError("Login failed, please try again.");
@@ -79,7 +84,11 @@ export const AuthProvider = ({ children }) => {
       const response = await post("/auth/register", data);
       const { token, user } = response.data;
       login(token, user);
-      window.location.href = "/dashboard"; // Optionally redirect to the dashboard
+      if (user.role == "mentor") {
+        window.location.href = "/mentor";
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch (error) {
       console.error("Registration failed:", error);
       setError("Registration failed, please try again.");

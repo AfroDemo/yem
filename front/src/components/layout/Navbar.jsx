@@ -9,7 +9,7 @@ import { useAuth } from "../../context/AuthContext"; // Import the Auth context
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isAuthenticated, logout } = useAuth(); // Get isAuthenticated and logout from context
+  const { isAuthenticated,user, logout } = useAuth(); // Get isAuthenticated and logout from context
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -24,7 +24,7 @@ const Navbar = () => {
   const authNavItems = isAuthenticated ? (
     <div className="ml-4 flex items-center space-x-2">
       <RouterLink
-        to="/dashboard"
+        to={user?.role === "mentor" ? "/mentor" : "/dashboard"}
         className="px-4 py-2 border border-blue-600 text-sm font-medium text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
       >
         Dashboard

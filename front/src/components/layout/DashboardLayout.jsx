@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { getCurrentUser } from "../../services/authService";
 import { UserContext } from "../../context/UserContext"; // Import context
+import Avatar from "../avatar/Avatar";
+import AvatarImage from "../avatar/AvatarImage";
+import AvatarFallback from "../avatar/AvatarFallback";
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,25 +82,27 @@ export default function DashboardLayout() {
               label="Settings"
             />
           </nav>
-          <div className="p-4 absolute bottom-0 border-t">
-            <div className="flex items-center space-x-3">
-              <img
+          <div className="p-4 border-t absolute bottom-0">
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-9 w-9">
+              <AvatarImage
                 src={
                   user.profileImage
                     ? `http://localhost:5000${user.profileImage}`
                     : "/placeholder.svg?height=96&width=96"
                 }
-                alt="Profile picture"
-                className="h-10 w-10 rounded-full"
+                alt={user.name}
               />
-              <div>
-                <p className="font-medium">
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-xs text-muted-foreground">Pro Member</p>
-              </div>
+              <AvatarFallback>MJ</AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <p className="font-medium text-sm">
+                {user.firstName} {user.lastName}
+              </p>
+              <p className="text-xs text-gray-500">Senior Mentor</p>
             </div>
           </div>
+        </div>
         </aside>
 
         {/* Mobile header */}

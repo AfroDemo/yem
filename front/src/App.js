@@ -8,7 +8,6 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
-// Pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -20,8 +19,6 @@ import SuccessStories from "./pages/SuccessStories";
 import About from "./pages/About";
 import Dashboard from "./pages/Dashboard";
 import EventsPage from "./pages/Event/Events";
-
-// Layout components
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -30,28 +27,39 @@ import NetworkPage from "./pages/Network/Network";
 import ResourcesPage from "./pages/Resources/Resource";
 import SettingsPage from "./pages/Settings/Setting";
 import NewMessagePage from "./pages/Message/Create";
+import MentorLayout from "./components/layout/MentorLayout";
+import MentorDashboard from "./pages/Mentor/dashboard";
 
-// Protected route component
-const ProtectedRoute = () => {
-  const { isAuthenticated, loading } = useAuth();
+// Loading component
+const LoadingScreen = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="animate-spin border-t-4 border-blue-500 rounded-full w-12 h-12"></div>
+  </div>
+);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
-      </div>
-    );
+// Role-based Route Component
+const RoleBasedRoute = ({ allowedRoles }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <LoadingScreen />;
+  if (!user || (allowedRoles && !allowedRoles.includes(user.role))) {
+    return <Navigate to="/" replace />;
   }
-
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  return <Outlet />;
 };
 
+// Auth Redirect Component
 const AuthRedirectRoute = () => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Outlet />;
+  return user.role == "mentor" ? (
+    <Navigate to="/mentor" replace />
+  ) : (
+    <Navigate to="/dashboard" replace />
+  );
 };
 
-// Main layout component
+// Main Layout Component
 const MainLayout = () => (
   <>
     <Navbar />
@@ -61,6 +69,17 @@ const MainLayout = () => (
     <Footer />
   </>
 );
+
+// Dashboard Routes
+const dashboardRoutes = [
+  { path: "/dashboard", component: <Dashboard /> },
+  { path: "/dashboard/events", component: <EventsPage /> },
+  { path: "/dashboard/messages", component: <MessagesPage /> },
+  { path: "/dashboard/messages/new", component: <NewMessagePage /> },
+  { path: "/dashboard/network", component: <NetworkPage /> },
+  { path: "/dashboard/resources", component: <ResourcesPage /> },
+  { path: "/dashboard/settings", component: <SettingsPage /> },
+];
 
 function App() {
   return (
@@ -78,27 +97,36 @@ function App() {
               <Route path="/success-stories" element={<SuccessStories />} />
 
               {/* Auth routes with redirect */}
-              <Route element={<AuthRedirectRoute />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<AuthRedirectRoute />}>
+                <Route index element={<Login />} />
+              </Route>
+              <Route path="/register" element={<AuthRedirectRoute />}>
+                <Route index element={<Register />} />
               </Route>
             </Route>
 
-            {/* Protected dashboard routes */}
-            <Route element={<ProtectedRoute />}>
+            {/* Protected Dashboard Routes */}
+            <Route
+              element={
+                <RoleBasedRoute allowedRoles={["mentee", "admin"]} />
+              }
+            >
               <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/events" element={<EventsPage />} />
-                <Route path="/dashboard/messages" element={<MessagesPage />} />
-                <Route path="/dashboard/messages/new" element={<NewMessagePage />} />
-                <Route path="/dashboard/network" element={<NetworkPage />} />
-                <Route path="/dashboard/resources" element={<ResourcesPage />} />
-                <Route path="/dashboard/settings" element={<SettingsPage />} />
+                {dashboardRoutes.map(({ path, component }) => (
+                  <Route key={path} path={path} element={component} />
+                ))}
                 <Route path="/for-mentees" element={<ForMentees />} />
               </Route>
             </Route>
 
-            {/* Fallback route */}
+            {/* Mentor Routes */}
+            <Route element={<RoleBasedRoute allowedRoles={["mentor"]} />}>
+              <Route element={<MentorLayout />}>
+                <Route path="/mentor" element={<MentorDashboard />} />
+              </Route>
+            </Route>
+
+            {/* Fallback Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
