@@ -67,9 +67,9 @@ export default function DashboardLayout() {
               label="Resources"
             />
             <NavItem
-              to="/dashboard/network"
+              to="/dashboard/mentors"
               icon={<Users className="h-5 w-5" />}
-              label="Network"
+              label="Mentors"
             />
             <NavItem
               to="/dashboard/messages"

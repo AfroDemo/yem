@@ -1,8 +1,6 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Upload, Link2 } from 'lucide-react'
-import Label from './Label'
 
 export function RadioGroup({ defaultValue, onValueChange, children, className = '' }) {
   const [value, setValue] = useState(defaultValue)

@@ -56,27 +56,29 @@ exports.getMatches = async (req, res) => {
 
     let matchQuery = {
       where: {
-        role: user.role === "entrepreneur" ? "mentor" : "entrepreneur",
+        role: user.role === "mentee" ? "mentor" : "mentee",
       },
     };
 
     // For array contains operations in Sequelize
     if (user.industries && user.industries.length > 0) {
       matchQuery.where.industries = {
-        [Sequelize.Op.overlap]: user.industries,
+        [db.Sequelize.Op.overlap]: user.industries,
       };
     }
 
-    if (user.role === "entrepreneur") {
+    if (user.role === "mentee") {
       if (user.interests && user.interests.length > 0) {
+        const interestsArray = user.interests.split(',').map(interest => interest.replace(/\\"/g, '').trim());
+        const industriesArray = user.industries.split(',').map(industry => industry.replace(/\\"/g, '').trim());
         matchQuery.where.skills = {
-          [Sequelize.Op.overlap]: user.interests,
+          [db.Sequelize.Op.overlap]: interestsArray,
         };
       }
     } else {
       if (user.skills && user.skills.length > 0) {
         matchQuery.where.interests = {
-          [Sequelize.Op.overlap]: user.skills,
+          [db.Sequelize.Op.overlap]: user.skills,
         };
       }
 
@@ -85,11 +87,12 @@ exports.getMatches = async (req, res) => {
         user.preferredBusinessStages.length > 0
       ) {
         matchQuery.where.businessStage = {
-          [Sequelize.Op.in]: user.preferredBusinessStages,
+          [db.Sequelize.Op.in]: user.preferredBusinessStages,
         };
       }
     }
 
+    console.log('matchQuery:', matchQuery);
     const matches = await User.findAll({
       ...matchQuery,
       attributes: { exclude: ["password"] },
@@ -219,11 +222,7 @@ exports.uploadProfileImage = async (req, res) => {
 
     // Delete old profile image if exists
     if (user.profileImage) {
-      const oldImagePath = path.join(
-        __dirname,
-        "../public",
-        user.profileImage
-      );
+      const oldImagePath = path.join(__dirname, "../public", user.profileImage);
       if (fs.existsSync(oldImagePath)) {
         fs.unlinkSync(oldImagePath);
       }

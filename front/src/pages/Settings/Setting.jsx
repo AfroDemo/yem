@@ -41,8 +41,6 @@ export default function SettingsPage() {
     interests: user.interests || "",
   });
 
-  console.log(user)
-
   const commonSkills = [
     "Fundraising",
     "Product Development",
@@ -144,7 +142,6 @@ export default function SettingsPage() {
       interests: formData.interests,
     };
 
-    // Call updateUser with all the changes
     updateUser(user.id, updateData);
   };
 

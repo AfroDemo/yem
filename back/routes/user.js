@@ -5,6 +5,7 @@ const {
   updateUser,
   deleteUser,
   uploadProfileImage,
+  getMatches,
 } = require("../controllers/userController");
 const { auth, adminAuth } = require("../middleware/auth");
 const upload = require("../utils/upload");
@@ -21,5 +22,6 @@ router.put(
   upload.single("profileImage"),
   uploadProfileImage
 );
+router.get("/matches/:id",getMatches)
 
 module.exports = router;

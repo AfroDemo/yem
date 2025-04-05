@@ -30,6 +30,10 @@ import NewMessagePage from "./pages/Message/Create";
 import MentorLayout from "./components/layout/MentorLayout";
 import MentorResources from "./pages/Mentor/Resources";
 import UploadResourcePage from "./pages/Mentor/Resources/create";
+import MatchPage from "./pages/Matches/Index";
+import MentorProfilePage from "./pages/Matches/Show";
+import RequestMentorshipPage from "./pages/Matches/Create";
+import MentorRequestsPage from "./pages/Matches/Requests";
 
 // Loading component
 const LoadingScreen = () => (
@@ -77,7 +81,10 @@ const dashboardRoutes = [
   { path: "/dashboard/events", component: <EventsPage /> },
   { path: "/dashboard/messages", component: <MessagesPage /> },
   { path: "/dashboard/messages/new", component: <NewMessagePage /> },
-  { path: "/dashboard/network", component: <NetworkPage /> },
+  { path: "/dashboard/mentors", component: <MatchPage /> },
+  { path: "/dashboard/mentors/:mentorId", component: <MentorProfilePage /> },
+  { path: "/dashboard/mentors/requests", component: <MentorRequestsPage /> },
+  { path: "/dashboard/mentors/:mentorId/request", component: <RequestMentorshipPage /> },
   { path: "/dashboard/resources", component: <ResourcesPage /> },
   { path: "/dashboard/settings", component: <SettingsPage /> },
 ];
