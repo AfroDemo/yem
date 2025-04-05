@@ -65,46 +65,40 @@ exports.getMatches = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Start with just role matching
+    // Role-based matching (mentor/mentee)
     const matchQuery = {
       where: {
         role: user.role === "mentee" ? "mentor" : "mentee",
       },
     };
 
-    // Get all potential role matches
+    // Fetch potential matches
     const potentialMatches = await User.findAll({
       where: matchQuery.where,
       attributes: { exclude: ["password"] },
     });
 
-    console.log(
-      `Found ${potentialMatches.length} potential matches based on role`
-    );
+    console.log(`Found ${potentialMatches.length} potential role matches`);
 
-    // Helper function to convert string to array
+    // --- Helper Functions ---
     const stringToArray = (value) => {
       if (!value) return [];
       if (Array.isArray(value)) return value;
-
-      // If it's a string, clean it up and split if it contains commas
       if (typeof value === "string") {
-        // Remove any trailing quotes and clean whitespace
         const cleaned = value.replace(/\\"/g, "").replace(/"/g, "").trim();
-
-        // If it contains commas, split it
-        if (cleaned.includes(",")) {
-          return cleaned.split(",").map((item) => item.trim());
-        }
-
-        // Otherwise return as single-item array
-        return [cleaned];
+        return cleaned.includes(",")
+          ? cleaned.split(",").map((item) => item.trim())
+          : [cleaned];
       }
-
       return [];
     };
 
-    // Parse user fields as simple strings
+    // Case-insensitive comparison
+    const includes = (array, value) => {
+      return array.some((item) => item.toLowerCase() === value.toLowerCase());
+    };
+
+    // --- Parse User Attributes ---
     const userIndustries = stringToArray(user.industries);
     const userInterests =
       user.role === "mentee" ? stringToArray(user.interests) : [];
@@ -114,19 +108,24 @@ exports.getMatches = async (req, res) => {
     const userPreferredBusinessStage =
       user.role === "mentor" ? stringToArray(user.preferredBusinessStages) : [];
 
-    console.log("User industries (processed):", userIndustries);
-    console.log(
-      "User interests/skills (processed):",
-      user.role === "mentee" ? userInterests : userSkills
-    );
+    // Calculate user's maximum possible score (for normalization)
+    const maxPossibleScore =
+      userIndustries.length * 10 +
+        userBusinessStage.length * 10 +
+        (user.role === "mentee"
+          ? userInterests.length * 10
+          : userSkills.length * 10) || // Reduced to 10pts per skill/interest
+      1; // Avoid division by zero
 
-    // Process and score matches
+    console.log(`User's max possible score: ${maxPossibleScore}`);
+
+    // --- Score and Normalize Matches ---
     const scoredMatches = potentialMatches
       .map((match) => {
         let matchScore = 0;
         let matchReasons = [];
 
-        // Parse match string fields
+        // Parse match attributes
         const matchIndustries = stringToArray(match.industries);
         const matchSkills =
           match.role === "mentor" ? stringToArray(match.skills) : [];
@@ -139,21 +138,12 @@ exports.getMatches = async (req, res) => {
             ? stringToArray(match.preferredBusinessStages)
             : [];
 
-        // Case-insensitive compare function
-        const includes = (array, value) => {
-          return array.some(
-            (item) => item.toLowerCase() === value.toLowerCase()
-          );
-        };
-
-        // Check industries overlap
+        // 1. Industry Matching (10pts per match)
         if (userIndustries.length > 0 && matchIndustries.length > 0) {
           const commonIndustries = userIndustries.filter((industry) =>
             includes(matchIndustries, industry)
           );
-
           if (commonIndustries.length > 0) {
-            // Add 10 points for each common industry
             matchScore += commonIndustries.length * 10;
             matchReasons.push(
               `${commonIndustries.length} shared industries: ${commonIndustries.join(", ")}`
@@ -161,97 +151,92 @@ exports.getMatches = async (req, res) => {
           }
         }
 
-        // Check business stages match
+        // 2. Business Stage Matching (10pts per match)
         if (user.role === "mentee") {
-          // Mentee looking for mentor with matching business stage
-          if (userBusinessStage.length > 0 && matchPreferredBusinessStage.length > 0) {
+          // Mentee vs. Mentor's preferred stages
+          if (
+            userBusinessStage.length > 0 &&
+            matchPreferredBusinessStage.length > 0
+          ) {
             const matchedStages = userBusinessStage.filter((stage) =>
               includes(matchPreferredBusinessStage, stage)
             );
-
             if (matchedStages.length > 0) {
-              // Add 10 points for each matched business stage
               matchScore += matchedStages.length * 10;
               matchReasons.push(
-                `${matchedStages.length} business stages match mentor preferences: ${matchedStages.join(", ")}`
+                `${matchedStages.length} business stage matches: ${matchedStages.join(", ")}`
               );
             }
           }
         } else {
-          // Mentor looking for mentee with matching business stage
-          if (userPreferredBusinessStage.length > 0 && matchBusinessStage.length > 0) {
+          // Mentor vs. Mentee's stages
+          if (
+            userPreferredBusinessStage.length > 0 &&
+            matchBusinessStage.length > 0
+          ) {
             const matchedStages = userPreferredBusinessStage.filter((stage) =>
               includes(matchBusinessStage, stage)
             );
-
             if (matchedStages.length > 0) {
-              // Add 10 points for each matched business stage
               matchScore += matchedStages.length * 10;
               matchReasons.push(
-                `${matchedStages.length} business stages match mentee preferences: ${matchedStages.join(", ")}`
+                `${matchedStages.length} business stage matches: ${matchedStages.join(", ")}`
               );
             }
           }
         }
 
-        // Check skills/interests match
+        // 3. Skills/Interests Matching (10pts per match, reduced from 20)
         if (user.role === "mentee") {
-          // Mentee looking for mentor with matching skills
+          // Mentee interests vs. Mentor skills
           if (userInterests.length > 0 && matchSkills.length > 0) {
             const matchedSkills = userInterests.filter((interest) =>
               includes(matchSkills, interest)
             );
-
             if (matchedSkills.length > 0) {
-              // Add 20 points for each matched skill/interest
-              matchScore += matchedSkills.length * 20;
+              matchScore += matchedSkills.length * 10;
               matchReasons.push(
-                `${matchedSkills.length} interests match mentor skills: ${matchedSkills.join(", ")}`
+                `${matchedSkills.length} skill/interest matches: ${matchedSkills.join(", ")}`
               );
             }
           }
         } else {
-          // Mentor looking for mentee with matching interests
+          // Mentor skills vs. Mentee interests
           if (userSkills.length > 0 && matchInterests.length > 0) {
             const matchedInterests = userSkills.filter((skill) =>
               includes(matchInterests, skill)
             );
-
             if (matchedInterests.length > 0) {
-              // Add 20 points for each matched skill/interest
-              matchScore += matchedInterests.length * 20;
+              matchScore += matchedInterests.length * 10;
               matchReasons.push(
-                `${matchedInterests.length} skills match mentee interests: ${matchedInterests.join(", ")}`
+                `${matchedInterests.length} skill/interest matches: ${matchedInterests.join(", ")}`
               );
-            }
-          }
-
-          // Business stage matching (for mentors)
-          if (userPreferredStages.length > 0 && match.businessStage) {
-            if (includes(userPreferredStages, match.businessStage)) {
-              matchScore += 15;
-              matchReasons.push(`Business stage match: ${match.businessStage}`);
             }
           }
         }
 
+        // Normalize to 0-100% and round
+        const normalizedScore = Math.round(
+          Math.min((matchScore / maxPossibleScore) * 100, 100)
+        );
+
         return {
           user: match,
-          matchScore,
+          matchScore: normalizedScore, // 0-100%
+          rawScore: matchScore, // Optional: original points
           matchReasons,
         };
       })
-      .filter((match) => match.matchScore > 0) // Only return matches with a score
-      .sort((a, b) => b.matchScore - a.matchScore);
+      .filter((match) => match.matchScore > 0) // Exclude 0% matches
+      .sort((a, b) => b.matchScore - a.matchScore); // Best matches first
 
-    console.log(`Found ${scoredMatches.length} matches with scores`);
+    console.log(`Found ${scoredMatches.length} scored matches`);
     res.json(scoredMatches);
   } catch (error) {
     console.error("Get matches error:", error);
     res.status(500).json({
       message: "Server error",
       error: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
