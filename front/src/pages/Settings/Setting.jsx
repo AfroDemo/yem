@@ -23,12 +23,9 @@ import { Loader2 } from "lucide-react";
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const user = useUser();
-  const [newInterest, setNewInterest] = useState("");
-  const [newSkill, setNewSkill] = useState("");
-  const [skillSuggestions, setSkillSuggestions] = useState([]);
-  const [interestSuggestions, setInterestSuggestions] = useState([]);
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [searchSkill, setSearchSkill] = useState("");
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -37,11 +34,43 @@ export default function SettingsPage() {
       : "",
     bio: user.bio || "",
     location: user.location || "",
+    industries: user.industries || "",
+    businessStage: user.businessStage || "",
     skills: user.skills || "",
     interests: user.interests || "",
   });
 
-  const commonSkills = [
+  const commonInterests = [
+    "Entrepreneurship",
+    "Leadership",
+    "Personal Finance",
+    "Software Development",
+    "UI/UX Design",
+    "Digital Marketing",
+    "Public Speaking",
+    "Project Management",
+    "Career Growth",
+    "Freelancing",
+    "Startups",
+    "Content Creation",
+    "Photography",
+    "Writing & Blogging",
+    "Mobile App Development",
+    "Cybersecurity",
+    "Artificial Intelligence",
+    "Blockchain & Crypto",
+    "Data Science",
+    "Machine Learning",
+    "Web Development",
+    "Gaming & Game Development",
+    "Investing & Trading",
+    "Health & Wellness",
+    "Sustainable Living",
+    "Networking & Personal Branding",
+    "E-learning & EdTech",
+    "Product Management",
+    "Community Building",
+    "Open Source Contribution",
     "Fundraising",
     "Product Development",
     "Marketing Strategy",
@@ -51,22 +80,57 @@ export default function SettingsPage() {
     "Team Building",
     "Legal & Compliance",
     "Technology Architecture",
-    "UX/UI Design",
     "Customer Acquisition",
     "Supply Chain",
     "International Expansion",
-  ];
-
-  const commonInterests = [
     "Scaling Business",
     "Funding Opportunities",
     "Product Innovation",
-    "Marketing Strategy",
     "Leadership Development",
     "Technical Skills",
     "Industry Networking",
     "Business Model Optimization",
     "Market Research",
+  ];
+
+  const commonBusinessStages = [
+    "Idea",
+    "Planning",
+    "Development",
+    "Testing",
+    "Launch",
+    "Growth",
+    "Expansion",
+    "Maturity",
+    "Exit",
+  ];
+
+  const commonIndustries = [
+    "Technology",
+    "Finance",
+    "Healthcare",
+    "Education",
+    "Agriculture",
+    "Construction",
+    "Manufacturing",
+    "Retail",
+    "Real Estate",
+    "Transportation",
+    "Hospitality & Tourism",
+    "Media & Entertainment",
+    "Marketing & Advertising",
+    "Legal Services",
+    "Human Resources",
+    "Energy & Utilities",
+    "Non-Profit & Social Impact",
+    "Government & Public Sector",
+    "Telecommunications",
+    "Fashion & Beauty",
+    "Food & Beverage",
+    "E-commerce",
+    "Logistics & Supply Chain",
+    "Arts & Design",
+    "Sports & Fitness",
   ];
 
   const handleInputChange = (e) => {
@@ -77,71 +141,118 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills?.includes(newSkill.trim())) {
-      const updatedSkills = formData.skills
-        ? `${formData.skills}, ${newSkill.trim()}`
-        : newSkill.trim();
-      setFormData((prev) => ({
-        ...prev,
-        skills: updatedSkills,
-      }));
-      setNewSkill("");
+  const handleAddSkill = (skillToAdd) => {
+    const currentSkills = formData.skills
+      ? formData.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s)
+      : [];
+
+    if (!currentSkills.includes(skillToAdd.trim())) {
+      const updatedSkills = [...currentSkills, skillToAdd.trim()].join(", ");
+      setFormData((prev) => ({ ...prev, skills: updatedSkills }));
     }
+    setSearchSkill("");
   };
 
   const handleRemoveSkill = (skillToRemove) => {
     const updatedSkills = formData.skills
       .split(",")
       .map((s) => s.trim())
-      .filter((s) => s !== skillToRemove)
+      .filter((s) => s && s !== skillToRemove)
       .join(", ");
-    setFormData((prev) => ({
-      ...prev,
-      skills: updatedSkills || "",
-    }));
+    setFormData((prev) => ({ ...prev, skills: updatedSkills }));
   };
 
-  const handleAddInterest = () => {
-    if (
-      newInterest.trim() &&
-      !formData.interests?.includes(newInterest.trim())
-    ) {
-      const updatedInterests = formData.interests
-        ? `${formData.interests}, ${newInterest.trim()}`
-        : newInterest.trim();
-      setFormData((prev) => ({
-        ...prev,
-        interests: updatedInterests,
-      }));
-      setNewInterest("");
+  const handleAddInterest = (interestToAdd) => {
+    const currentInterests = formData.interests
+      ? formData.interests
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i)
+      : [];
+
+    if (!currentInterests.includes(interestToAdd.trim())) {
+      const updatedInterests = [...currentInterests, interestToAdd.trim()].join(
+        ", "
+      );
+      setFormData((prev) => ({ ...prev, interests: updatedInterests }));
     }
+    setSearchSkill("");
   };
 
   const handleRemoveInterest = (interestToRemove) => {
     const updatedInterests = formData.interests
       .split(",")
       .map((i) => i.trim())
-      .filter((i) => i !== interestToRemove)
+      .filter((i) => i && i !== interestToRemove)
       .join(", ");
-    setFormData((prev) => ({
-      ...prev,
-      interests: updatedInterests || "",
-    }));
+    setFormData((prev) => ({ ...prev, interests: updatedInterests }));
+  };
+
+  const handleAddIndustry = (industryToAdd) => {
+    const currentIndustries = formData.industries
+      ? formData.industries
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i)
+      : [];
+
+    if (!currentIndustries.includes(industryToAdd.trim())) {
+      const updatedIndustries = [
+        ...currentIndustries,
+        industryToAdd.trim(),
+      ].join(", ");
+      setFormData((prev) => ({ ...prev, industries: updatedIndustries }));
+    }
+    setSearchSkill("");
+  };
+
+  const handleRemoveIndustry = (industryToRemove) => {
+    const updatedIndustries = formData.industries
+      .split(",")
+      .map((i) => i.trim())
+      .filter((i) => i && i !== industryToRemove)
+      .join(", ");
+    setFormData((prev) => ({ ...prev, industries: updatedIndustries }));
   };
 
   const handleSaveChanges = () => {
-    // Prepare the data to be sent to the API
+    // Clean the interests/skills data
+    const cleanedInterests = formData.interests
+      ? formData.interests
+          .split(",")
+          .map((i) => i.trim())
+          .join(", ")
+      : "";
+
+    const cleanedSkills = formData.skills
+      ? formData.skills
+          .split(",")
+          .map((s) => s.trim())
+          .join(", ")
+      : "";
+
+    const cleanedIndustries = formData.industries
+      ? formData.industries
+          .split(",")
+          .map((s) => s.trim())
+          .join(", ")
+      : "";
+
     const updateData = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      role: formData.headline.toLowerCase(),
-      bio: formData.bio,
-      location: formData.location,
-      skills: formData.skills,
-      interests: formData.interests,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      role: formData.headline.toLowerCase().trim(),
+      bio: formData.bio.trim(),
+      location: formData.location.trim(),
+      skills: cleanedSkills,
+      interests: cleanedInterests,
+      industries:cleanedIndustries,
     };
 
+    // console.log("Submitting:", updateData);
     updateUser(user.id, updateData);
   };
 
@@ -165,8 +276,7 @@ export default function SettingsPage() {
     setIsUploading(true);
 
     try {
-
-      const result=await uploadProfileImage(user.id, file);
+      const result = await uploadProfileImage(user.id, file);
 
       // setUser(prev => ({ ...prev, profileImage: result.profileImage }));
 
@@ -245,7 +355,7 @@ export default function SettingsPage() {
                     <Avatar className="h-24 w-24">
                       <AvatarImage
                         src={
-                          "http://localhost:5000"+user.profileImage ||
+                          "http://localhost:5000" + user.profileImage ||
                           "/placeholder.svg?height=96&width=96"
                         }
                         alt="Profile picture"
@@ -335,136 +445,160 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Interests</Label>
-                  <div className="border rounded-md p-4">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {formData.interests
-                        .split(",")
-                        .filter((i) => i.trim()) // Filter out empty strings
-                        .map((interest, index) => (
-                          <div
-                            key={index}
-                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
-                          >
-                            {interest.trim()}
-                            <button
-                              onClick={() =>
-                                handleRemoveInterest(interest.trim())
-                              }
-                              className="ml-2 text-gray-500 hover:text-gray-900"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                    </div>
-                    <div className="relative">
-                      <div className="flex gap-2">
-                        <Input
-                          value={newInterest}
-                          onChange={(e) => {
-                            setNewInterest(e.target.value);
-                            setInterestSuggestions(
-                              commonInterests.filter((interest) =>
-                                interest
-                                  .toLowerCase()
-                                  .includes(e.target.value.toLowerCase())
-                              )
-                            );
-                          }}
-                          placeholder="Add an interest..."
-                          className="h-8"
-                        />
-                        <Button size="sm" onClick={handleAddInterest}>
-                          Add
-                        </Button>
+                {user.role == "mentee" && (
+                  <div className="space-y-2">
+                    <Label>Interests</Label>
+                    <div className="border rounded-md p-4">
+                      {/* Selected skills */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {formData.interests ? (
+                          formData.interests
+                            .split(",")
+                            .map((i) => i.trim())
+                            .filter((i) => i)
+                            .map((interest, index) => (
+                              <div
+                                key={index}
+                                className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                              >
+                                {interest}
+                                <button
+                                  onClick={() => handleRemoveInterest(interest)}
+                                  className="ml-2 text-gray-500 hover:text-gray-900"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No interests added yet
+                          </p>
+                        )}
                       </div>
-                      {newInterest && interestSuggestions.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
-                          {interestSuggestions.map((interest, index) => (
-                            <div
-                              key={index}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => {
-                                setNewInterest(interest);
-                                setInterestSuggestions([]);
-                              }}
-                            >
-                              {interest}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Skills & Expertise</Label>
-                  <div className="border rounded-md p-4">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {formData.skills ? (
-                        formData.skills.split(",").map((skill, index) => (
-                          <div
-                            key={index}
-                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
-                          >
-                            {skill.trim()}
-                            <button
-                              onClick={() => handleRemoveSkill(skill.trim())}
-                              className="ml-2 text-gray-500 hover:text-gray-900"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          No skills added yet
-                        </p>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <div className="flex gap-2">
-                        <Input
-                          value={newSkill}
-                          onChange={(e) => {
-                            setNewSkill(e.target.value);
-                            setSkillSuggestions(
-                              commonSkills.filter((skill) =>
-                                skill
-                                  .toLowerCase()
-                                  .includes(e.target.value.toLowerCase())
-                              )
+                      {/* Search field */}
+                      <Input
+                        value={searchSkill}
+                        onChange={(e) => setSearchSkill(e.target.value)}
+                        placeholder="Search interests to add..."
+                        className="h-8 mb-2"
+                      />
+
+                      {/* Filtered interest suggestions */}
+                      <div className="max-h-60 overflow-y-auto border rounded-md p-2 bg-white shadow-inner">
+                        {commonInterests
+                          .filter((interest) =>
+                            interest
+                              .toLowerCase()
+                              .includes(searchSkill.toLowerCase())
+                          )
+                          .map((interest, index) => {
+                            const isAlreadyAdded =
+                              formData.interests &&
+                              formData.interests
+                                .split(",")
+                                .map((s) => s.trim().toLowerCase())
+                                .includes(interest.toLowerCase());
+
+                            return (
+                              <div
+                                key={index}
+                                className={`px-4 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 ${
+                                  isAlreadyAdded
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  if (!isAlreadyAdded)
+                                    handleAddInterest(interest);
+                                }}
+                              >
+                                {interest}
+                              </div>
                             );
-                          }}
-                          placeholder="Add a skill (e.g., JavaScript, Design, Marketing)"
-                          className="h-8"
-                        />
-                        <Button size="sm" onClick={handleAddSkill}>
-                          Add
-                        </Button>
+                          })}
                       </div>
-                      {newSkill && skillSuggestions.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
-                          {skillSuggestions.map((skill, index) => (
-                            <div
-                              key={index}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => {
-                                setNewSkill(skill);
-                                setSkillSuggestions([]);
-                              }}
-                            >
-                              {skill}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
+                )}
+
+                {user.role === "mentor" && (
+                  <div className="space-y-2">
+                    <Label>Skills & Expertise</Label>
+                    <div className="border rounded-md p-4">
+                      {/* Selected skills */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {formData.skills ? (
+                          formData.skills
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter((s) => s)
+                            .map((skill, index) => (
+                              <div
+                                key={index}
+                                className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                              >
+                                {skill}
+                                <button
+                                  onClick={() => handleRemoveSkill(skill)}
+                                  className="ml-2 text-gray-500 hover:text-gray-900"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No skills added yet
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Search field */}
+                      <Input
+                        value={searchSkill}
+                        onChange={(e) => setSearchSkill(e.target.value)}
+                        placeholder="Search skills to add..."
+                        className="h-8 mb-2"
+                      />
+
+                      {/* Filtered skill suggestions */}
+                      <div className="max-h-60 overflow-y-auto border rounded-md p-2 bg-white shadow-inner">
+                        {commonInterests
+                          .filter((skill) =>
+                            skill
+                              .toLowerCase()
+                              .includes(searchSkill.toLowerCase())
+                          )
+                          .map((skill, index) => {
+                            const isAlreadyAdded =
+                              formData.skills &&
+                              formData.skills
+                                .split(",")
+                                .map((s) => s.trim().toLowerCase())
+                                .includes(skill.toLowerCase());
+
+                            return (
+                              <div
+                                key={index}
+                                className={`px-4 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 ${
+                                  isAlreadyAdded
+                                    ? "text-gray-400 cursor-not-allowed"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  if (!isAlreadyAdded) handleAddSkill(skill);
+                                }}
+                              >
+                                {skill}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="flex justify-end gap-2">
                 <Button variant="outline">Cancel</Button>
