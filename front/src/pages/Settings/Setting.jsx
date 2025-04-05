@@ -249,10 +249,10 @@ export default function SettingsPage() {
       location: formData.location.trim(),
       skills: cleanedSkills,
       interests: cleanedInterests,
-      industries:cleanedIndustries,
+      industries: cleanedIndustries,
     };
 
-    // console.log("Submitting:", updateData);
+    console.log("Submitting:", updateData);
     updateUser(user.id, updateData);
   };
 
@@ -442,6 +442,82 @@ export default function SettingsPage() {
                       value={formData.location}
                       onChange={handleInputChange}
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Industries</Label>
+                  <div className="border rounded-md p-4">
+                    {/* Selected skills */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {formData.industries ? (
+                        formData.industries
+                          .split(",")
+                          .map((i) => i.trim())
+                          .filter((i) => i)
+                          .map((industry, index) => (
+                            <div
+                              key={index}
+                              className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                            >
+                              {industry}
+                              <button
+                                onClick={() => handleRemoveIndustry(industry)}
+                                className="ml-2 text-gray-500 hover:text-gray-900"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No industries added yet
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Search field */}
+                    <Input
+                      value={searchSkill}
+                      onChange={(e) => setSearchSkill(e.target.value)}
+                      placeholder="Search industries to add..."
+                      className="h-8 mb-2"
+                    />
+
+                    {/* Filtered industry suggestions */}
+                    <div className="max-h-60 overflow-y-auto border rounded-md p-2 bg-white shadow-inner">
+                      {commonIndustries
+                        .filter((industry) =>
+                          industry
+                            .toLowerCase()
+                            .includes(searchSkill.toLowerCase())
+                        )
+                        .map((industry, index) => {
+                          const isAlreadyAdded =
+                            formData.industries &&
+                            formData.industries
+                              .split(",")
+                              .map((s) => s.trim().toLowerCase())
+                              .includes(industry.toLowerCase());
+
+                          return (
+                            <div
+                              key={index}
+                              className={`px-4 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 ${
+                                isAlreadyAdded
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                if (!isAlreadyAdded)
+                                  handleAddIndustry(industry);
+                              }}
+                            >
+                              {industry}
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
                 </div>
 
