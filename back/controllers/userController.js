@@ -235,6 +235,8 @@ exports.updateUser = async (req, res) => {
       socialLinks,
       profileImage,
       industries,
+      businessStage,
+      preferredBusinessStages,
     } = req.body;
 
     const user = await User.findByPk(req.params.id);
@@ -259,6 +261,12 @@ exports.updateUser = async (req, res) => {
       location: location !== undefined ? location : user.location,
       profileImage:
         profileImage !== undefined ? profileImage : user.profileImage,
+      businessStage:
+        businessStage !== undefined ? businessStage : user.businessStage,
+      preferredBusinessStages:
+        preferredBusinessStages !== undefined
+          ? preferredBusinessStages
+          : user.preferredBusinessStages,
     });
 
     const userJson = updatedUser.toJSON();

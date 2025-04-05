@@ -19,6 +19,7 @@ import { useUser } from "../../context/UserContext";
 import { updateUser, uploadProfileImage } from "../../services/userService";
 import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
+import { addToCsv, removeFromCsv } from "../../utils/csvHelpers";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -26,6 +27,17 @@ export default function SettingsPage() {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [searchSkill, setSearchSkill] = useState("");
+  const [selectedBusinessStages, setSelectedBusinessStages] = useState(
+    user.role === "mentor"
+      ? (user.preferredBusinessStages || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s)
+      : (user.businessStage || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s)
+  );
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -36,6 +48,7 @@ export default function SettingsPage() {
     location: user.location || "",
     industries: user.industries || "",
     businessStage: user.businessStage || "",
+    preferredBusinessStages: user.preferredBusinessStages,
     skills: user.skills || "",
     interests: user.interests || "",
   });
@@ -141,105 +154,68 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleAddSkill = (skillToAdd) => {
-    const currentSkills = formData.skills
-      ? formData.skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s)
-      : [];
-
-    if (!currentSkills.includes(skillToAdd.trim())) {
-      const updatedSkills = [...currentSkills, skillToAdd.trim()].join(", ");
-      setFormData((prev) => ({ ...prev, skills: updatedSkills }));
-    }
+  const handleAddToField = (fieldName, valueToAdd) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: addToCsv(prev[fieldName], valueToAdd)
+    }));
     setSearchSkill("");
   };
-
-  const handleRemoveSkill = (skillToRemove) => {
-    const updatedSkills = formData.skills
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s && s !== skillToRemove)
-      .join(", ");
-    setFormData((prev) => ({ ...prev, skills: updatedSkills }));
+  
+  const handleRemoveFromField = (fieldName, valueToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: removeFromCsv(prev[fieldName], valueToRemove)
+    }));
   };
 
-  const handleAddInterest = (interestToAdd) => {
-    const currentInterests = formData.interests
-      ? formData.interests
-          .split(",")
-          .map((i) => i.trim())
-          .filter((i) => i)
-      : [];
-
-    if (!currentInterests.includes(interestToAdd.trim())) {
-      const updatedInterests = [...currentInterests, interestToAdd.trim()].join(
-        ", "
-      );
-      setFormData((prev) => ({ ...prev, interests: updatedInterests }));
+  const handleAddSkill = (skill) => handleAddToField('skills', skill);
+  const handleRemoveSkill = (skill) => handleRemoveFromField('skills', skill);
+  
+  const handleAddInterest = (interest) => handleAddToField('interests', interest);
+  const handleRemoveInterest = (interest) => handleRemoveFromField('interests', interest);
+  
+  const handleAddIndustry = (industry) => handleAddToField('industries', industry);
+  const handleRemoveIndustry = (industry) => handleRemoveFromField('industries', industry);
+  
+  // Business stages stays separate since it has different logic
+  const handleAddBusinessStage = (stageToAdd) => {
+    const trimmedStage = stageToAdd.trim();
+  
+    if (user.role === "mentee") {
+      setSelectedBusinessStages([trimmedStage]);
+    } else {
+      if (selectedBusinessStages.length >= 4) {
+        toast.error("You can select up to 4 business stages");
+        return;
+      }
+      if (!selectedBusinessStages.includes(trimmedStage)) {
+        setSelectedBusinessStages([...selectedBusinessStages, trimmedStage]);
+      }
     }
-    setSearchSkill("");
   };
 
-  const handleRemoveInterest = (interestToRemove) => {
-    const updatedInterests = formData.interests
-      .split(",")
-      .map((i) => i.trim())
-      .filter((i) => i && i !== interestToRemove)
-      .join(", ");
-    setFormData((prev) => ({ ...prev, interests: updatedInterests }));
+  const handleRemoveBusinessStage = (stageToRemove) => {
+    setSelectedBusinessStages(
+      selectedBusinessStages.filter((stage) => stage !== stageToRemove)
+    );
   };
 
-  const handleAddIndustry = (industryToAdd) => {
-    const currentIndustries = formData.industries
-      ? formData.industries
-          .split(",")
-          .map((i) => i.trim())
-          .filter((i) => i)
-      : [];
-
-    if (!currentIndustries.includes(industryToAdd.trim())) {
-      const updatedIndustries = [
-        ...currentIndustries,
-        industryToAdd.trim(),
-      ].join(", ");
-      setFormData((prev) => ({ ...prev, industries: updatedIndustries }));
+  const handleSaveChanges = async () => {
+    // Basic validation
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast.error("First and last name are required");
+      return;
     }
-    setSearchSkill("");
-  };
 
-  const handleRemoveIndustry = (industryToRemove) => {
-    const updatedIndustries = formData.industries
-      .split(",")
-      .map((i) => i.trim())
-      .filter((i) => i && i !== industryToRemove)
-      .join(", ");
-    setFormData((prev) => ({ ...prev, industries: updatedIndustries }));
-  };
-
-  const handleSaveChanges = () => {
-    // Clean the interests/skills data
-    const cleanedInterests = formData.interests
-      ? formData.interests
-          .split(",")
-          .map((i) => i.trim())
-          .join(", ")
-      : "";
-
-    const cleanedSkills = formData.skills
-      ? formData.skills
-          .split(",")
-          .map((s) => s.trim())
-          .join(", ")
-      : "";
-
-    const cleanedIndustries = formData.industries
-      ? formData.industries
-          .split(",")
-          .map((s) => s.trim())
-          .join(", ")
-      : "";
+    // Clean comma-separated fields
+    const cleanCSV = (str) =>
+      str
+        ? str
+            .split(",")
+            .map((s) => s.trim())
+            .join(", ")
+        : "";
 
     const updateData = {
       firstName: formData.firstName.trim(),
@@ -247,13 +223,26 @@ export default function SettingsPage() {
       role: formData.headline.toLowerCase().trim(),
       bio: formData.bio.trim(),
       location: formData.location.trim(),
-      skills: cleanedSkills,
-      interests: cleanedInterests,
-      industries: cleanedIndustries,
+      skills: cleanCSV(formData.skills),
+      interests: cleanCSV(formData.interests),
+      industries: cleanCSV(formData.industries),
+      ...(user.role === "mentor"
+        ? {
+            preferredBusinessStages: selectedBusinessStages.join(", "),
+            businessStage: "", // Clear mentee field if user is mentor
+          }
+        : {
+            businessStage: selectedBusinessStages.join(", "),
+            preferredBusinessStages: "", // Clear mentor field if user is mentee
+          }),
     };
 
-    console.log("Submitting:", updateData);
-    updateUser(user.id, updateData);
+    try {
+      await updateUser(user.id, updateData);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error(error.message || "Failed to update profile");
+    }
   };
 
   const handleFileChange = async (e) => {
@@ -442,6 +431,98 @@ export default function SettingsPage() {
                       value={formData.location}
                       onChange={handleInputChange}
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>
+                    {user.role === "mentor"
+                      ? "Preferred Business Stages"
+                      : "Your Business Stage"}
+                  </Label>
+                  {user.role === "mentor" && (
+                    <p className="text-sm text-gray-500">
+                      Select up to 4 business stages you can mentor in
+                    </p>
+                  )}
+
+                  <div className="border rounded-md p-4">
+                    {/* Selected stages display */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedBusinessStages.length > 0 ? (
+                        selectedBusinessStages.map((stage, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                          >
+                            {stage}
+                            <button
+                              onClick={() => handleRemoveBusinessStage(stage)}
+                              className="ml-2 text-gray-500 hover:text-gray-900"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          {user.role === "mentor"
+                            ? "No preferred stages selected"
+                            : "No business stage selected"}
+                        </p>
+                      )}
+                      {user.role === "mentor" && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {4 - selectedBusinessStages.length} selections
+                          remaining
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Rest of the component remains the same */}
+                    <Input
+                      value={searchSkill}
+                      onChange={(e) => setSearchSkill(e.target.value)}
+                      placeholder="Search business stages..."
+                      className="h-8 mb-2"
+                    />
+
+                    <div className="max-h-60 overflow-y-auto border rounded-md p-2 bg-white shadow-inner">
+                      {commonBusinessStages
+                        .filter((stage) =>
+                          stage
+                            .toLowerCase()
+                            .includes(searchSkill.toLowerCase())
+                        )
+                        .map((stage, index) => {
+                          const isAlreadyAdded =
+                            selectedBusinessStages.includes(stage);
+                          const isMenteeWithSelection =
+                            user.role === "mentee" &&
+                            selectedBusinessStages.length > 0;
+
+                          return (
+                            <div
+                              key={index}
+                              className={`px-4 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 ${
+                                isAlreadyAdded || isMenteeWithSelection
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                if (!isAlreadyAdded && !isMenteeWithSelection) {
+                                  handleAddBusinessStage(stage);
+                                }
+                              }}
+                            >
+                              {stage}
+                              {isAlreadyAdded && (
+                                <span className="ml-2 text-green-500">✓</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
                 </div>
 
