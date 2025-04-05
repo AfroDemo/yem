@@ -1,7 +1,6 @@
 import {
   BookOpen,
   Calendar,
-  ChevronDown,
   FileText,
   Home,
   MessageSquare,
@@ -160,7 +159,7 @@ export default function MentorLayout() {
 function NavItem({ href, icon, label }) {
   return (
     <Link
-      href={href}
+      to={href}
       className="flex items-center space-x-3 p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
     >
       {icon}

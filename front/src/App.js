@@ -28,7 +28,8 @@ import ResourcesPage from "./pages/Resources/Resource";
 import SettingsPage from "./pages/Settings/Setting";
 import NewMessagePage from "./pages/Message/Create";
 import MentorLayout from "./components/layout/MentorLayout";
-import MentorDashboard from "./pages/Mentor/dashboard";
+import MentorResources from "./pages/Mentor/Resources";
+import UploadResourcePage from "./pages/Mentor/Resources/create";
 
 // Loading component
 const LoadingScreen = () => (
@@ -81,6 +82,17 @@ const dashboardRoutes = [
   { path: "/dashboard/settings", component: <SettingsPage /> },
 ];
 
+const mentorDashboardRoutes = [
+  { path: "/mentor", component: <Dashboard /> },
+  { path: "/mentor/events", component: <EventsPage /> },
+  { path: "/mentor/messages", component: <MessagesPage /> },
+  { path: "/mentor/messages/new", component: <NewMessagePage /> },
+  { path: "/mentor/network", component: <NetworkPage /> },
+  { path: "/mentor/resources", component: <MentorResources /> },
+  { path: "/mentor/resource/upload", component: <UploadResourcePage /> },
+  { path: "/mentor/settings", component: <SettingsPage /> },
+];
+
 function App() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -107,9 +119,7 @@ function App() {
 
             {/* Protected Dashboard Routes */}
             <Route
-              element={
-                <RoleBasedRoute allowedRoles={["mentee", "admin"]} />
-              }
+              element={<RoleBasedRoute allowedRoles={["mentee", "admin"]} />}
             >
               <Route element={<DashboardLayout />}>
                 {dashboardRoutes.map(({ path, component }) => (
@@ -122,7 +132,9 @@ function App() {
             {/* Mentor Routes */}
             <Route element={<RoleBasedRoute allowedRoles={["mentor"]} />}>
               <Route element={<MentorLayout />}>
-                <Route path="/mentor" element={<MentorDashboard />} />
+                {mentorDashboardRoutes.map(({ path, component }) => (
+                  <Route key={path} path={path} element={component} />
+                ))}
               </Route>
             </Route>
 
