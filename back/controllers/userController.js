@@ -109,9 +109,9 @@ exports.getMatches = async (req, res) => {
     const userInterests =
       user.role === "mentee" ? stringToArray(user.interests) : [];
     const userSkills = user.role === "mentor" ? stringToArray(user.skills) : [];
-
-    // Handle business stages (might be comma-separated or single value)
-    const userPreferredStages =
+    const userBusinessStage =
+      user.role === "mentee" ? stringToArray(user.businessStage) : [];
+    const userPreferredBusinessStage =
       user.role === "mentor" ? stringToArray(user.preferredBusinessStages) : [];
 
     console.log("User industries (processed):", userIndustries);
@@ -132,6 +132,12 @@ exports.getMatches = async (req, res) => {
           match.role === "mentor" ? stringToArray(match.skills) : [];
         const matchInterests =
           match.role === "mentee" ? stringToArray(match.interests) : [];
+        const matchBusinessStage =
+          match.role === "mentee" ? stringToArray(match.businessStage) : [];
+        const matchPreferredBusinessStage =
+          match.role === "mentor"
+            ? stringToArray(match.preferredBusinessStages)
+            : [];
 
         // Case-insensitive compare function
         const includes = (array, value) => {
@@ -152,6 +158,39 @@ exports.getMatches = async (req, res) => {
             matchReasons.push(
               `${commonIndustries.length} shared industries: ${commonIndustries.join(", ")}`
             );
+          }
+        }
+
+        // Check business stages match
+        if (user.role === "mentee") {
+          // Mentee looking for mentor with matching business stage
+          if (userBusinessStage.length > 0 && matchPreferredBusinessStage.length > 0) {
+            const matchedStages = userBusinessStage.filter((stage) =>
+              includes(matchPreferredBusinessStage, stage)
+            );
+
+            if (matchedStages.length > 0) {
+              // Add 10 points for each matched business stage
+              matchScore += matchedStages.length * 10;
+              matchReasons.push(
+                `${matchedStages.length} business stages match mentor preferences: ${matchedStages.join(", ")}`
+              );
+            }
+          }
+        } else {
+          // Mentor looking for mentee with matching business stage
+          if (userPreferredBusinessStage.length > 0 && matchBusinessStage.length > 0) {
+            const matchedStages = userPreferredBusinessStage.filter((stage) =>
+              includes(matchBusinessStage, stage)
+            );
+
+            if (matchedStages.length > 0) {
+              // Add 10 points for each matched business stage
+              matchScore += matchedStages.length * 10;
+              matchReasons.push(
+                `${matchedStages.length} business stages match mentee preferences: ${matchedStages.join(", ")}`
+              );
+            }
           }
         }
 

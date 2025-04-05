@@ -46,7 +46,7 @@ export default function SettingsPage() {
       : "",
     bio: user.bio || "",
     location: user.location || "",
-    industries: user.industries || "",
+    industries: user.industries || null,
     businessStage: user.businessStage || "",
     preferredBusinessStages: user.preferredBusinessStages,
     skills: user.skills || "",
@@ -236,11 +236,13 @@ export default function SettingsPage() {
             preferredBusinessStages: "", // Clear mentor field if user is mentee
           }),
     };
-
+console.log(updateData)
     try {
       await updateUser(user.id, updateData);
       toast.success("Profile updated successfully");
+      console.log("Profile updated successfully");
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast.error(error.message || "Failed to update profile");
     }
   };
