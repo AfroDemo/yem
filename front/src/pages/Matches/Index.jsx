@@ -1,28 +1,30 @@
-import { BadgeCheck, BookOpen, Calendar, Filter, MessageSquare, Search, Star, UserPlus } from "lucide-react"
-import Button from "../../components/button"
-import { Link } from "react-router-dom"
-import Select from "../../components/select/select"
-import SelectTrigger from "../../components/select/SelectTrigger"
-import SelectContent from "../../components/select/SelectContent"
-import SelectItem from "../../components/select/SelectItem"
-import TabsList from "../../components/tab/TabsList"
-import TabsTrigger from "../../components/tab/TabsTrigger"
-import TabsContent from "../../components/tab/TabsContent"
-import Card from "../../components/card/card"
-import CardHeader from "../../components/card/cardHeader"
-import CardTitle from "../../components/card/cardTitle"
-import CardDescription from "../../components/card/cardDescription"
-import CardContent from "../../components/card/cardContent"
-import Progress from "../../components/progress"
-import Tabs from "../../components/tab/tabs"
-import Badge from "../../components/badge"
-import Input from "../../components/Input"
-import SelectValue from "../../components/select/SelectValue"
-import Avatar from "../../components/avatar/Avatar"
-import AvatarImage from "../../components/avatar/AvatarImage"
-import AvatarFallback from "../../components/avatar/AvatarFallback"
-import CardFooter from "../../components/card/cardFooter"
-
+import {
+  BadgeCheck,
+  BookOpen,
+  Calendar,
+  Filter,
+  MessageSquare,
+  Search,
+  Star,
+  UserPlus,
+} from "lucide-react";
+import Button from "../../components/button";
+import { Link } from "react-router-dom";
+import Card from "../../components/card/card";
+import CardHeader from "../../components/card/cardHeader";
+import CardTitle from "../../components/card/cardTitle";
+import CardDescription from "../../components/card/cardDescription";
+import CardContent from "../../components/card/cardContent";
+import Progress from "../../components/progress";
+import Badge from "../../components/badge";
+import Avatar from "../../components/avatar/Avatar";
+import AvatarImage from "../../components/avatar/AvatarImage";
+import AvatarFallback from "../../components/avatar/AvatarFallback";
+import CardFooter from "../../components/card/cardFooter";
+import { toast } from "react-toastify";
+import api from "../../utils/api";
+import { useUser } from "../../context/UserContext";
+import { useEffect, useState } from "react";
 
 // Mentor data object
 const mentorData = {
@@ -39,7 +41,7 @@ const mentorData = {
       reviews: 28,
       matchPercentage: 95,
       availability: "Available next week",
-      verified: true
+      verified: true,
     },
     {
       id: 2,
@@ -53,7 +55,7 @@ const mentorData = {
       reviews: 34,
       matchPercentage: 92,
       availability: "Available this week",
-      verified: true
+      verified: true,
     },
     {
       id: 3,
@@ -62,12 +64,16 @@ const mentorData = {
       role: "Startup Advisor",
       industry: "Technology",
       experience: "10+ years",
-      specialties: ["Venture Capital", "Pitch Development", "Business Planning"],
+      specialties: [
+        "Venture Capital",
+        "Pitch Development",
+        "Business Planning",
+      ],
       rating: 4.7,
       reviews: 19,
       matchPercentage: 88,
       availability: "Limited availability",
-      verified: true
+      verified: true,
     },
     {
       id: 4,
@@ -81,8 +87,8 @@ const mentorData = {
       reviews: 15,
       matchPercentage: 85,
       availability: "Available this week",
-      verified: false
-    }
+      verified: false,
+    },
   ],
   industry: [
     {
@@ -97,7 +103,7 @@ const mentorData = {
       reviews: 28,
       matchPercentage: 95,
       availability: "Available next week",
-      verified: true
+      verified: true,
     },
     {
       id: 2,
@@ -111,7 +117,7 @@ const mentorData = {
       reviews: 34,
       matchPercentage: 92,
       availability: "Available this week",
-      verified: true
+      verified: true,
     },
     {
       id: 5,
@@ -125,8 +131,8 @@ const mentorData = {
       reviews: 12,
       matchPercentage: 82,
       availability: "Available next week",
-      verified: false
-    }
+      verified: false,
+    },
   ],
   all: [
     {
@@ -141,7 +147,7 @@ const mentorData = {
       reviews: 28,
       matchPercentage: 95,
       availability: "Available next week",
-      verified: true
+      verified: true,
     },
     {
       id: 2,
@@ -155,7 +161,7 @@ const mentorData = {
       reviews: 34,
       matchPercentage: 92,
       availability: "Available this week",
-      verified: true
+      verified: true,
     },
     {
       id: 3,
@@ -164,12 +170,16 @@ const mentorData = {
       role: "Startup Advisor",
       industry: "Technology",
       experience: "10+ years",
-      specialties: ["Venture Capital", "Pitch Development", "Business Planning"],
+      specialties: [
+        "Venture Capital",
+        "Pitch Development",
+        "Business Planning",
+      ],
       rating: 4.7,
       reviews: 19,
       matchPercentage: 88,
       availability: "Limited availability",
-      verified: true
+      verified: true,
     },
     {
       id: 4,
@@ -183,7 +193,7 @@ const mentorData = {
       reviews: 15,
       matchPercentage: 85,
       availability: "Available this week",
-      verified: false
+      verified: false,
     },
     {
       id: 6,
@@ -197,7 +207,7 @@ const mentorData = {
       reviews: 42,
       matchPercentage: 78,
       availability: "Limited availability",
-      verified: true
+      verified: true,
     },
     {
       id: 7,
@@ -211,10 +221,10 @@ const mentorData = {
       reviews: 23,
       matchPercentage: 75,
       availability: "Available next week",
-      verified: true
-    }
-  ]
-}
+      verified: true,
+    },
+  ],
+};
 
 // Expertise data
 const expertiseData = [
@@ -222,40 +232,125 @@ const expertiseData = [
   { name: "Marketing", count: 12, color: "green" },
   { name: "Fundraising", count: 10, color: "purple" },
   { name: "Product Development", count: 8, color: "amber" },
-  { name: "Financial Planning", count: 6, color: "red" }
-]
+  { name: "Financial Planning", count: 6, color: "red" },
+];
 
 // How it works steps
 const howItWorksSteps = [
   {
     step: 1,
     title: "Browse Mentors",
-    description: "Explore profiles of experienced mentors in your industry"
+    description: "Explore profiles of experienced mentors in your industry",
   },
   {
     step: 2,
     title: "Send a Request",
-    description: "Request mentorship with a brief introduction about your goals"
+    description:
+      "Request mentorship with a brief introduction about your goals",
   },
   {
     step: 3,
     title: "Schedule Sessions",
-    description: "Once accepted, schedule regular mentoring sessions"
+    description: "Once accepted, schedule regular mentoring sessions",
   },
   {
     step: 4,
     title: "Grow Together",
-    description: "Work with your mentor to achieve your business goals"
-  }
-]
+    description: "Work with your mentor to achieve your business goals",
+  },
+];
 
 export default function MatchPage() {
+  const [activeTab, setActiveTab] = useState("recommended");
+  const [recommendedMentors, setRecommendedMentors] = useState([]);
+  const [industryMentors, setIndustryMentors] = useState([]);
+  const [allMentors, setAllMentors] = useState([]);
+  const user = useUser();
+
+  // Get the current mentor list based on active tab
+  const getCurrentMentors = () => {
+    switch (activeTab) {
+      case "recommended":
+        return recommendedMentors;
+      case "industry":
+        return mentorData.industry;
+      case "all":
+        return mentorData.all;
+      default:
+        return allMentors;
+    }
+  };
+
+  const getMatchedMentors = async () => {
+    try {
+      const response = await api.get(`/users/matches/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const shapedMentors = response.data.map((item) => {
+        const mentor = item.user;
+        return {
+          id: mentor.id,
+          name: `${mentor.firstName} ${mentor.lastName}`,
+          avatar: mentor.profileImage,
+          role: mentor.role,
+          industry: mentor.industries
+            ? mentor.industries.replace(/["\\]/g, "")
+            : "",
+          experience: mentor.experienceYears || "N/A",
+          specialties: mentor.skills
+            ? mentor.skills
+                .replace(/["\\]/g, "")
+                .split(",")
+                .map((skill) => ({ name: skill.trim() }))
+            : [],
+          rating: 4.5, // Replace with actual rating if available
+          reviews: 12, // Replace with actual reviews count if available
+          matchPercentage: item.matchScore,
+          availability: mentor.availability || "N/A",
+          verified: mentor.isVerified,
+        };
+      });
+
+      setRecommendedMentors(shapedMentors);
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  };
+
+  const getAllMentors = async () => {
+    try {
+      const responseMentors = await api
+        .get("/mentors", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+        .then((responseMentors) => {
+          setAllMentors(responseMentors.data);
+        });
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  };
+
+  useEffect(() => {
+    getMatchedMentors();
+    getAllMentors();
+  }, [user]);
+
+  console.log(recommendedMentors, allMentors);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Find a Mentor</h1>
-          <p className="text-gray-500">Connect with experienced mentors who can help you grow your business</p>
+          <p className="text-gray-500">
+            Connect with experienced mentors who can help you grow your business
+          </p>
         </div>
         <Button asChild>
           <Link to="/dashboard/mentors/requests">
@@ -267,60 +362,55 @@ export default function MatchPage() {
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-2/3 space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-              <Input type="search" placeholder="Search mentors..." className="pl-8" />
-            </div>
-            <Button variant="outline" className="flex gap-2">
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
-            <Select defaultValue="match">
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="match">Best Match</SelectItem>
-                <SelectItem value="rating">Highest Rating</SelectItem>
-                <SelectItem value="experience">Most Experience</SelectItem>
-                <SelectItem value="availability">Availability</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("recommended")}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "recommended"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Recommended
+              </button>
+              <button
+                onClick={() => setActiveTab("industry")}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "industry"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Same Industry
+              </button>
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "all"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                All Mentors
+              </button>
+            </nav>
           </div>
 
-          <Tabs defaultValue="recommended">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="recommended">Recommended</TabsTrigger>
-              <TabsTrigger value="industry">Same Industry</TabsTrigger>
-              <TabsTrigger value="all">All Mentors</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="recommended" className="space-y-4 mt-4">
-              {mentorData.recommended.map(mentor => (
-                <MentorCard key={mentor.id} {...mentor} />
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="industry" className="space-y-4 mt-4">
-              {mentorData.industry.map(mentor => (
-                <MentorCard key={mentor.id} {...mentor} />
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="all" className="space-y-4 mt-4">
-              {mentorData.all.map(mentor => (
-                <MentorCard key={mentor.id} {...mentor} />
-              ))}
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-4">
+            {getCurrentMentors().map((mentor) => (
+              <MentorCard key={mentor.id} {...mentor} />
+            ))}
+          </div>
         </div>
 
         <div className="w-full md:w-1/3">
           <Card>
             <CardHeader>
               <CardTitle>Your Mentor Match</CardTitle>
-              <CardDescription>How we find the right mentors for you</CardDescription>
+              <CardDescription>
+                How we find the right mentors for you
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -329,7 +419,9 @@ export default function MatchPage() {
                   <span className="text-sm">75%</span>
                 </div>
                 <Progress value={75} className="h-2" />
-                <p className="text-xs text-gray-500">Complete your profile to improve mentor matching</p>
+                <p className="text-xs text-gray-500">
+                  Complete your profile to improve mentor matching
+                </p>
               </div>
 
               <div className="rounded-md border p-3">
@@ -362,8 +454,14 @@ export default function MatchPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {expertiseData.map((expertise, index) => (
-                <Button key={index} variant="outline" className="w-full justify-start">
-                  <Badge className={`mr-2 bg-${expertise.color}-100 text-${expertise.color}-800 hover:bg-${expertise.color}-100`}>
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Badge
+                    className={`mr-2 bg-${expertise.color}-100 text-${expertise.color}-800 hover:bg-${expertise.color}-100`}
+                  >
                     {expertise.count}
                   </Badge>
                   {expertise.name}
@@ -394,11 +492,11 @@ export default function MatchPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function MentorCard({
-    id,
+  id,
   name,
   avatar,
   role,
@@ -418,7 +516,12 @@ function MentorCard({
           <div className="flex flex-col items-center text-center md:text-left md:items-start">
             <div className="relative">
               <Avatar className="h-20 w-20 mb-2">
-                <AvatarImage src={avatar} alt={name} />
+                <AvatarImage src={
+                  avatar
+                    ? `http://localhost:5000${avatar}`
+                    : "/placeholder.svg?height=96&width=96"
+                }
+                alt={name} />
                 <AvatarFallback>{name.charAt(0)}</AvatarFallback>
               </Avatar>
               {verified && (
@@ -435,12 +538,12 @@ function MentorCard({
                   industry === "Technology"
                     ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
                     : industry === "Finance"
-                      ? "bg-green-100 text-green-800 hover:bg-green-100"
-                      : industry === "E-commerce"
-                        ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
-                        : industry === "SaaS"
-                          ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                          : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                    ? "bg-green-100 text-green-800 hover:bg-green-100"
+                    : industry === "E-commerce"
+                    ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
+                    : industry === "SaaS"
+                    ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-100"
                 }`}
               >
                 {industry}
@@ -451,7 +554,11 @@ function MentorCard({
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-3 w-3 ${i < Math.floor(rating) ? "text-yellow-400 fill-yellow-400" : "text-gray-400"}`}
+                    className={`h-3 w-3 ${
+                      i < Math.floor(rating)
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-400"
+                    }`}
                   />
                 ))}
               </div>
@@ -464,18 +571,28 @@ function MentorCard({
           <div className="flex-1 space-y-4">
             <div className="flex flex-col md:flex-row justify-between">
               <div>
-                <p className="text-sm text-gray-500">Experience: {experience}</p>
-                <p className="text-sm text-gray-500">Availability: {availability}</p>
+                <p className="text-sm text-gray-500">
+                  Experience: {experience}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Availability: {availability}
+                </p>
                 <div className="mt-2">
                   <p className="text-sm font-medium mb-1">Match Score</p>
                   <div className="flex items-center gap-2">
                     <Progress value={matchPercentage} className="h-2 w-24" />
-                    <span className="text-sm font-medium">{matchPercentage}%</span>
+                    <span className="text-sm font-medium">
+                      {matchPercentage}%
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="flex mt-4 md:mt-0 md:flex-col gap-2 md:items-end">
-                <Button variant="outline" size="sm" className="flex-1 md:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 md:w-auto"
+                >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Message
                 </Button>
@@ -488,8 +605,10 @@ function MentorCard({
             <div className="space-y-2">
               <p className="text-sm font-medium">About</p>
               <p className="text-sm">
-                Experienced {role.toLowerCase()} with expertise in {industry.toLowerCase()} startups. Passionate about
-                helping entrepreneurs navigate challenges and achieve their business goals.
+                Experienced {role.toLowerCase()} with expertise in{" "}
+                {industry.toLowerCase()} startups. Passionate about helping
+                entrepreneurs navigate challenges and achieve their business
+                goals.
               </p>
             </div>
 
@@ -498,7 +617,7 @@ function MentorCard({
               <div className="flex flex-wrap gap-2">
                 {specialties.map((specialty, index) => (
                   <Badge key={index} variant="secondary">
-                    {specialty}
+                    {specialty.name}
                   </Badge>
                 ))}
               </div>
@@ -530,5 +649,5 @@ function MentorCard({
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }

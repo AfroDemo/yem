@@ -73,11 +73,11 @@ module.exports = {
         allowNull: true
       },
       experienceYears: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
         allowNull: true
       },
       availability: {
-        type: Sequelize.JSON,
+        type: Sequelize.STRING,
         allowNull: true
       },
       createdAt: {

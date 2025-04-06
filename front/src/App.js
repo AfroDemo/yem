@@ -34,6 +34,8 @@ import MatchPage from "./pages/Matches/Index";
 import MentorProfilePage from "./pages/Matches/Show";
 import RequestMentorshipPage from "./pages/Matches/Create";
 import MentorRequestsPage from "./pages/Matches/Requests";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 // Loading component
 const LoadingScreen = () => (
@@ -70,6 +72,7 @@ const MainLayout = () => (
     <Navbar />
     <main className="flex-grow">
       <Outlet />
+    <ToastContainer />
     </main>
     <Footer />
   </>

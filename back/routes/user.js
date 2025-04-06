@@ -6,6 +6,7 @@ const {
   deleteUser,
   uploadProfileImage,
   getMatches,
+  getAllMentors,
 } = require("../controllers/userController");
 const { auth, adminAuth } = require("../middleware/auth");
 const upload = require("../utils/upload");
@@ -22,6 +23,6 @@ router.put(
   upload.single("profileImage"),
   uploadProfileImage
 );
-router.get("/matches/:id",getMatches)
+router.get("/matches/:id",auth,getMatches)
 
 module.exports = router;

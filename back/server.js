@@ -54,8 +54,8 @@ sequelize
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/mentor-profiles", mentorProfileRoutes);
-app.use("/api/mentee-profiles", menteeProfileRoutes);
+app.use("/api/mentors", mentorProfileRoutes);
+app.use("/api/mentees", menteeProfileRoutes);
 app.use("/api/mentorships", mentorshipRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/events", eventRoutes);

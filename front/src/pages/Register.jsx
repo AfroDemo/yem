@@ -52,7 +52,6 @@ const Register = () => {
       role: "mentee",
       bio: "",
       location: "",
-      interests: "",
       agreeToTerms: false,
     },
     validationSchema: validationSchema,
@@ -368,23 +367,6 @@ const Register = () => {
                     placeholder="City, Country"
                   />
                 </div>
-                <div>
-                  <label
-                    htmlFor="interests"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Interests/Expertise
-                  </label>
-                  <input
-                    id="interests"
-                    name="interests"
-                    type="text"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    value={formik.values.interests}
-                    onChange={formik.handleChange}
-                    placeholder="E.g., Technology, Marketing, Finance (comma separated)"
-                  />
-                </div>
               </div>
             )}
 
@@ -447,16 +429,6 @@ const Register = () => {
                         </h3>
                         <p className="mt-1 text-sm text-gray-900">
                           {formik.values.location}
-                        </p>
-                      </div>
-                    )}
-                    {formik.values.interests && (
-                      <div className="md:col-span-2">
-                        <h3 className="text-sm font-medium text-gray-500">
-                          Interests/Expertise
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-900">
-                          {formik.values.interests}
                         </p>
                       </div>
                     )}

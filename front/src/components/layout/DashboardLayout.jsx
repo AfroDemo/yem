@@ -13,6 +13,7 @@ import { UserContext } from "../../context/UserContext"; // Import context
 import Avatar from "../avatar/Avatar";
 import AvatarImage from "../avatar/AvatarImage";
 import AvatarFallback from "../avatar/AvatarFallback";
+import { ToastContainer } from "react-toastify";
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -138,6 +139,7 @@ export default function DashboardLayout() {
           </main>
         </div>
       </div>
+    <ToastContainer />
     </UserContext.Provider>
   );
 }

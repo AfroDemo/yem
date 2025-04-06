@@ -64,8 +64,8 @@ module.exports = (sequelize) => {
       industries: { type: DataTypes.JSON },
       businessStage: { type: DataTypes.STRING },
       preferredBusinessStages: { type: DataTypes.JSON },
-      experienceYears: { type: DataTypes.INTEGER },
-      availability: { type: DataTypes.JSON },
+      experienceYears: { type: DataTypes.STRING },
+      availability: { type: DataTypes.STRING },
     },
     {
       tableName: "users",

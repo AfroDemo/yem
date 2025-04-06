@@ -117,8 +117,6 @@ exports.getMatches = async (req, res) => {
           : userSkills.length * 10) || // Reduced to 10pts per skill/interest
       1; // Avoid division by zero
 
-    console.log(`User's max possible score: ${maxPossibleScore}`);
-
     // --- Score and Normalize Matches ---
     const scoredMatches = potentialMatches
       .map((match) => {
@@ -230,7 +228,6 @@ exports.getMatches = async (req, res) => {
       .filter((match) => match.matchScore > 0) // Exclude 0% matches
       .sort((a, b) => b.matchScore - a.matchScore); // Best matches first
 
-    console.log(`Found ${scoredMatches.length} scored matches`);
     res.json(scoredMatches);
   } catch (error) {
     console.error("Get matches error:", error);
@@ -261,6 +258,8 @@ exports.updateUser = async (req, res) => {
       industries,
       businessStage,
       preferredBusinessStages,
+      availability,
+      experienceYears,
     } = req.body;
 
     const user = await User.findByPk(req.params.id);
@@ -291,6 +290,10 @@ exports.updateUser = async (req, res) => {
         preferredBusinessStages !== undefined
           ? preferredBusinessStages
           : user.preferredBusinessStages,
+      availability:
+        availability !== undefined ? availability : user.availability,
+      experienceYears:
+        experienceYears !== undefined ? experienceYears : user.experienceYears,
     });
 
     const userJson = updatedUser.toJSON();
