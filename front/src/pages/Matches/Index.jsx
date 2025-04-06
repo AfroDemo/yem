@@ -1,13 +1,4 @@
-import {
-  BadgeCheck,
-  BookOpen,
-  Calendar,
-  Filter,
-  MessageSquare,
-  Search,
-  Star,
-  UserPlus,
-} from "lucide-react";
+import { UserPlus } from "lucide-react";
 import Button from "../../components/button";
 import { Link } from "react-router-dom";
 import Card from "../../components/card/card";
@@ -17,214 +8,11 @@ import CardDescription from "../../components/card/cardDescription";
 import CardContent from "../../components/card/cardContent";
 import Progress from "../../components/progress";
 import Badge from "../../components/badge";
-import Avatar from "../../components/avatar/Avatar";
-import AvatarImage from "../../components/avatar/AvatarImage";
-import AvatarFallback from "../../components/avatar/AvatarFallback";
-import CardFooter from "../../components/card/cardFooter";
-import { toast } from "react-toastify";
 import api from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 import { useEffect, useState } from "react";
-
-// Mentor data object
-const mentorData = {
-  recommended: [
-    {
-      id: 1,
-      name: "Michael Johnson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Senior Mentor",
-      industry: "Technology",
-      experience: "15+ years",
-      specialties: ["Business Strategy", "Fundraising", "Product Development"],
-      rating: 4.9,
-      reviews: 28,
-      matchPercentage: 95,
-      availability: "Available next week",
-      verified: true,
-    },
-    {
-      id: 2,
-      name: "Jennifer Williams",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Marketing Expert",
-      industry: "Technology",
-      experience: "12+ years",
-      specialties: ["Digital Marketing", "Brand Strategy", "Growth Hacking"],
-      rating: 4.8,
-      reviews: 34,
-      matchPercentage: 92,
-      availability: "Available this week",
-      verified: true,
-    },
-    {
-      id: 3,
-      name: "Robert Chen",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Startup Advisor",
-      industry: "Technology",
-      experience: "10+ years",
-      specialties: [
-        "Venture Capital",
-        "Pitch Development",
-        "Business Planning",
-      ],
-      rating: 4.7,
-      reviews: 19,
-      matchPercentage: 88,
-      availability: "Limited availability",
-      verified: true,
-    },
-    {
-      id: 4,
-      name: "Sophia Martinez",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Product Strategist",
-      industry: "SaaS",
-      experience: "8+ years",
-      specialties: ["Product Management", "UX Strategy", "Market Research"],
-      rating: 4.6,
-      reviews: 15,
-      matchPercentage: 85,
-      availability: "Available this week",
-      verified: false,
-    },
-  ],
-  industry: [
-    {
-      id: 1,
-      name: "Michael Johnson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Senior Mentor",
-      industry: "Technology",
-      experience: "15+ years",
-      specialties: ["Business Strategy", "Fundraising", "Product Development"],
-      rating: 4.9,
-      reviews: 28,
-      matchPercentage: 95,
-      availability: "Available next week",
-      verified: true,
-    },
-    {
-      id: 2,
-      name: "Jennifer Williams",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Marketing Expert",
-      industry: "Technology",
-      experience: "12+ years",
-      specialties: ["Digital Marketing", "Brand Strategy", "Growth Hacking"],
-      rating: 4.8,
-      reviews: 34,
-      matchPercentage: 92,
-      availability: "Available this week",
-      verified: true,
-    },
-    {
-      id: 5,
-      name: "David Thompson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Tech Entrepreneur",
-      industry: "Technology",
-      experience: "9+ years",
-      specialties: ["Software Development", "Tech Stack", "Scaling"],
-      rating: 4.5,
-      reviews: 12,
-      matchPercentage: 82,
-      availability: "Available next week",
-      verified: false,
-    },
-  ],
-  all: [
-    {
-      id: 1,
-      name: "Michael Johnson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Senior Mentor",
-      industry: "Technology",
-      experience: "15+ years",
-      specialties: ["Business Strategy", "Fundraising", "Product Development"],
-      rating: 4.9,
-      reviews: 28,
-      matchPercentage: 95,
-      availability: "Available next week",
-      verified: true,
-    },
-    {
-      id: 2,
-      name: "Jennifer Williams",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Marketing Expert",
-      industry: "Technology",
-      experience: "12+ years",
-      specialties: ["Digital Marketing", "Brand Strategy", "Growth Hacking"],
-      rating: 4.8,
-      reviews: 34,
-      matchPercentage: 92,
-      availability: "Available this week",
-      verified: true,
-    },
-    {
-      id: 3,
-      name: "Robert Chen",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Startup Advisor",
-      industry: "Technology",
-      experience: "10+ years",
-      specialties: [
-        "Venture Capital",
-        "Pitch Development",
-        "Business Planning",
-      ],
-      rating: 4.7,
-      reviews: 19,
-      matchPercentage: 88,
-      availability: "Limited availability",
-      verified: true,
-    },
-    {
-      id: 4,
-      name: "Sophia Martinez",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Product Strategist",
-      industry: "SaaS",
-      experience: "8+ years",
-      specialties: ["Product Management", "UX Strategy", "Market Research"],
-      rating: 4.6,
-      reviews: 15,
-      matchPercentage: 85,
-      availability: "Available this week",
-      verified: false,
-    },
-    {
-      id: 6,
-      name: "James Wilson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Financial Advisor",
-      industry: "Finance",
-      experience: "20+ years",
-      specialties: ["Financial Planning", "Investment Strategy", "Fundraising"],
-      rating: 4.9,
-      reviews: 42,
-      matchPercentage: 78,
-      availability: "Limited availability",
-      verified: true,
-    },
-    {
-      id: 7,
-      name: "Emily Rodriguez",
-      avatar: "/placeholder.svg?height=100&width=100",
-      role: "Marketing Director",
-      industry: "E-commerce",
-      experience: "12+ years",
-      specialties: ["E-commerce Strategy", "Customer Acquisition", "Retention"],
-      rating: 4.7,
-      reviews: 23,
-      matchPercentage: 75,
-      availability: "Available next week",
-      verified: true,
-    },
-  ],
-};
+import { parseCsv } from "../../utils/csvHelpers";
+import { MentorCard, MentorCardAll } from "../../components/card/MentorCard";
 
 // Expertise data
 const expertiseData = [
@@ -273,9 +61,9 @@ export default function MatchPage() {
       case "recommended":
         return recommendedMentors;
       case "industry":
-        return mentorData.industry;
+        return industryMentors;
       case "all":
-        return mentorData.all;
+        return allMentors;
       default:
         return allMentors;
     }
@@ -320,6 +108,30 @@ export default function MatchPage() {
     }
   };
 
+  const getSameIndustryMentors = (user, mentors) => {
+    const userIndustries = parseCsv(user.industries);
+
+    const sameIndustryMentors = mentors
+      .map((mentor) => {
+        const mentorIndustries = parseCsv(mentor.industry);
+        const shared = mentorIndustries.filter((industry) =>
+          userIndustries.includes(industry)
+        );
+
+        if (shared.length > 0) {
+          return {
+            ...mentor,
+            sharedIndustries: shared,
+          };
+        }
+
+        return null;
+      })
+      .filter(Boolean); // remove nulls
+
+    setIndustryMentors(sameIndustryMentors);
+  };
+
   const getAllMentors = async () => {
     try {
       const responseMentors = await api
@@ -341,7 +153,12 @@ export default function MatchPage() {
     getAllMentors();
   }, [user]);
 
-  console.log(recommendedMentors, allMentors);
+  useEffect(() => {
+    getSameIndustryMentors(user, recommendedMentors);
+  }, [user, recommendedMentors]);
+
+  console.log(allMentors);
+  console.log(recommendedMentors);
 
   return (
     <div className="space-y-6">
@@ -398,9 +215,25 @@ export default function MatchPage() {
           </div>
 
           <div className="space-y-4">
-            {getCurrentMentors().map((mentor) => (
-              <MentorCard key={mentor.id} {...mentor} />
-            ))}
+            {activeTab === "all" ? (
+              // For all mentors tab, use getCurrentMentors()
+              Array.isArray(getCurrentMentors()?.mentors) &&
+              getCurrentMentors().mentors.length > 0 ? (
+                getCurrentMentors().mentors.map((mentor) => (
+                  <MentorCardAll key={mentor.id} mentor={mentor} />
+                ))
+              ) : (
+                <p>No mentors available</p>
+              )
+            ) : // For recommended mentors tab, use getRecommendedMentors()
+            Array.isArray(getCurrentMentors()) &&
+              getCurrentMentors().length > 0 ? (
+              getCurrentMentors().map((mentor) => (
+                <MentorCard key={mentor.id} {...mentor} />
+              ))
+            ) : (
+              <p>No recommended mentors available</p>
+            )}
           </div>
         </div>
 
@@ -492,162 +325,5 @@ export default function MatchPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function MentorCard({
-  id,
-  name,
-  avatar,
-  role,
-  industry,
-  experience,
-  specialties,
-  rating,
-  reviews,
-  matchPercentage,
-  availability,
-  verified,
-}) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex flex-col items-center text-center md:text-left md:items-start">
-            <div className="relative">
-              <Avatar className="h-20 w-20 mb-2">
-                <AvatarImage src={
-                  avatar
-                    ? `http://localhost:5000${avatar}`
-                    : "/placeholder.svg?height=96&width=96"
-                }
-                alt={name} />
-                <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              {verified && (
-                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5">
-                  <BadgeCheck className="h-4 w-4" />
-                </div>
-              )}
-            </div>
-            <h3 className="font-semibold text-lg">{name}</h3>
-            <p className="text-sm text-gray-500">{role}</p>
-            <div className="flex items-center mt-2">
-              <Badge
-                className={`${
-                  industry === "Technology"
-                    ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                    : industry === "Finance"
-                    ? "bg-green-100 text-green-800 hover:bg-green-100"
-                    : industry === "E-commerce"
-                    ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
-                    : industry === "SaaS"
-                    ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                }`}
-              >
-                {industry}
-              </Badge>
-            </div>
-            <div className="flex items-center mt-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-3 w-3 ${
-                      i < Math.floor(rating)
-                        ? "text-yellow-400 fill-yellow-400"
-                        : "text-gray-400"
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="ml-1 text-xs font-medium">{rating}</span>
-              <span className="mx-1 text-xs text-gray-500">•</span>
-              <span className="text-xs text-gray-500">{reviews} reviews</span>
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between">
-              <div>
-                <p className="text-sm text-gray-500">
-                  Experience: {experience}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Availability: {availability}
-                </p>
-                <div className="mt-2">
-                  <p className="text-sm font-medium mb-1">Match Score</p>
-                  <div className="flex items-center gap-2">
-                    <Progress value={matchPercentage} className="h-2 w-24" />
-                    <span className="text-sm font-medium">
-                      {matchPercentage}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex mt-4 md:mt-0 md:flex-col gap-2 md:items-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 md:w-auto"
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Message
-                </Button>
-                <Button size="sm" className="flex-1 md:w-auto" asChild>
-                  <Link to={`/dashboard/mentors/${id}`}>View Profile</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">About</p>
-              <p className="text-sm">
-                Experienced {role.toLowerCase()} with expertise in{" "}
-                {industry.toLowerCase()} startups. Passionate about helping
-                entrepreneurs navigate challenges and achieve their business
-                goals.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Specialties</p>
-              <div className="flex flex-wrap gap-2">
-                {specialties.map((specialty, index) => (
-                  <Badge key={index} variant="secondary">
-                    {specialty.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 pt-2">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-xs">1-on-1 Sessions</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageSquare className="h-4 w-4 text-gray-400" />
-                <span className="text-xs">Chat Support</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <BookOpen className="h-4 w-4 text-gray-400" />
-                <span className="text-xs">Resource Sharing</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="bg-gray-100 px-6 py-3">
-        <Button className="w-full" asChild>
-          <Link to={`/dashboard/mentors/${id}/request`}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Request Mentorship
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
   );
 }
