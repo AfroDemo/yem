@@ -1,6 +1,6 @@
 import { UserPlus } from "lucide-react";
 import Button from "../../components/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/card";
 import CardHeader from "../../components/card/cardHeader";
 import CardTitle from "../../components/card/cardTitle";
@@ -54,8 +54,22 @@ export default function MatchPage() {
   const [industryMentors, setIndustryMentors] = useState([]);
   const [allMentors, setAllMentors] = useState([]);
   const user = useUser();
+  const navigate = useNavigate();
 
-  // Get the current mentor list based on active tab
+  const getProfileCompletionPercentage = () => {
+    const fields = [
+      user.firstName,
+      user.lastName,
+      user.email,
+      user.bio,
+      user.industries,
+      user.skills,
+    ];
+
+    const completedFields = fields.filter((field) => field && field !== "");
+    return Math.round((completedFields.length / fields.length) * 100);
+  };
+
   const getCurrentMentors = () => {
     switch (activeTab) {
       case "recommended":
@@ -157,9 +171,6 @@ export default function MatchPage() {
     getSameIndustryMentors(user, recommendedMentors);
   }, [user, recommendedMentors]);
 
-  console.log(allMentors);
-  console.log(recommendedMentors);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -246,41 +257,53 @@ export default function MatchPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Profile Completion */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <p className="text-sm font-medium">Profile Completion</p>
-                  <span className="text-sm">75%</span>
+                  <span className="text-sm">
+                    {getProfileCompletionPercentage()}%
+                  </span>
                 </div>
-                <Progress value={75} className="h-2" />
+                <Progress
+                  value={getProfileCompletionPercentage()}
+                  className="h-2"
+                />
                 <p className="text-xs text-gray-500">
                   Complete your profile to improve mentor matching
                 </p>
               </div>
 
+              {/* Preferences Section */}
               <div className="rounded-md border p-3">
                 <h4 className="font-medium text-sm mb-2">Your Preferences</h4>
                 <div className="space-y-1 text-sm">
                   <p className="flex justify-between">
                     <span className="text-gray-500">Industry:</span>
-                    <span>Technology</span>
+                    <span>{parseCsv(user.industries) || "Not specified"}</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-gray-500">Business Stage:</span>
-                    <span>Early Startup</span>
+                    <span>{user.businessStage || "Not specified"}</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-gray-500">Goals:</span>
-                    <span>Fundraising, Growth</span>
+                    <span>{parseCsv(user.interests) || "Not specified"}</span>
                   </p>
                 </div>
-                <Button variant="link" size="sm" className="px-0 mt-1">
+                <Button
+                  onClick={() => navigate("/dashboard/settings")}
+                  variant="link"
+                  size="sm"
+                  className="px-0 mt-1"
+                >
                   Update Preferences
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="mt-6">
+          {/* <Card className="mt-6">
             <CardHeader>
               <CardTitle>Mentor Expertise</CardTitle>
               <CardDescription>Browse by specialty</CardDescription>
@@ -301,7 +324,7 @@ export default function MatchPage() {
                 </Button>
               ))}
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="mt-6">
             <CardHeader>

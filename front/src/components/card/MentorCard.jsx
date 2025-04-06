@@ -16,6 +16,7 @@ import CardContent from "./cardContent";
 import Button from "../button";
 import CardFooter from "./cardFooter";
 import Progress from "../progress";
+import { useNavigate } from "react-router-dom";
 
 const parseArray = (val) => {
   if (!val) return [];
@@ -54,6 +55,7 @@ export function MentorCardAll({ mentor }) {
   const fullName = `${firstName} ${lastName}`;
   const parsedIndustries = parseArray(industries);
   const parsedSkills = parseArray(skills);
+  const navigate = useNavigate();
 
   return (
     <Card>
@@ -165,11 +167,15 @@ export function MentorCardAll({ mentor }) {
         </div>
       </CardContent>
       <CardFooter className="bg-gray-100 px-6 py-3">
-        <Button className="w-full" asChild>
-          <Link to={`/dashboard/mentors/${id}/request`}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Request Mentorship
-          </Link>
+        <Button
+          className="w-full flex items-center justify-center gap-2"
+          asChild
+          onClick={() => {
+            navigate(`/dashboard/mentors/${id}/request`);
+          }}
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Request Mentorship</span>
         </Button>
       </CardFooter>
     </Card>
@@ -190,6 +196,7 @@ export function MentorCard({
   availability,
   verified,
 }) {
+  const navigate = useNavigate();
   return (
     <Card>
       <CardContent className="p-6">
@@ -323,12 +330,16 @@ export function MentorCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-gray-100 px-6 py-3">
-        <Button className="w-full" asChild>
-          <Link to={`/dashboard/mentors/${id}/request`}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Request Mentorship
-          </Link>
+      <CardFooter className="bg-blue-100 px-6 py-3">
+        <Button
+          className="w-full flex items-center justify-center gap-2"
+          asChild
+          onClick={() => {
+            navigate(`/dashboard/mentors/${id}/request`);
+          }}
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Request Mentorship</span>
         </Button>
       </CardFooter>
     </Card>
