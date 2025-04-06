@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { sequelize, testConnection } = require("./config/db");
-const path = require('path');
+const path = require("path");
 const fs = require("fs");
 
 // Route imports
@@ -11,6 +11,7 @@ const userRoutes = require("./routes/user");
 const mentorProfileRoutes = require("./routes/mentorProfiles");
 const menteeProfileRoutes = require("./routes/menteeProfiles");
 const mentorshipRoutes = require("./routes/mentorships");
+const mentorshipRequestRoutes = require("./routes/mentorshipRequest");
 const resourceRoutes = require("./routes/resources");
 const eventRoutes = require("./routes/events");
 const eventRegistrationRoutes = require("./routes/eventRegistrations");
@@ -24,7 +25,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 // Serve static files first
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Then add debugging middleware if needed
 // app.use('/uploads', (req, res, next) => {
@@ -63,6 +64,7 @@ app.use("/api/event-registrations", eventRegistrationRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/success-stories", successStoryRoutes);
+app.use("/api/req", mentorshipRequestRoutes);
 
 // Basic route
 app.get("/", (req, res) => {
