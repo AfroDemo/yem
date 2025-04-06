@@ -17,9 +17,9 @@ import Input from "../../components/Input";
 import Textarea from "../../components/Textarea";
 import { useUser } from "../../context/UserContext";
 import { updateUser, uploadProfileImage } from "../../services/userService";
-import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
-import { addToCsv, removeFromCsv } from "../../utils/csvHelpers";
+import { addToCsv, parseCsv, removeFromCsv } from "../../utils/csvHelpers";
+import { toast } from "react-toastify";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -51,6 +51,8 @@ export default function SettingsPage() {
     preferredBusinessStages: user.preferredBusinessStages,
     skills: user.skills || "",
     interests: user.interests || "",
+    experienceYears: user.experienceYears || "",
+    availability: user.availability || "",
   });
 
   const commonInterests = [
@@ -155,33 +157,37 @@ export default function SettingsPage() {
   };
 
   const handleAddToField = (fieldName, valueToAdd) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: addToCsv(prev[fieldName], valueToAdd)
+      [fieldName]: addToCsv(prev[fieldName], valueToAdd),
     }));
     setSearchSkill("");
   };
-  
+
   const handleRemoveFromField = (fieldName, valueToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: removeFromCsv(prev[fieldName], valueToRemove)
+      [fieldName]: removeFromCsv(prev[fieldName], valueToRemove),
     }));
   };
 
-  const handleAddSkill = (skill) => handleAddToField('skills', skill);
-  const handleRemoveSkill = (skill) => handleRemoveFromField('skills', skill);
-  
-  const handleAddInterest = (interest) => handleAddToField('interests', interest);
-  const handleRemoveInterest = (interest) => handleRemoveFromField('interests', interest);
-  
-  const handleAddIndustry = (industry) => handleAddToField('industries', industry);
-  const handleRemoveIndustry = (industry) => handleRemoveFromField('industries', industry);
-  
+  const handleAddSkill = (skill) => handleAddToField("skills", skill);
+  const handleRemoveSkill = (skill) => handleRemoveFromField("skills", skill);
+
+  const handleAddInterest = (interest) =>
+    handleAddToField("interests", interest);
+  const handleRemoveInterest = (interest) =>
+    handleRemoveFromField("interests", interest);
+
+  const handleAddIndustry = (industry) =>
+    handleAddToField("industries", industry);
+  const handleRemoveIndustry = (industry) =>
+    handleRemoveFromField("industries", industry);
+
   // Business stages stays separate since it has different logic
   const handleAddBusinessStage = (stageToAdd) => {
     const trimmedStage = stageToAdd.trim();
-  
+
     if (user.role === "mentee") {
       setSelectedBusinessStages([trimmedStage]);
     } else {
@@ -223,22 +229,27 @@ export default function SettingsPage() {
       role: formData.headline.toLowerCase().trim(),
       bio: formData.bio.trim(),
       location: formData.location.trim(),
-      skills: cleanCSV(formData.skills),
-      interests: cleanCSV(formData.interests),
-      industries: cleanCSV(formData.industries),
+      availability: formData.availability.trim(),
+      experienceYears: formData.experienceYears.trim(),
+      skills: parseCsv(formData.skills),
+      interests: parseCsv(formData.interests),
+      industries: parseCsv(formData.industries),
       ...(user.role === "mentor"
         ? {
-            preferredBusinessStages: selectedBusinessStages.join(", "),
+            preferredBusinessStages: parseCsv(
+              selectedBusinessStages.join(", ")
+            ),
             businessStage: "", // Clear mentee field if user is mentor
           }
         : {
-            businessStage: selectedBusinessStages.join(", "),
+            businessStage: parseCsv(selectedBusinessStages.join(", ")),
             preferredBusinessStages: "", // Clear mentor field if user is mentee
           }),
     };
-console.log(updateData)
+    console.log(updateData);
     try {
       await updateUser(user.id, updateData);
+      // console.log(updateData);
       toast.success("Profile updated successfully");
       console.log("Profile updated successfully");
     } catch (error) {
@@ -436,6 +447,34 @@ console.log(updateData)
                   </div>
                 </div>
 
+                {user.role === "mentor" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="availability">Availability</Label>
+                        <Input
+                          id="availability"
+                          value={formData.availability}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="experienceYears">
+                          Years of Experience
+                        </Label>
+                        <Input
+                          id="experienceYears"
+                          value={formData.experienceYears}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="space-y-2">
                   <Label>
                     {user.role === "mentor"
@@ -531,27 +570,23 @@ console.log(updateData)
                 <div className="space-y-2">
                   <Label>Industries</Label>
                   <div className="border rounded-md p-4">
-                    {/* Selected skills */}
+                    {/* Selected industries */}
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {formData.industries ? (
-                        formData.industries
-                          .split(",")
-                          .map((i) => i.trim())
-                          .filter((i) => i)
-                          .map((industry, index) => (
-                            <div
-                              key={index}
-                              className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                      {parseCsv(formData.industries).length > 0 ? (
+                        parseCsv(formData.industries).map((industry, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
+                          >
+                            {industry}
+                            <button
+                              onClick={() => handleRemoveIndustry(industry)}
+                              className="ml-2 text-gray-500 hover:text-gray-900"
                             >
-                              {industry}
-                              <button
-                                onClick={() => handleRemoveIndustry(industry)}
-                                className="ml-2 text-gray-500 hover:text-gray-900"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))
+                              ×
+                            </button>
+                          </div>
+                        ))
                       ) : (
                         <p className="text-sm text-gray-500">
                           No industries added yet
@@ -576,12 +611,12 @@ console.log(updateData)
                             .includes(searchSkill.toLowerCase())
                         )
                         .map((industry, index) => {
-                          const isAlreadyAdded =
-                            formData.industries &&
+                          const currentIndustries = parseCsv(
                             formData.industries
-                              .split(",")
-                              .map((s) => s.trim().toLowerCase())
-                              .includes(industry.toLowerCase());
+                          );
+                          const isAlreadyAdded = currentIndustries
+                            .map((s) => s.toLowerCase())
+                            .includes(industry.toLowerCase());
 
                           return (
                             <div

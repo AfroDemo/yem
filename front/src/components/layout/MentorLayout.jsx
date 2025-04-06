@@ -17,6 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../../services/authService";
 import { UserContext } from "../../context/UserContext";
+import { ToastContainer } from "react-toastify";
 
 export default function MentorLayout() {
   const { logout } = useAuth();
@@ -155,6 +156,7 @@ export default function MentorLayout() {
           </main>
         </div>
       </div>
+      <ToastContainer />
     </UserContext.Provider>
   );
 }

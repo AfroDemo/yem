@@ -21,3 +21,12 @@ export const removeFromCsv = (currentCsv, itemToRemove) => {
   const array = csvToArray(currentCsv);
   return arrayToCsv(array.filter((item) => item !== itemToRemove));
 };
+
+export const parseCsv = (str) =>
+  str
+    ? str
+        .replace(/["\\]/g, "") // removes extra quotes and slashes
+        .split(",")
+        .map((i) => i.trim())
+        .filter((i) => i)
+    : [];
