@@ -1,4 +1,4 @@
-"use strict";
+const { DataTypes } = require("sequelize");
 
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -7,10 +7,10 @@ module.exports = {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
       mentorId: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.INTEGER,
         references: {
           model: "users",
           key: "id",
@@ -38,6 +38,11 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false,
       },
+      progress: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       background: {
         type: Sequelize.TEXT,
         allowNull: false,
@@ -63,6 +68,12 @@ module.exports = {
       meetingFrequency: {
         type: Sequelize.STRING,
       },
+      nextMeetingDate: {
+        type: DataTypes.DATE,
+      },
+      feedback: {
+        type: DataTypes.JSON,
+      },
       notes: {
         type: Sequelize.TEXT,
       },
@@ -77,17 +88,17 @@ module.exports = {
     });
 
     // Add composite index to prevent duplicate requests
-    await queryInterface.addIndex('mentorship_requests', {
-      fields: ['mentorId', 'menteeId'],
+    await queryInterface.addIndex("mentorship_requests", {
+      fields: ["mentorId", "menteeId"],
       unique: true,
       where: {
-        status: 'pending'
+        status: "pending",
       },
-      name: 'mentorship_requests_mentor_mentee_unique'
+      name: "mentorship_requests_mentor_mentee_unique",
     });
   },
 
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("mentorship_requests");
-  }
+  },
 };

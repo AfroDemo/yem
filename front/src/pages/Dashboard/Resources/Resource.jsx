@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BookOpen, Bookmark, Filter, Search } from "lucide-react";
-import Progress from "../../components/progress";
+import Progress from "../../../components/progress";
 
 // Button Component
 const Button = ({

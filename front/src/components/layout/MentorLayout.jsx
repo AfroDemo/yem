@@ -64,7 +64,7 @@ export default function MentorLayout() {
             <NavItem
               href="/mentor/mentees"
               icon={<Users className="h-5 w-5" />}
-              label="My Mentees"
+              label="Mentees"
             />
             <NavItem
               href="/mentor/sessions"

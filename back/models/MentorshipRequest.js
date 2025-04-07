@@ -36,6 +36,9 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      progress: {
+        type: DataTypes.JSON, // Storing progress as a JSON array
+      },
       background: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -63,6 +66,12 @@ module.exports = (sequelize) => {
       },
       meetingFrequency: {
         type: DataTypes.STRING,
+      },
+      nextMeetingDate: {
+        type: DataTypes.DATE,
+      },
+      feedback: {
+        type: DataTypes.JSON,
       },
       notes: {
         type: DataTypes.TEXT,

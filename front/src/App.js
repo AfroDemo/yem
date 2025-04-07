@@ -17,14 +17,12 @@ import Events from "./pages/Events";
 import Contact from "./pages/Contact";
 import SuccessStories from "./pages/SuccessStories";
 import About from "./pages/About";
-import Dashboard from "./pages/Dashboard";
 import EventsPage from "./pages/Event/Events";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import MessagesPage from "./pages/Message/Messages";
-import NetworkPage from "./pages/Network/Network";
-import ResourcesPage from "./pages/Resources/Resource";
+import ResourcesPage from "./pages/Dashboard/Resources/Resource";
 import SettingsPage from "./pages/Settings/Setting";
 import NewMessagePage from "./pages/Message/Create";
 import MentorLayout from "./components/layout/MentorLayout";
@@ -35,7 +33,10 @@ import MentorProfilePage from "./pages/Matches/Show";
 import RequestMentorshipPage from "./pages/Matches/Create";
 import MentorRequestsPage from "./pages/Matches/Requests";
 import { ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
+import MenteesPage from "./pages/Mentor/Mentee/mentee";
+import MenteeRequestsPage from "./pages/Mentor/Mentee/Requests";
+import Dashboard from "./pages/Dashboard/Dashboard";
 
 // Loading component
 const LoadingScreen = () => (
@@ -72,7 +73,7 @@ const MainLayout = () => (
     <Navbar />
     <main className="flex-grow">
       <Outlet />
-    <ToastContainer />
+      <ToastContainer />
     </main>
     <Footer />
   </>
@@ -87,7 +88,10 @@ const dashboardRoutes = [
   { path: "/dashboard/mentors", component: <MatchPage /> },
   { path: "/dashboard/mentors/:mentorId", component: <MentorProfilePage /> },
   { path: "/dashboard/mentors/requests", component: <MentorRequestsPage /> },
-  { path: "/dashboard/mentors/:mentorId/request", component: <RequestMentorshipPage /> },
+  {
+    path: "/dashboard/mentors/:mentorId/request",
+    component: <RequestMentorshipPage />,
+  },
   { path: "/dashboard/resources", component: <ResourcesPage /> },
   { path: "/dashboard/settings", component: <SettingsPage /> },
 ];
@@ -97,7 +101,8 @@ const mentorDashboardRoutes = [
   { path: "/mentor/events", component: <EventsPage /> },
   { path: "/mentor/messages", component: <MessagesPage /> },
   { path: "/mentor/messages/new", component: <NewMessagePage /> },
-  { path: "/mentor/network", component: <NetworkPage /> },
+  { path: "/mentor/mentees", component: <MenteesPage /> },
+  { path: "/mentor/mentees/requests", component: <MenteeRequestsPage /> },
   { path: "/mentor/resources", component: <MentorResources /> },
   { path: "/mentor/resource/upload", component: <UploadResourcePage /> },
   { path: "/mentor/settings", component: <SettingsPage /> },

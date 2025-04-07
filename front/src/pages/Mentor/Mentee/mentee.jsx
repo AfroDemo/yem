@@ -1,0 +1,292 @@
+import Button from "../../../components/button";
+import Card from "../../../components/card/card";
+import CardHeader from "../../../components/card/cardHeader";
+import CardTitle from "../../../components/card/cardTitle";
+import CardDescription from "../../../components/card/cardDescription";
+import CardContent from "../../../components/card/cardContent";
+import Badge from "../../../components/badge";
+import Tabs from "../../../components/tab/tabs";
+import TabsList from "../../../components/tab/TabsList";
+import TabsTrigger from "../../../components/tab/TabsTrigger";
+import TabsContent from "../../../components/tab/TabsContent";
+import { MenteeCard } from "../../../components/card/MenteeCard";
+import Avatar from "../../../components/avatar/Avatar";
+import AvatarImage from "../../../components/avatar/AvatarImage";
+import AvatarFallback from "../../../components/avatar/AvatarFallback";
+import CardFooter from "../../../components/card/cardFooter";
+import { Bell, Clock, Search, Star, Users } from "lucide-react";
+import { useState } from "react";
+
+const menteesData = {
+  active: [
+    {
+      id: 1,
+      name: "Alex Johnson",
+      avatar: "/placeholder.svg?height=100&width=100",
+      business: "TechStart Solutions",
+      industry: "SaaS",
+      location: "San Francisco, CA",
+      startDate: "January 15, 2025",
+      progress: 75,
+      nextSession: "April 15, 2025 • 10:00 AM",
+      goals: [
+        { title: "Complete Business Plan", status: "completed" },
+        { title: "Secure Initial Funding", status: "in-progress" },
+        { title: "Launch MVP", status: "not-started" },
+      ],
+    },
+    {
+      id: 2,
+      name: "Sarah Chen",
+      avatar: "/placeholder.svg?height=100&width=100",
+      business: "EcoFashion",
+      industry: "Retail",
+      location: "New York, NY",
+      startDate: "February 3, 2025",
+      progress: 40,
+      nextSession: "April 22, 2025 • 1:30 PM",
+      goals: [
+        { title: "Market Research", status: "completed" },
+        { title: "Develop Marketing Strategy", status: "in-progress" },
+        { title: "Create Sales Funnel", status: "not-started" },
+      ],
+    },
+    // Add more active mentees...
+  ],
+  completed: [
+    {
+      id: 3,
+      name: "James Wilson",
+      avatar: "/placeholder.svg?height=100&width=100",
+      business: "Urban Delivery",
+      industry: "Logistics",
+      location: "Seattle, WA",
+      startDate: "June 15, 2024",
+      endDate: "February 15, 2025",
+      progress: 100,
+      status: "completed",
+      goals: [
+        { title: "Develop Business Plan", status: "completed" },
+        { title: "Secure Seed Funding", status: "completed" },
+        { title: "Launch Operations", status: "completed" },
+      ],
+    },
+    // Add more completed mentees...
+  ],
+  paused: [
+    {
+      id: 4,
+      name: "Michael Brown",
+      avatar: "/placeholder.svg?height=100&width=100",
+      business: "GreenEnergy Solutions",
+      industry: "Renewable Energy",
+      location: "Austin, TX",
+      startDate: "January 20, 2025",
+      pauseDate: "March 15, 2025",
+      progress: 60,
+      status: "paused",
+      pauseReason: "Personal reasons - resuming in May",
+      goals: [
+        { title: "Market Analysis", status: "completed" },
+        { title: "Product Development", status: "in-progress" },
+        { title: "Investor Pitch Preparation", status: "not-started" },
+      ],
+    },
+    // Add more paused mentees...
+  ],
+};
+
+// Statistics data
+const statsData = [
+  {
+    icon: <Users className="h-5 w-5 text-primary" />,
+    title: "Total Mentees",
+    description: "Current and past",
+    value: "19",
+  },
+  {
+    icon: <Star className="h-5 w-5 text-primary" />,
+    title: "Success Rate",
+    description: "Goal achievement",
+    value: "87%",
+  },
+  {
+    icon: <Clock className="h-5 w-5 text-primary" />,
+    title: "Avg. Relationship",
+    description: "Duration",
+    value: "6.2 mo",
+  },
+];
+
+// Industry breakdown data
+const industriesData = [
+  { name: "Technology", count: 5, color: "blue" },
+  { name: "Retail", count: 3, color: "green" },
+  { name: "Healthcare", count: 2, color: "purple" },
+  { name: "Education", count: 2, color: "amber" },
+  { name: "Food & Beverage", count: 1, color: "red" },
+  { name: "Renewable Energy", count: 1, color: "indigo" },
+];
+
+// Recent achievements data
+const achievementsData = [
+  {
+    name: "David Park",
+    avatar: "/placeholder.svg?height=24&width=24",
+    description: "Completed brand identity development",
+    date: "April 2, 2025",
+  },
+  // Add more achievements...
+];
+
+export default function MenteesPage() {
+  const [activeTab, setActiveTab] = useState("active");
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">My Mentees</h1>
+          <p className="text-muted-foreground">
+            Manage and track your mentee relationships
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={()=>{window.location.href="/mentor/mentees/requests"}} variant="outline">
+            <Bell className="mr-2 h-4 w-4" />
+            View Mentee Requests
+          </Button>
+        </div>
+      </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-2/3 space-y-6">
+          <div className="tabs-container">
+            <div className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-md">
+              {["active", "completed", "paused"].map((tab) => (
+                <button
+                  key={tab}
+                  className={`py-1.5 px-3 text-sm font-medium rounded-sm transition-all ${
+                    activeTab === tab
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-500 hover:bg-gray-200"
+                  }`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)} (
+                  {menteesData[tab].length})
+                </button>
+              ))}
+            </div>
+
+            <div className="tab-content mt-4 space-y-4">
+              {activeTab === "active" &&
+                menteesData.active.map((mentee) => (
+                  <MenteeCard key={mentee.id} {...mentee} />
+                ))}
+
+              {activeTab === "completed" &&
+                menteesData.completed.map((mentee) => (
+                  <MenteeCard key={mentee.id} {...mentee} />
+                ))}
+
+              {activeTab === "paused" &&
+                menteesData.paused.map((mentee) => (
+                  <MenteeCard key={mentee.id} {...mentee} />
+                ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full md:w-1/3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mentee Statistics</CardTitle>
+              <CardDescription>
+                Overview of your mentoring impact
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {statsData.map((stat, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center p-3 bg-muted/50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-md">
+                      {stat.icon}
+                    </div>
+                    <div>
+                      <p className="font-medium">{stat.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {stat.description}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold">{stat.value}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Industry Breakdown</CardTitle>
+              <CardDescription>Mentees by industry</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {industriesData.map((industry, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Badge
+                    className={`mr-2 bg-${industry.color}-100 text-${industry.color}-800 hover:bg-${industry.color}-100`}
+                  >
+                    {industry.count}
+                  </Badge>
+                  {industry.name}
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Recent Achievements</CardTitle>
+              <CardDescription>Mentee milestones reached</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {achievementsData.map((achievement, index) => (
+                <div key={index} className="border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage
+                        src={achievement.avatar}
+                        alt={achievement.name}
+                      />
+                      <AvatarFallback>
+                        {achievement.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-sm">
+                      {achievement.name}
+                    </span>
+                  </div>
+                  <p className="text-sm mb-1">{achievement.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {achievement.date}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                View All Achievements
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
