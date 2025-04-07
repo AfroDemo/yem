@@ -1,5 +1,6 @@
 const db = require("../models");
 const User = db.User;
+const Mentorship = db.Mentorship;
 
 // Create mentorship request
 exports.createMentorship = async (req, res) => {
@@ -22,7 +23,7 @@ exports.createMentorship = async (req, res) => {
     }
 
     // Check for existing pending request
-    const existingRequest = await MentorshipRequest.findOne({
+    const existingRequest = await Mentorship.findOne({
       where: {
         mentorId,
         menteeId,
@@ -36,7 +37,7 @@ exports.createMentorship = async (req, res) => {
         .json({ error: "You already have a pending request with this mentor" });
     }
 
-    const newRequest = await MentorshipRequest.create({
+    const newRequest = await Mentorship.create({
       mentorId,
       menteeId,
       packageType: selectedPackage,
@@ -49,7 +50,7 @@ exports.createMentorship = async (req, res) => {
     });
 
     // Include mentor details in the response
-    const response = await MentorshipRequest.findByPk(newRequest.id, {
+    const response = await Mentorship.findByPk(newRequest.id, {
       include: [
         {
           model: User,
@@ -71,20 +72,13 @@ exports.getMentorRequests = async (req, res) => {
   try {
     const mentorId = req.user.id; // Assuming authenticated user is the mentor
 
-    const requests = await MentorshipRequest.findAll({
+    const requests = await Mentorship.findAll({
       where: { mentorId },
       include: [
         {
           model: User,
           as: "mentee",
-          attributes: [
-            "id",
-            "firstName",
-            "lastName",
-            "profileImage",
-            "role",
-            "industry",
-          ],
+          attributes: { exclude: ["password"] },
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -102,20 +96,13 @@ exports.getMenteeRequests = async (req, res) => {
   try {
     const menteeId = req.user.id; // Assuming authenticated user is the mentee
 
-    const requests = await MentorshipRequest.findAll({
+    const requests = await Mentorship.findAll({
       where: { menteeId },
       include: [
         {
           model: User,
           as: "mentor",
-          attributes: [
-            "id",
-            "firstName",
-            "lastName",
-            "profileImage",
-            "role",
-            "industry",
-          ],
+          attributes: { exclude: ["password"] },
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -139,7 +126,7 @@ exports.updateMentorshipStatus = async (req, res) => {
       return res.status(400).json({ error: "Invalid status update" });
     }
 
-    const request = await MentorshipRequest.findOne({
+    const request = await Mentorship.findOne({
       where: {
         id: requestId,
         mentorId,
@@ -180,7 +167,7 @@ exports.getRequestDetails = async (req, res) => {
     const { requestId } = req.params;
     const userId = req.user.id; // Authenticated user
 
-    const request = await MentorshipRequest.findOne({
+    const request = await Mentorship.findOne({
       where: {
         id: requestId,
         [Op.or]: [{ mentorId: userId }, { menteeId: userId }],
@@ -209,4 +196,3 @@ exports.getRequestDetails = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch request details" });
   }
 };
-

@@ -1,78 +1,120 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MenteeRequestCard } from "../../../components/card/MenteeRequestCard";
-
-const menteeRequests = {
-  pending: [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      role: "Tech Startup Founder",
-      industry: "Technology",
-      badgeColor: "blue",
-      requestDate: "April 10, 2025",
-      package: "Growth Package",
-      packageDetails: "4 sessions per month • 60 minutes each",
-      message:
-        "I'm looking for guidance on scaling my SaaS startup and securing Series A funding...",
-      goals: [
-        "Refine pitch deck for Series A funding",
-        "Develop scalable growth strategy",
-        "Improve team structure and hiring plan",
-      ],
-      availability: "Weekdays after 3pm PT • Timezone: Pacific Time (PT)",
-    },
-    // Add other pending mentees...
-  ],
-  accepted: [
-    {
-      id: 4,
-      name: "Emily Rodriguez",
-      role: "EdTech Founder",
-      industry: "Education",
-      badgeColor: "amber",
-      requestDate: "April 2, 2025",
-      package: "Starter Package",
-      packageDetails: "2 sessions per month • 45 minutes each",
-      nextSession: "April 16, 2025 • 2:00 PM - 3:00 PM (PT)",
-      goals: [
-        "Develop content strategy for educational platform",
-        "Create partnerships with educational institutions",
-        "Develop sustainable business model for EdTech startup",
-      ],
-      availability: "Weekdays after 4pm ET • Timezone: Eastern Time (ET)",
-    },
-    // Add other accepted mentees...
-  ],
-  declined: [
-    {
-      id: 6,
-      name: "Michael Brown",
-      role: "Renewable Energy Startup",
-      industry: "Energy",
-      badgeColor: "indigo",
-      requestDate: "March 25, 2025",
-      package: "Growth Package",
-      packageDetails: "4 sessions per month • 60 minutes each",
-      declineReason:
-        "I appreciate your interest in mentorship, but I don't have enough expertise in the renewable energy sector...",
-      recommendations: [
-        "Jennifer Williams (Energy Expert)",
-        "Robert Chen (CleanTech Advisor)",
-      ],
-    },
-  ],
-};
+import api from "../../../utils/api";
+import { useUser } from "../../../context/UserContext";
 
 export default function MenteeRequestsPage() {
   const [activeTab, setActiveTab] = useState("pending");
+  const [menteeRequests, setMenteeRequests] = useState({
+    pending: [],
+    accepted: [],
+    declined: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const user = useUser();
+
+  const getRequestData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/mentorships/", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      // Transform the API data into our desired format
+      const transformedData = {
+        pending: [],
+        accepted: [],
+        declined: [],
+      };
+
+      response.data.forEach((request) => {
+        const mentee = request.mentee;
+        const industries = JSON.parse(mentee.industries || "[]").join(", ");
+
+        const baseData = {
+          id: request.id,
+          name: `${mentee.firstName} ${mentee.lastName}`,
+          role: mentee.bio || "Entrepreneur",
+          industry: industries || "Not specified",
+          badgeColor: "blue", // Default color
+          requestDate: new Date(request.createdAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          package: request.packageType
+            ? request.packageType.charAt(0).toUpperCase() +
+              request.packageType.slice(1) +
+              " Package"
+            : "Custom Package",
+          goals: request.goals
+            ? [request.goals]
+            : ["No specific goals provided"],
+          background: request.background || "No background provided",
+          expectations: request.expectations || "No expectations provided",
+          availability: request.availability
+            ? `${request.availability} • Timezone: ${
+                request.timezone || "Not specified"
+              }`
+            : "Not specified",
+          menteeData: mentee, // Include full mentee data if needed
+        };
+
+        if (request.status === "pending") {
+          transformedData.pending.push({
+            ...baseData,
+            packageDetails: "Details not specified",
+            message: request.expectations || "Looking for mentorship",
+          });
+        } else if (request.status === "accepted") {
+          transformedData.accepted.push({
+            ...baseData,
+            nextSession: request.nextMeetingDate
+              ? new Date(request.nextMeetingDate).toLocaleString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "No session scheduled",
+          });
+        } else if (request.status === "declined") {
+          transformedData.declined.push({
+            ...baseData,
+            declineReason: "Not specified",
+            recommendations: [],
+          });
+        }
+      });
+
+      setMenteeRequests(transformedData);
+    } catch (error) {
+      console.log("Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getRequestData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link
-          href="/mentor"
+          to="/mentor"
           className="inline-flex items-center justify-center rounded-md p-2 hover:bg-gray-100"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -107,6 +149,7 @@ export default function MenteeRequestsPage() {
                 key={mentee.id}
                 mentee={mentee}
                 status="pending"
+                onUpdate={getRequestData} // Pass refresh function
               />
             ))}
 
@@ -116,6 +159,7 @@ export default function MenteeRequestsPage() {
                 key={mentee.id}
                 mentee={mentee}
                 status="accepted"
+                onUpdate={getRequestData} // Pass refresh function
               />
             ))}
 
@@ -125,6 +169,7 @@ export default function MenteeRequestsPage() {
                 key={mentee.id}
                 mentee={mentee}
                 status="declined"
+                onUpdate={getRequestData} // Pass refresh function
               />
             ))}
         </div>
@@ -147,12 +192,25 @@ export default function MenteeRequestsPage() {
                 challenges to determine if you're the right fit.
               </p>
             </div>
-            {/* Add other tip cards... */}
+            <div className="border rounded-lg p-4">
+              <h3 className="font-medium mb-2">Set Clear Expectations</h3>
+              <p className="text-sm text-gray-500">
+                Clearly communicate what you can and cannot help with to avoid
+                misunderstandings.
+              </p>
+            </div>
+            <div className="border rounded-lg p-4">
+              <h3 className="font-medium mb-2">Be Responsive</h3>
+              <p className="text-sm text-gray-500">
+                Try to respond to requests within 48 hours, even if it's just to
+                acknowledge receipt.
+              </p>
+            </div>
           </div>
         </div>
         <div className="border-t p-6">
           <Link
-            href="/mentor/resources/mentorship-guide"
+            to="/mentor/resources/mentorship-guide"
             className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 w-full"
           >
             View Mentorship Guide

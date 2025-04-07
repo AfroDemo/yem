@@ -19,7 +19,6 @@ export default function RequestMentorshipPage() {
     timezone: "",
   });
   const user = useUser();
-  const navigate = useNavigate();
 
   const mentorshipPackages = [
     {

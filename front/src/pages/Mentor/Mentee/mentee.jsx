@@ -5,17 +5,13 @@ import CardTitle from "../../../components/card/cardTitle";
 import CardDescription from "../../../components/card/cardDescription";
 import CardContent from "../../../components/card/cardContent";
 import Badge from "../../../components/badge";
-import Tabs from "../../../components/tab/tabs";
-import TabsList from "../../../components/tab/TabsList";
-import TabsTrigger from "../../../components/tab/TabsTrigger";
-import TabsContent from "../../../components/tab/TabsContent";
 import { MenteeCard } from "../../../components/card/MenteeCard";
 import Avatar from "../../../components/avatar/Avatar";
 import AvatarImage from "../../../components/avatar/AvatarImage";
 import AvatarFallback from "../../../components/avatar/AvatarFallback";
 import CardFooter from "../../../components/card/cardFooter";
 import { Bell, Clock, Star, Users } from "lucide-react";
-import { useState } from "react";
+import {useState } from "react";
 
 const menteesData = {
   active: [
@@ -141,6 +137,7 @@ const achievementsData = [
 
 export default function MenteesPage() {
   const [activeTab, setActiveTab] = useState("active");
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -151,7 +148,12 @@ export default function MenteesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={()=>{window.location.href="/mentor/mentees/requests"}} variant="outline">
+          <Button
+            onClick={() => {
+              window.location.href = "/mentor/mentees/requests";
+            }}
+            variant="outline"
+          >
             <Bell className="mr-2 h-4 w-4" />
             View Mentee Requests
           </Button>
