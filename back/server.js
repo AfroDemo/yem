@@ -8,10 +8,7 @@ const fs = require("fs");
 // Route imports
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
-const mentorProfileRoutes = require("./routes/mentorProfiles");
-const menteeProfileRoutes = require("./routes/menteeProfiles");
 const mentorshipRoutes = require("./routes/mentorships");
-const mentorshipRequestRoutes = require("./routes/mentorshipRequest");
 const resourceRoutes = require("./routes/resources");
 const eventRoutes = require("./routes/events");
 const eventRegistrationRoutes = require("./routes/eventRegistrations");
@@ -55,8 +52,6 @@ sequelize
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/mentors", mentorProfileRoutes);
-app.use("/api/mentees", menteeProfileRoutes);
 app.use("/api/mentorships", mentorshipRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/events", eventRoutes);
@@ -64,7 +59,6 @@ app.use("/api/event-registrations", eventRegistrationRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/success-stories", successStoryRoutes);
-app.use("/api/req", mentorshipRequestRoutes);
 
 // Basic route
 app.get("/", (req, res) => {

@@ -1,6 +1,5 @@
 const db = require("../models");
 const User = db.User;
-const MentorProfile = db.MentorProfile;
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
@@ -317,11 +316,6 @@ exports.deleteUser = async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
-    }
-
-    // If user is a mentor, delete their mentor profile
-    if (user.role === "mentor") {
-      await MentorProfile.destroy({ where: { userId: user.id } });
     }
 
     // Delete user

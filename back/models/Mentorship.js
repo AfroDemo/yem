@@ -7,24 +7,57 @@ module.exports = (sequelize) => {
     "Mentorship",
     {
       mentorId: {
-        type: DataTypes.INTEGER, // Foreign key referencing the User model (mentor)
+        type: DataTypes.INTEGER,
         references: {
-          model: "users", // Assuming 'users' table is used for the User model
+          model: "users",
           key: "id",
         },
         allowNull: false,
       },
       menteeId: {
-        type: DataTypes.INTEGER, // Foreign key referencing the User model (mentee)
+        type: DataTypes.INTEGER,
         references: {
-          model: "users", // Assuming 'users' table is used for the User model
+          model: "users",
           key: "id",
         },
         allowNull: false,
       },
+      packageType: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          isIn: [["starter", "growth"]],
+        },
+      },
       status: {
-        type: DataTypes.ENUM("pending", "active", "completed", "rejected"),
+        type: DataTypes.ENUM("pending", "accepted", "rejected", "completed"),
         defaultValue: "pending",
+        allowNull: false,
+      },
+      goals: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      progress: {
+        type: DataTypes.JSON, // Storing progress as a JSON array
+      },
+      background: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      expectations: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      availability: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          isIn: [["weekdays", "evenings", "weekends", "flexible"]],
+        },
+      },
+      timezone: {
+        type: DataTypes.STRING,
         allowNull: false,
       },
       startDate: {
@@ -33,12 +66,6 @@ module.exports = (sequelize) => {
       endDate: {
         type: DataTypes.DATE,
       },
-      goals: {
-        type: DataTypes.JSON, // Storing goals as a JSON array
-      },
-      progress: {
-        type: DataTypes.JSON, // Storing progress as a JSON array
-      },
       meetingFrequency: {
         type: DataTypes.STRING,
       },
@@ -46,7 +73,10 @@ module.exports = (sequelize) => {
         type: DataTypes.DATE,
       },
       feedback: {
-        type: DataTypes.JSON, // Storing feedback as a JSON object
+        type: DataTypes.JSON,
+      },
+      notes: {
+        type: DataTypes.TEXT,
       },
     },
     {

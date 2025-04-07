@@ -1,92 +1,94 @@
 "use strict";
 
+const { DataTypes } = require('sequelize');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("users", {
       id: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
       email: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: false,
         unique: true,
       },
       password: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       firstName: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       lastName: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       role: {
-        type: Sequelize.ENUM("mentee", "mentor", "admin"),
+        type: DataTypes.ENUM("mentee", "mentor", "admin"),
         allowNull: false,
       },
       profileImage: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
       },
       bio: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
       },
       skills: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
       },
       interests: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
       },
       location: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
       },
       socialLinks: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
       },
       isVerified: {
-        type: Sequelize.BOOLEAN,
+        type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
       resetPasswordToken: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: true,
       },
       resetPasswordExpires: {
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
         allowNull: true,
       },
       industries: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
         allowNull:true
       },
       businessStage:{
-        type: Sequelize.STRING,
+        type: DataTypes.JSON,
         allowNull:true
       },
       preferredBusinessStages: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
         allowNull: true
       },
       experienceYears: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: true
       },
       availability: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: true
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
       },
     });
   },

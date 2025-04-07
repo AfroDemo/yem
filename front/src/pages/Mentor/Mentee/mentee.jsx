@@ -14,7 +14,7 @@ import Avatar from "../../../components/avatar/Avatar";
 import AvatarImage from "../../../components/avatar/AvatarImage";
 import AvatarFallback from "../../../components/avatar/AvatarFallback";
 import CardFooter from "../../../components/card/cardFooter";
-import { Bell, Clock, Search, Star, Users } from "lucide-react";
+import { Bell, Clock, Star, Users } from "lucide-react";
 import { useState } from "react";
 
 const menteesData = {

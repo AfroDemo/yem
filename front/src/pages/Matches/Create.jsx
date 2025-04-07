@@ -81,7 +81,7 @@ export default function RequestMentorshipPage() {
 
     try {
       console.log(submissionData)
-      await api.post("/req", submissionData, {
+      await api.post("/mentorships", submissionData, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       toast.success("Mentorship Request sent!");

@@ -23,7 +23,6 @@ import Footer from "./components/layout/Footer";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import MessagesPage from "./pages/Message/Messages";
 import ResourcesPage from "./pages/Dashboard/Resources/Resource";
-import SettingsPage from "./pages/Settings/Setting";
 import NewMessagePage from "./pages/Message/Create";
 import MentorLayout from "./components/layout/MentorLayout";
 import MentorResources from "./pages/Mentor/Resources";
@@ -37,6 +36,7 @@ import "react-toastify/dist/ReactToastify.css";
 import MenteesPage from "./pages/Mentor/Mentee/mentee";
 import MenteeRequestsPage from "./pages/Mentor/Mentee/Requests";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import SettingsPage from "./pages/Setting";
 
 // Loading component
 const LoadingScreen = () => (

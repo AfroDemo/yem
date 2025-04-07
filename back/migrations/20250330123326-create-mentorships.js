@@ -1,11 +1,19 @@
 "use strict";
 
+const { DataTypes } = require('sequelize');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("mentorships", {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER,
+      },
       mentorId: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.INTEGER,
         references: {
           model: "users",
           key: "id",
@@ -13,43 +21,72 @@ module.exports = {
         allowNull: false,
       },
       menteeId: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.INTEGER,
         references: {
           model: "users",
           key: "id",
         },
         allowNull: false,
       },
+      packageType: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       status: {
-        type: Sequelize.ENUM("pending", "active", "completed", "rejected"),
+        type: DataTypes.ENUM("pending", "accepted", "rejected", "completed"),
         defaultValue: "pending",
         allowNull: false,
       },
-      startDate: {
-        type: Sequelize.DATE,
-      },
-      endDate: {
-        type: Sequelize.DATE,
-      },
       goals: {
-        type: Sequelize.JSON, // Store array of goals
+        type: DataTypes.TEXT,
+        allowNull: false,
       },
       progress: {
-        type: Sequelize.JSON, // Store array of challenges
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      background: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      expectations: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      availability: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      timezone: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      startDate: {
+        type: DataTypes.DATE,
+      },
+      endDate: {
+        type: DataTypes.DATE,
       },
       meetingFrequency: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
       },
       nextMeetingDate: {
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
+      },
+      feedback: {
+        type: DataTypes.JSON,
+      },
+      notes: {
+        type: DataTypes.TEXT,
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
       },
     });
   },

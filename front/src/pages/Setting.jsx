@@ -1,24 +1,29 @@
 import { useRef, useState } from "react";
-import Card from "../../components/card/card";
-import CardTitle from "../../components/card/cardTitle";
-import CardDescription from "../../components/card/cardDescription";
-import Button from "../../components/button";
-import CardHeader from "../../components/card/cardHeader";
-import CardContent from "../../components/card/cardContent";
-import CardFooter from "../../components/card/cardFooter";
-import TabsList from "../../components/tab/TabsList";
-import TabsTrigger from "../../components/tab/TabsTrigger";
-import TabsContent from "../../components/tab/TabsContent";
-import Label from "../../components/Label";
-import Avatar from "../../components/avatar/Avatar";
-import AvatarImage from "../../components/avatar/AvatarImage";
-import AvatarFallback from "../../components/avatar/AvatarFallback";
-import Input from "../../components/Input";
-import Textarea from "../../components/Textarea";
-import { useUser } from "../../context/UserContext";
-import { updateUser, uploadProfileImage } from "../../services/userService";
+import Card from "../components/card/card";
+import CardTitle from "../components/card/cardTitle";
+import CardDescription from "../components/card/cardDescription";
+import Button from "../components/button";
+import CardHeader from "../components/card/cardHeader";
+import CardContent from "../components/card/cardContent";
+import CardFooter from "../components/card/cardFooter";
+import TabsList from "../components/tab/TabsList";
+import TabsTrigger from "../components/tab/TabsTrigger";
+import TabsContent from "../components/tab/TabsContent";
+import Label from "../components/Label";
+import Avatar from "../components/avatar/Avatar";
+import AvatarImage from "../components/avatar/AvatarImage";
+import AvatarFallback from "../components/avatar/AvatarFallback";
+import Input from "../components/Input";
+import Textarea from "../components/Textarea";
+import { useUser } from "../context/UserContext";
+import { updateUser, uploadProfileImage } from "../services/userService";
 import { Loader2 } from "lucide-react";
-import { addToCsv, parseCsv, removeFromCsv } from "../../utils/csvHelpers";
+import {
+  getArrayFromJsonString,
+  addToJsonArray,
+  removeFromJsonArray,
+  stringifyArray,
+} from "../utils/csvHelpers";
 import { toast } from "react-toastify";
 
 export default function SettingsPage() {
@@ -27,17 +32,14 @@ export default function SettingsPage() {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [searchSkill, setSearchSkill] = useState("");
-  const [selectedBusinessStages, setSelectedBusinessStages] = useState(
-    user.role === "mentor"
-      ? (user.preferredBusinessStages || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s)
-      : (user.businessStage || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s)
-  );
+  const [selectedBusinessStages, setSelectedBusinessStages] = useState(() => {
+    const stagesJson =
+      user.role === "mentor"
+        ? user.preferredBusinessStages
+        : user.businessStage;
+
+    return getArrayFromJsonString(stagesJson) || [];
+  });
   const [formData, setFormData] = useState({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
@@ -159,7 +161,7 @@ export default function SettingsPage() {
   const handleAddToField = (fieldName, valueToAdd) => {
     setFormData((prev) => ({
       ...prev,
-      [fieldName]: addToCsv(prev[fieldName], valueToAdd),
+      [fieldName]: addToJsonArray(prev[fieldName], valueToAdd),
     }));
     setSearchSkill("");
   };
@@ -167,7 +169,7 @@ export default function SettingsPage() {
   const handleRemoveFromField = (fieldName, valueToRemove) => {
     setFormData((prev) => ({
       ...prev,
-      [fieldName]: removeFromCsv(prev[fieldName], valueToRemove),
+      [fieldName]: removeFromJsonArray(prev[fieldName], valueToRemove),
     }));
   };
 
@@ -189,13 +191,19 @@ export default function SettingsPage() {
     const trimmedStage = stageToAdd.trim();
 
     if (user.role === "mentee") {
+      // For mentee, just one selection allowed
       setSelectedBusinessStages([trimmedStage]);
     } else {
+      // For mentor, up to 4 selections allowed
       if (selectedBusinessStages.length >= 4) {
         toast.error("You can select up to 4 business stages");
         return;
       }
-      if (!selectedBusinessStages.includes(trimmedStage)) {
+      if (
+        !selectedBusinessStages.some(
+          (stage) => stage.toLowerCase() === trimmedStage.toLowerCase()
+        )
+      ) {
         setSelectedBusinessStages([...selectedBusinessStages, trimmedStage]);
       }
     }
@@ -203,7 +211,9 @@ export default function SettingsPage() {
 
   const handleRemoveBusinessStage = (stageToRemove) => {
     setSelectedBusinessStages(
-      selectedBusinessStages.filter((stage) => stage !== stageToRemove)
+      selectedBusinessStages.filter(
+        (stage) => stage.toLowerCase() !== stageToRemove.toLowerCase()
+      )
     );
   };
 
@@ -214,15 +224,6 @@ export default function SettingsPage() {
       return;
     }
 
-    // Clean comma-separated fields
-    const cleanCSV = (str) =>
-      str
-        ? str
-            .split(",")
-            .map((s) => s.trim())
-            .join(", ")
-        : "";
-
     const updateData = {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
@@ -231,27 +232,26 @@ export default function SettingsPage() {
       location: formData.location.trim(),
       availability: formData.availability.trim(),
       experienceYears: formData.experienceYears.trim(),
-      skills: parseCsv(formData.skills),
-      interests: parseCsv(formData.interests),
-      industries: parseCsv(formData.industries),
+
+      // No need to modify these since they're already in the right format
+      skills: formData.skills,
+      interests: formData.interests,
+      industries: formData.industries,
+
       ...(user.role === "mentor"
         ? {
-            preferredBusinessStages: parseCsv(
-              selectedBusinessStages.join(", ")
-            ),
-            businessStage: "", // Clear mentee field if user is mentor
+            preferredBusinessStages: stringifyArray(selectedBusinessStages),
+            businessStage: null,
           }
         : {
-            businessStage: parseCsv(selectedBusinessStages.join(", ")),
-            preferredBusinessStages: "", // Clear mentor field if user is mentee
+            businessStage: stringifyArray(selectedBusinessStages),
+            preferredBusinessStages: null,
           }),
     };
-    console.log(updateData);
+
     try {
       await updateUser(user.id, updateData);
-      // console.log(updateData);
       toast.success("Profile updated successfully");
-      console.log("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error(error.message || "Failed to update profile");
@@ -293,6 +293,8 @@ export default function SettingsPage() {
       }
     }
   };
+
+  console.log(user);
 
   return (
     <div className="space-y-6">
@@ -572,21 +574,24 @@ export default function SettingsPage() {
                   <div className="border rounded-md p-4">
                     {/* Selected industries */}
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {parseCsv(formData.industries).length > 0 ? (
-                        parseCsv(formData.industries).map((industry, index) => (
-                          <div
-                            key={index}
-                            className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
-                          >
-                            {industry}
-                            <button
-                              onClick={() => handleRemoveIndustry(industry)}
-                              className="ml-2 text-gray-500 hover:text-gray-900"
+                      {getArrayFromJsonString(formData.industries).length >
+                      0 ? (
+                        getArrayFromJsonString(formData.industries).map(
+                          (industry, index) => (
+                            <div
+                              key={index}
+                              className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
                             >
-                              ×
-                            </button>
-                          </div>
-                        ))
+                              {industry}
+                              <button
+                                onClick={() => handleRemoveIndustry(industry)}
+                                className="ml-2 text-gray-500 hover:text-gray-900"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )
+                        )
                       ) : (
                         <p className="text-sm text-gray-500">
                           No industries added yet
@@ -611,12 +616,12 @@ export default function SettingsPage() {
                             .includes(searchSkill.toLowerCase())
                         )
                         .map((industry, index) => {
-                          const currentIndustries = parseCsv(
+                          const industriesArray = getArrayFromJsonString(
                             formData.industries
                           );
-                          const isAlreadyAdded = currentIndustries
-                            .map((s) => s.toLowerCase())
-                            .includes(industry.toLowerCase());
+                          const isAlreadyAdded = industriesArray.some(
+                            (s) => s.toLowerCase() === industry.toLowerCase()
+                          );
 
                           return (
                             <div
@@ -645,12 +650,10 @@ export default function SettingsPage() {
                     <div className="border rounded-md p-4">
                       {/* Selected skills */}
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {formData.interests ? (
-                          formData.interests
-                            .split(",")
-                            .map((i) => i.trim())
-                            .filter((i) => i)
-                            .map((interest, index) => (
+                        {getArrayFromJsonString(formData.interests).length >
+                        0 ? (
+                          getArrayFromJsonString(formData.interests).map(
+                            (interest, index) => (
                               <div
                                 key={index}
                                 className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
@@ -663,7 +666,8 @@ export default function SettingsPage() {
                                   ×
                                 </button>
                               </div>
-                            ))
+                            )
+                          )
                         ) : (
                           <p className="text-sm text-gray-500">
                             No interests added yet
@@ -688,13 +692,12 @@ export default function SettingsPage() {
                               .includes(searchSkill.toLowerCase())
                           )
                           .map((interest, index) => {
-                            const isAlreadyAdded =
-                              formData.interests &&
+                            const interestsArray = getArrayFromJsonString(
                               formData.interests
-                                .split(",")
-                                .map((s) => s.trim().toLowerCase())
-                                .includes(interest.toLowerCase());
-
+                            );
+                            const isAlreadyAdded = interestsArray.some(
+                              (s) => s.toLowerCase() === interest.toLowerCase()
+                            );
                             return (
                               <div
                                 key={index}
@@ -723,12 +726,9 @@ export default function SettingsPage() {
                     <div className="border rounded-md p-4">
                       {/* Selected skills */}
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {formData.skills ? (
-                          formData.skills
-                            .split(",")
-                            .map((s) => s.trim())
-                            .filter((s) => s)
-                            .map((skill, index) => (
+                        {getArrayFromJsonString(formData.skills).length > 0 ? (
+                          getArrayFromJsonString(formData.skills).map(
+                            (skill, index) => (
                               <div
                                 key={index}
                                 className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm flex items-center"
@@ -741,7 +741,8 @@ export default function SettingsPage() {
                                   ×
                                 </button>
                               </div>
-                            ))
+                            )
+                          )
                         ) : (
                           <p className="text-sm text-gray-500">
                             No skills added yet
@@ -766,12 +767,12 @@ export default function SettingsPage() {
                               .includes(searchSkill.toLowerCase())
                           )
                           .map((skill, index) => {
-                            const isAlreadyAdded =
-                              formData.skills &&
+                            const skillsArray = getArrayFromJsonString(
                               formData.skills
-                                .split(",")
-                                .map((s) => s.trim().toLowerCase())
-                                .includes(skill.toLowerCase());
+                            );
+                            const isAlreadyAdded = skillsArray.some(
+                              (s) => s.toLowerCase() === skill.toLowerCase()
+                            );
 
                             return (
                               <div

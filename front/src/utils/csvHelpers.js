@@ -1,32 +1,46 @@
-export const csvToArray = (str) =>
-  str
-    ? str
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item) => item)
-    : [];
+export const parseJsonString = (jsonString) => {
+  if (!jsonString) return null;
 
-export const arrayToCsv = (arr) => arr.join(", ");
-
-export const addToCsv = (currentCsv, newItem) => {
-  const array = csvToArray(currentCsv);
-  const trimmedItem = newItem.trim();
-  if (!array.includes(trimmedItem)) {
-    return arrayToCsv([...array, trimmedItem]);
+  try {
+    const parsed = JSON.parse(jsonString);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    console.error("Error parsing JSON string:", e);
+    return null;
   }
-  return currentCsv;
 };
 
-export const removeFromCsv = (currentCsv, itemToRemove) => {
-  const array = csvToArray(currentCsv);
-  return arrayToCsv(array.filter((item) => item !== itemToRemove));
+export const stringifyArray = (array) => {
+  if (!array || !Array.isArray(array) || array.length === 0) return null;
+  return JSON.stringify(array);
 };
 
-export const parseCsv = (str) =>
-  str
-    ? str
-        .replace(/["\\]/g, "") // removes extra quotes and slashes
-        .split(",")
-        .map((i) => i.trim())
-        .filter((i) => i)
-    : [];
+export const addToJsonArray = (jsonString, newItem) => {
+  if (!newItem || typeof newItem !== "string") return jsonString || "[]";
+
+  const array = parseJsonString(jsonString) || [];
+  const trimmedItem = newItem.trim();
+
+  if (trimmedItem === "") return jsonString || "[]";
+
+  if (!array.some((item) => item.toLowerCase() === trimmedItem.toLowerCase())) {
+    return JSON.stringify([...array, trimmedItem]);
+  }
+
+  return jsonString || "[]";
+};
+
+export const removeFromJsonArray = (jsonString, itemToRemove) => {
+  if (!jsonString || !itemToRemove) return jsonString || "[]";
+
+  const array = parseJsonString(jsonString) || [];
+  const filteredArray = array.filter(
+    (item) => item.toLowerCase() !== itemToRemove.toLowerCase()
+  );
+
+  return JSON.stringify(filteredArray);
+};
+
+export const getArrayFromJsonString = (jsonString) => {
+  return parseJsonString(jsonString) || [];
+};

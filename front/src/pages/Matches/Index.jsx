@@ -11,7 +11,7 @@ import Badge from "../../components/badge";
 import api from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 import { useEffect, useState } from "react";
-import { parseCsv } from "../../utils/csvHelpers";
+import { getArrayFromJsonString } from "../../utils/csvHelpers";
 import { MentorCard, MentorCardAll } from "../../components/card/MentorCard";
 
 // Expertise data
@@ -123,11 +123,11 @@ export default function MatchPage() {
   };
 
   const getSameIndustryMentors = (user, mentors) => {
-    const userIndustries = parseCsv(user.industries);
+    const userIndustries = getArrayFromJsonString(user.industries);
 
     const sameIndustryMentors = mentors
       .map((mentor) => {
-        const mentorIndustries = parseCsv(mentor.industry);
+        const mentorIndustries = getArrayFromJsonString(mentor.industry);
         const shared = mentorIndustries.filter((industry) =>
           userIndustries.includes(industry)
         );
@@ -280,7 +280,7 @@ export default function MatchPage() {
                 <div className="space-y-1 text-sm">
                   <p className="flex justify-between">
                     <span className="text-gray-500">Industry:</span>
-                    <span>{parseCsv(user.industries) || "Not specified"}</span>
+                    <span>{getArrayFromJsonString(user.industries) || "Not specified"}</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-gray-500">Business Stage:</span>
@@ -288,7 +288,7 @@ export default function MatchPage() {
                   </p>
                   <p className="flex justify-between">
                     <span className="text-gray-500">Goals:</span>
-                    <span>{parseCsv(user.interests) || "Not specified"}</span>
+                    <span>{getArrayFromJsonString(user.interests) || "Not specified"}</span>
                   </p>
                 </div>
                 <Button

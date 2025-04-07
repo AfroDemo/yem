@@ -46,9 +46,6 @@ module.exports = (sequelize) => {
       location: {
         type: DataTypes.STRING,
       },
-      socialLinks: {
-        type: DataTypes.JSON,
-      },
       isVerified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
@@ -62,7 +59,7 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       industries: { type: DataTypes.JSON },
-      businessStage: { type: DataTypes.STRING },
+      businessStage: { type: DataTypes.JSON },
       preferredBusinessStages: { type: DataTypes.JSON },
       experienceYears: { type: DataTypes.STRING },
       availability: { type: DataTypes.STRING },
@@ -74,14 +71,6 @@ module.exports = (sequelize) => {
   );
 
   User.associate = function (models) {
-    User.hasOne(models.MenteeProfile, {
-      foreignKey: "userId",
-      as: "menteeProfile",
-    });
-    User.hasOne(models.MentorProfile, {
-      foreignKey: "userId",
-      as: "mentorProfile",
-    });
     User.hasMany(models.Event, { foreignKey: "hostId", as: "hostedEvents" });
     User.hasMany(models.EventRegistration, {
       foreignKey: "userId",
@@ -109,7 +98,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.toString=()=>'User'
+  User.toString = () => "User";
 
   return User;
 };
