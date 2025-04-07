@@ -10,9 +10,11 @@ import {
   Send,
   Smile,
 } from "lucide-react";
+import { useUser } from "../../context/UserContext";
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const user = useUser();
 
   const conversations = [
     {
@@ -113,7 +115,11 @@ export default function MessagesPage() {
         <h1 className="text-2xl font-bold text-gray-800">Messages</h1>
         <a
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          href="/dashboard/messages/new"
+          href={
+            user.role == "mentee"
+              ? "/dashboard/messages/new"
+              : "/mentor/messages/new"
+          }
         >
           <Edit className="h-4 w-4" />
           <span>New Message</span>
@@ -350,7 +356,11 @@ export default function MessagesPage() {
               </p>
               <a
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                href="/dashboard/messages/new"
+                href={
+                  user.role == "mentee"
+                    ? "/dashboard/messages/new"
+                    : "/mentor/messages/new"
+                }
               >
                 <Edit className="h-4 w-4" />
                 <span>New Message</span>
