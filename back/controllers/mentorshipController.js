@@ -118,17 +118,17 @@ exports.getMenteeRequests = async (req, res) => {
 // Update request status (accept/reject)
 exports.updateMentorshipStatus = async (req, res) => {
   try {
-    const { requestId } = req.params;
+    const { id } = req.params;
     const { status } = req.body;
     const mentorId = req.user.id; // Authenticated user must be the mentor
 
-    if (!["accepted", "rejected"].includes(status)) {
+    if (!["accepted", "rejected", "completed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status update" });
     }
 
     const request = await Mentorship.findOne({
       where: {
-        id: requestId,
+        id,
         mentorId,
       },
     });

@@ -4,15 +4,17 @@ import { Link } from "react-router-dom";
 import { MenteeRequestCard } from "../../../components/card/MenteeRequestCard";
 import api from "../../../utils/api";
 import { useUser } from "../../../context/UserContext";
+import { toast } from "react-toastify";
 
 export default function MenteeRequestsPage() {
   const [activeTab, setActiveTab] = useState("pending");
   const [menteeRequests, setMenteeRequests] = useState({
     pending: [],
     accepted: [],
-    declined: [],
+    rejected: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
   const user = useUser();
 
   const getRequestData = async () => {
@@ -26,7 +28,7 @@ export default function MenteeRequestsPage() {
       const transformedData = {
         pending: [],
         accepted: [],
-        declined: [],
+        rejected: [],
       };
 
       response.data.forEach((request) => {
@@ -81,8 +83,8 @@ export default function MenteeRequestsPage() {
                 })
               : "No session scheduled",
           });
-        } else if (request.status === "declined") {
-          transformedData.declined.push({
+        } else if (request.status === "rejected") {
+          transformedData.rejected.push({
             ...baseData,
             declineReason: "Not specified",
             recommendations: [],
@@ -95,6 +97,34 @@ export default function MenteeRequestsPage() {
       console.log("Error:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (mentorshipId, newStatus) => {
+    setIsUpdating(true);
+    console.log(newStatus)
+    try {
+      await api.put(
+        `/mentorships/${mentorshipId}/status`,
+        { status:newStatus },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      toast.success(`Request ${newStatus} successfully`);
+
+      // Refresh the data
+      await getRequestData();
+
+      // If the current tab doesn't have any items left, switch to pending
+      if (menteeRequests[activeTab].length === 1) {
+        setActiveTab("pending");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error(`Failed to ${newStatus} request`);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -125,7 +155,7 @@ export default function MenteeRequestsPage() {
       {/* Tabs */}
       <div className="tabs-container">
         <div className="grid w-full grid-cols-3 max-w-md bg-gray-100 p-1 rounded-md">
-          {["pending", "accepted", "declined"].map((tab) => (
+          {["pending", "accepted", "rejected"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -149,7 +179,9 @@ export default function MenteeRequestsPage() {
                 key={mentee.id}
                 mentee={mentee}
                 status="pending"
-                onUpdate={getRequestData} // Pass refresh function
+                onAccept={() => handleStatusUpdate(mentee.id, "accepted")}
+                onDecline={() => handleStatusUpdate(mentee.id, "rejected")}
+                isUpdating={isUpdating}
               />
             ))}
 
@@ -158,18 +190,22 @@ export default function MenteeRequestsPage() {
               <MenteeRequestCard
                 key={mentee.id}
                 mentee={mentee}
-                status="accepted"
-                onUpdate={getRequestData} // Pass refresh function
+                status="pending"
+                onAccept={() => handleStatusUpdate(mentee.id, "accepted")}
+                onDecline={() => handleStatusUpdate(mentee.id, "rejected")}
+                isUpdating={isUpdating}
               />
             ))}
 
-          {activeTab === "declined" &&
-            menteeRequests.declined.map((mentee) => (
+          {activeTab === "rejected" &&
+            menteeRequests.rejected.map((mentee) => (
               <MenteeRequestCard
                 key={mentee.id}
                 mentee={mentee}
-                status="declined"
-                onUpdate={getRequestData} // Pass refresh function
+                status="pending"
+                onAccept={() => handleStatusUpdate(mentee.id, "accepted")}
+                onDecline={() => handleStatusUpdate(mentee.id, "rejected")}
+                isUpdating={isUpdating}
               />
             ))}
         </div>
