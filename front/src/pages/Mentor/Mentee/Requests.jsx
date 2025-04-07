@@ -24,6 +24,7 @@ export default function MenteeRequestsPage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
+      console.log(response.data);
       // Transform the API data into our desired format
       const transformedData = {
         pending: [],
@@ -34,12 +35,16 @@ export default function MenteeRequestsPage() {
       response.data.forEach((request) => {
         const mentee = request.mentee;
         const industries = JSON.parse(mentee.industries || "[]").join(", ");
+        const interests = JSON.parse(mentee.interests || "[]").join(", ");
+        const businessStage = JSON.parse(mentee.businessStage || "[]").join(", ");
 
         const baseData = {
           id: request.id,
           name: `${mentee.firstName} ${mentee.lastName}`,
-          role: mentee.bio || "Entrepreneur",
+          status:request.status,
+          role: businessStage || "Not specified",
           industry: industries || "Not specified",
+          interest: interests || "Not specified",
           badgeColor: "blue", // Default color
           requestDate: new Date(request.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
@@ -178,7 +183,7 @@ export default function MenteeRequestsPage() {
               <MenteeRequestCard
                 key={mentee.id}
                 mentee={mentee}
-                status="pending"
+                status={mentee.status}
                 onAccept={() => handleStatusUpdate(mentee.id, "accepted")}
                 onDecline={() => handleStatusUpdate(mentee.id, "rejected")}
                 isUpdating={isUpdating}
@@ -190,7 +195,7 @@ export default function MenteeRequestsPage() {
               <MenteeRequestCard
                 key={mentee.id}
                 mentee={mentee}
-                status="pending"
+                status={mentee.status}
                 onAccept={() => handleStatusUpdate(mentee.id, "accepted")}
                 onDecline={() => handleStatusUpdate(mentee.id, "rejected")}
                 isUpdating={isUpdating}
@@ -202,7 +207,7 @@ export default function MenteeRequestsPage() {
               <MenteeRequestCard
                 key={mentee.id}
                 mentee={mentee}
-                status="pending"
+                status={mentee.status}
                 onAccept={() => handleStatusUpdate(mentee.id, "accepted")}
                 onDecline={() => handleStatusUpdate(mentee.id, "rejected")}
                 isUpdating={isUpdating}

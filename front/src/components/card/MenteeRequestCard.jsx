@@ -140,8 +140,8 @@ export function MenteeRequestCard({
 
             {/* Request Message */}
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Request Message</h4>
-              <p className="text-sm">{mentee.message}</p>
+              <h4 className="font-medium text-sm">Interests</h4>
+              <p className="text-sm">{mentee.interest}</p>
             </div>
 
             {/* Goals */}
