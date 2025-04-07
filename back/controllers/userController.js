@@ -80,41 +80,41 @@ exports.getMatches = async (req, res) => {
     console.log(`Found ${potentialMatches.length} potential role matches`);
 
     // --- Helper Functions ---
-    const stringToArray = (value) => {
+    const parseJsonField = (value) => {
       if (!value) return [];
       if (Array.isArray(value)) return value;
-      if (typeof value === "string") {
+      
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+      } catch (e) {
+        // Fallback to string splitting if JSON parsing fails
         const cleaned = value.replace(/\\"/g, "").replace(/"/g, "").trim();
         return cleaned.includes(",")
           ? cleaned.split(",").map((item) => item.trim())
-          : [cleaned];
+          : (cleaned ? [cleaned] : []);
       }
-      return [];
     };
 
     // Case-insensitive comparison
     const includes = (array, value) => {
-      return array.some((item) => item.toLowerCase() === value.toLowerCase());
+      return array.some((item) => 
+        item && value && item.toLowerCase() === value.toLowerCase()
+      );
     };
 
     // --- Parse User Attributes ---
-    const userIndustries = stringToArray(user.industries);
-    const userInterests =
-      user.role === "mentee" ? stringToArray(user.interests) : [];
-    const userSkills = user.role === "mentor" ? stringToArray(user.skills) : [];
-    const userBusinessStage =
-      user.role === "mentee" ? stringToArray(user.businessStage) : [];
-    const userPreferredBusinessStage =
-      user.role === "mentor" ? stringToArray(user.preferredBusinessStages) : [];
+    const userIndustries = parseJsonField(user.industries);
+    const userInterests = user.role === "mentee" ? parseJsonField(user.interests) : [];
+    const userSkills = user.role === "mentor" ? parseJsonField(user.skills) : [];
+    const userBusinessStage = user.role === "mentee" ? parseJsonField(user.businessStage) : [];
+    const userPreferredBusinessStage = user.role === "mentor" ? parseJsonField(user.preferredBusinessStages) : [];
 
     // Calculate user's maximum possible score (for normalization)
     const maxPossibleScore =
       userIndustries.length * 10 +
-        userBusinessStage.length * 10 +
-        (user.role === "mentee"
-          ? userInterests.length * 10
-          : userSkills.length * 10) || // Reduced to 10pts per skill/interest
-      1; // Avoid division by zero
+      (user.role === "mentee" ? userBusinessStage.length * 10 : userPreferredBusinessStage.length * 10) +
+      (user.role === "mentee" ? userInterests.length * 10 : userSkills.length * 10) || 1; // Avoid division by zero
 
     // --- Score and Normalize Matches ---
     const scoredMatches = potentialMatches
@@ -123,17 +123,11 @@ exports.getMatches = async (req, res) => {
         let matchReasons = [];
 
         // Parse match attributes
-        const matchIndustries = stringToArray(match.industries);
-        const matchSkills =
-          match.role === "mentor" ? stringToArray(match.skills) : [];
-        const matchInterests =
-          match.role === "mentee" ? stringToArray(match.interests) : [];
-        const matchBusinessStage =
-          match.role === "mentee" ? stringToArray(match.businessStage) : [];
-        const matchPreferredBusinessStage =
-          match.role === "mentor"
-            ? stringToArray(match.preferredBusinessStages)
-            : [];
+        const matchIndustries = parseJsonField(match.industries);
+        const matchSkills = match.role === "mentor" ? parseJsonField(match.skills) : [];
+        const matchInterests = match.role === "mentee" ? parseJsonField(match.interests) : [];
+        const matchBusinessStage = match.role === "mentee" ? parseJsonField(match.businessStage) : [];
+        const matchPreferredBusinessStage = match.role === "mentor" ? parseJsonField(match.preferredBusinessStages) : [];
 
         // 1. Industry Matching (10pts per match)
         if (userIndustries.length > 0 && matchIndustries.length > 0) {
@@ -151,10 +145,7 @@ exports.getMatches = async (req, res) => {
         // 2. Business Stage Matching (10pts per match)
         if (user.role === "mentee") {
           // Mentee vs. Mentor's preferred stages
-          if (
-            userBusinessStage.length > 0 &&
-            matchPreferredBusinessStage.length > 0
-          ) {
+          if (userBusinessStage.length > 0 && matchPreferredBusinessStage.length > 0) {
             const matchedStages = userBusinessStage.filter((stage) =>
               includes(matchPreferredBusinessStage, stage)
             );
@@ -167,10 +158,7 @@ exports.getMatches = async (req, res) => {
           }
         } else {
           // Mentor vs. Mentee's stages
-          if (
-            userPreferredBusinessStage.length > 0 &&
-            matchBusinessStage.length > 0
-          ) {
+          if (userPreferredBusinessStage.length > 0 && matchBusinessStage.length > 0) {
             const matchedStages = userPreferredBusinessStage.filter((stage) =>
               includes(matchBusinessStage, stage)
             );
@@ -183,7 +171,7 @@ exports.getMatches = async (req, res) => {
           }
         }
 
-        // 3. Skills/Interests Matching (10pts per match, reduced from 20)
+        // 3. Skills/Interests Matching (10pts per match)
         if (user.role === "mentee") {
           // Mentee interests vs. Mentor skills
           if (userInterests.length > 0 && matchSkills.length > 0) {
@@ -220,7 +208,7 @@ exports.getMatches = async (req, res) => {
         return {
           user: match,
           matchScore: normalizedScore, // 0-100%
-          rawScore: matchScore, // Optional: original points
+          rawScore: matchScore, // Original points
           matchReasons,
         };
       })
