@@ -24,7 +24,6 @@ export default function MenteeRequestsPage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
-      console.log(response.data);
       // Transform the API data into our desired format
       const transformedData = {
         pending: [],
@@ -136,6 +135,8 @@ export default function MenteeRequestsPage() {
   useEffect(() => {
     getRequestData();
   }, [user]);
+
+  console.log(menteeRequests)
 
   if (isLoading) {
     return (

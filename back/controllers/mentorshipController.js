@@ -117,9 +117,12 @@ exports.getMenteeRequests = async (req, res) => {
 
 // Update request status (accept/reject)
 exports.updateMentorshipStatus = async (req, res) => {
+  console.log("====================================");
+  console.log("hapa");
+  console.log("====================================");
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, completedAt } = req.body;
     const mentorId = req.user.id; // Authenticated user must be the mentor
 
     if (!["accepted", "rejected", "completed"].includes(status)) {
@@ -137,22 +140,30 @@ exports.updateMentorshipStatus = async (req, res) => {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    if (request.status !== "pending") {
+    // Allow updating from accepted to completed
+    if (
+      request.status !== "pending" &&
+      !(request.status === "accepted" && status === "completed")
+    ) {
       return res
         .status(400)
         .json({ error: "Request status cannot be changed" });
     }
 
-    const updatedRequest = await request.update({
-      status,
-      ...(status === "accepted" && {
-        startDate: new Date(),
-        meetingFrequency:
-          request.packageType === "starter"
-            ? "2 sessions/month"
-            : "4 sessions/month",
-      }),
-    });
+    // Prepare update object based on status
+    const updateData = { status };
+
+    if (status === "accepted") {
+      updateData.startDate = new Date();
+      updateData.meetingFrequency =
+        request.packageType === "starter"
+          ? "2 sessions/month"
+          : "4 sessions/month";
+    } else if (status === "completed") {
+      updateData.completedAt = completedAt || new Date();
+    }
+
+    const updatedRequest = await request.update(updateData);
 
     res.json(updatedRequest);
   } catch (error) {

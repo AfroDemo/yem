@@ -10,87 +10,11 @@ import Avatar from "../../../components/avatar/Avatar";
 import AvatarImage from "../../../components/avatar/AvatarImage";
 import AvatarFallback from "../../../components/avatar/AvatarFallback";
 import CardFooter from "../../../components/card/cardFooter";
-import { Bell, Clock, Star, Users } from "lucide-react";
-import {useState } from "react";
-
-const menteesData = {
-  active: [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      business: "TechStart Solutions",
-      industry: "SaaS",
-      location: "San Francisco, CA",
-      startDate: "January 15, 2025",
-      progress: 75,
-      nextSession: "April 15, 2025 • 10:00 AM",
-      goals: [
-        { title: "Complete Business Plan", status: "completed" },
-        { title: "Secure Initial Funding", status: "in-progress" },
-        { title: "Launch MVP", status: "not-started" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Sarah Chen",
-      avatar: "/placeholder.svg?height=100&width=100",
-      business: "EcoFashion",
-      industry: "Retail",
-      location: "New York, NY",
-      startDate: "February 3, 2025",
-      progress: 40,
-      nextSession: "April 22, 2025 • 1:30 PM",
-      goals: [
-        { title: "Market Research", status: "completed" },
-        { title: "Develop Marketing Strategy", status: "in-progress" },
-        { title: "Create Sales Funnel", status: "not-started" },
-      ],
-    },
-    // Add more active mentees...
-  ],
-  completed: [
-    {
-      id: 3,
-      name: "James Wilson",
-      avatar: "/placeholder.svg?height=100&width=100",
-      business: "Urban Delivery",
-      industry: "Logistics",
-      location: "Seattle, WA",
-      startDate: "June 15, 2024",
-      endDate: "February 15, 2025",
-      progress: 100,
-      status: "completed",
-      goals: [
-        { title: "Develop Business Plan", status: "completed" },
-        { title: "Secure Seed Funding", status: "completed" },
-        { title: "Launch Operations", status: "completed" },
-      ],
-    },
-    // Add more completed mentees...
-  ],
-  paused: [
-    {
-      id: 4,
-      name: "Michael Brown",
-      avatar: "/placeholder.svg?height=100&width=100",
-      business: "GreenEnergy Solutions",
-      industry: "Renewable Energy",
-      location: "Austin, TX",
-      startDate: "January 20, 2025",
-      pauseDate: "March 15, 2025",
-      progress: 60,
-      status: "paused",
-      pauseReason: "Personal reasons - resuming in May",
-      goals: [
-        { title: "Market Analysis", status: "completed" },
-        { title: "Product Development", status: "in-progress" },
-        { title: "Investor Pitch Preparation", status: "not-started" },
-      ],
-    },
-    // Add more paused mentees...
-  ],
-};
+import { Bell, CheckCircle, Clock, Star, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import api from "../../../utils/api";
+import { useUser } from "../../../context/UserContext";
+import { toast } from "react-toastify";
 
 // Statistics data
 const statsData = [
@@ -136,7 +60,153 @@ const achievementsData = [
 ];
 
 export default function MenteesPage() {
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState("accepted");
+  const [mentees, setMentees] = useState({
+    accepted: [],
+    completed: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const user = useUser();
+
+  const getRequestData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/mentorships/", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      // Transform the API data into our desired format
+      const transformedData = {
+        accepted: [],
+        completed: [],
+      };
+
+      response.data.forEach((request) => {
+        const mentee = request.mentee;
+        const industries = JSON.parse(mentee.industries || "[]").join(", ");
+        const interests = JSON.parse(mentee.interests || "[]").join(", ");
+        const businessStage = JSON.parse(mentee.businessStage || "[]").join(
+          ", "
+        );
+
+        const baseData = {
+          id: request.id,
+          name: `${mentee.firstName} ${mentee.lastName}`,
+          status: request.status,
+          role: businessStage || "Not specified",
+          industry: industries || "Not specified",
+          interest: interests || "Not specified",
+          badgeColor: "blue",
+          requestDate: new Date(request.createdAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          package: request.packageType
+            ? request.packageType.charAt(0).toUpperCase() +
+              request.packageType.slice(1) +
+              " Package"
+            : "Custom Package",
+          goals: request.goals
+            ? [request.goals]
+            : ["No specific goals provided"],
+          background: request.background || "No background provided",
+          expectations: request.expectations || "No expectations provided",
+          availability: request.availability
+            ? `${request.availability} • Timezone: ${
+                request.timezone || "Not specified"
+              }`
+            : "Not specified",
+          menteeData: mentee,
+        };
+
+        if (request.status === "pending") {
+          // Handle pending requests if needed
+        } else if (request.status === "accepted") {
+          transformedData.accepted.push({
+            ...baseData,
+            nextSession: request.nextMeetingDate
+              ? new Date(request.nextMeetingDate).toLocaleString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "No session scheduled",
+          });
+        } else if (request.status === "completed") {
+          transformedData.completed.push({
+            ...baseData,
+            completedAt: request.completedAt || request.updatedAt,
+          });
+        }
+      });
+
+      setMentees(transformedData);
+    } catch (error) {
+      console.error("Error fetching mentees:", error);
+      toast.error("Failed to load mentee data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getRequestData();
+  }, [user]);
+
+  const handleCompleteMentorship = async (mentorshipId) => {
+    try {
+      setIsUpdating(true);
+      const response = await api.put(
+        `/mentorships/${mentorshipId}/status`,
+        {
+          status: "completed",
+          completedAt: new Date().toISOString(),
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        }
+      );
+
+      toast.success(
+        <div className="flex items-center">
+          <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+          Mentorship completed successfully!
+        </div>
+      );
+
+      await getRequestData();
+
+      // Switch to completed tab if no active mentees left
+      if (mentees.accepted.length <= 1) {
+        setActiveTab("completed");
+      }
+    } catch (error) {
+      console.error("Error completing mentorship:", error);
+      let errorMessage = "Failed to complete mentorship";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -163,35 +233,36 @@ export default function MenteesPage() {
         <div className="w-full md:w-2/3 space-y-6">
           <div className="tabs-container">
             <div className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-md">
-              {["active", "completed", "paused"].map((tab) => (
+              {[
+                { id: "accepted", label: "Active" },
+                { id: "completed", label: "Completed" },
+              ].map((tab) => (
                 <button
-                  key={tab}
+                  key={tab.id}
                   className={`py-1.5 px-3 text-sm font-medium rounded-sm transition-all ${
-                    activeTab === tab
+                    activeTab === tab.id
                       ? "bg-white shadow-sm text-gray-900"
                       : "text-gray-500 hover:bg-gray-200"
                   }`}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => setActiveTab(tab.id)}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)} (
-                  {menteesData[tab].length})
+                  {tab.label} ({mentees[tab.id].length})
                 </button>
               ))}
             </div>
 
             <div className="tab-content mt-4 space-y-4">
-              {activeTab === "active" &&
-                menteesData.active.map((mentee) => (
-                  <MenteeCard key={mentee.id} {...mentee} />
+              {activeTab === "accepted" &&
+                mentees.accepted.map((mentee) => (
+                  <MenteeCard
+                    key={mentee.id}
+                    {...mentee}
+                    onComplete={handleCompleteMentorship}
+                  />
                 ))}
 
               {activeTab === "completed" &&
-                menteesData.completed.map((mentee) => (
-                  <MenteeCard key={mentee.id} {...mentee} />
-                ))}
-
-              {activeTab === "paused" &&
-                menteesData.paused.map((mentee) => (
+                mentees.completed.map((mentee) => (
                   <MenteeCard key={mentee.id} {...mentee} />
                 ))}
             </div>
