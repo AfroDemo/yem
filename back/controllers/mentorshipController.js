@@ -117,9 +117,6 @@ exports.getMenteeRequests = async (req, res) => {
 
 // Update request status (accept/reject)
 exports.updateMentorshipStatus = async (req, res) => {
-  console.log("====================================");
-  console.log("hapa");
-  console.log("====================================");
   try {
     const { id } = req.params;
     const { status, completedAt } = req.body;

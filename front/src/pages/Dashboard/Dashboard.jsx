@@ -117,38 +117,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* Suggested Connections */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium">Suggested Connections</h3>
-        <p className="text-sm text-muted-foreground">
-          People you might want to connect with based on your industry and
-          interests
-        </p>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <ConnectionCard
-            name="Emily Chen"
-            role="Tech Startup Founder"
-            image="/placeholder.svg?height=100&width=100"
-            mutualConnections={4}
-          />
-          <ConnectionCard
-            name="Marcus Johnson"
-            role="Marketing Consultant"
-            image="/placeholder.svg?height=100&width=100"
-            mutualConnections={2}
-          />
-          <ConnectionCard
-            name="Sophia Rodriguez"
-            role="E-commerce Entrepreneur"
-            image="/placeholder.svg?height=100&width=100"
-            mutualConnections={5}
-          />
-        </div>
-        <button className="w-full mt-6 p-2 border rounded-lg">
-          <Link href="/network">View All Connections</Link>
-        </button>
-      </div>
     </div>
   );
 }

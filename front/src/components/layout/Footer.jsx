@@ -26,8 +26,6 @@ const Footer = () => {
               {[
                 { name: "Home", path: "/" },
                 { name: "About", path: "/about" },
-                { name: "For Mentees", path: "/for-mentees" },
-                { name: "For Mentors", path: "/for-mentors" },
               ].map((item) => (
                 <div key={item.name}>
                   <RouterLink
