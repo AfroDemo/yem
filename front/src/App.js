@@ -12,7 +12,6 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForMentees from "./pages/ForMentees";
-import Resources from "./pages/Resources";
 import Events from "./pages/Events";
 import Contact from "./pages/Contact";
 import SuccessStories from "./pages/SuccessStories";
@@ -119,7 +118,6 @@ function App() {
             <Route element={<MainLayout />}>
               <Route index element={<Home />} />
               <Route path="/about" element={<About />} />
-              <Route path="/resources" element={<Resources />} />
               <Route path="/events" element={<Events />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/success-stories" element={<SuccessStories />} />
