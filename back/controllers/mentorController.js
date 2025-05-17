@@ -17,9 +17,9 @@ exports.getDashboardMetrics = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Active mentees (count of active mentorships)
+    // Active mentees (count of accepted mentorships)
     const activeMentees = await Mentorship.count({
-      where: { mentorId, status: "active" },
+      where: { mentorId, status: "accepted" },
     });
 
     // Upcoming sessions (next 7 days)
@@ -44,7 +44,8 @@ exports.getDashboardMetrics = async (req, res) => {
     });
     const hoursMentored = sessions.reduce((total, session) => {
       const duration =
-        (new Date(session.endTime) - new Date(session.startTime)) / (1000 * 60 * 60);
+        (new Date(session.endTime) - new Date(session.startTime)) /
+        (1000 * 60 * 60);
       return total + duration;
     }, 0);
 
@@ -52,7 +53,8 @@ exports.getDashboardMetrics = async (req, res) => {
     const reviews = await Review.findAll({ where: { mentorId } });
     const averageRating =
       reviews.length > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviews.length
         : 0;
 
     res.json({
@@ -85,7 +87,13 @@ exports.getTodaysSessions = async (req, res) => {
         mentorId,
         startTime: { [Op.between]: [startOfDay, endOfDay] },
       },
-      include: [{ model: User, as: "mentee", attributes: ["id", "firstName", "lastName", "profileImage"] }],
+      include: [
+        {
+          model: User,
+          as: "mentee",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
     });
 
     res.json(sessions);
@@ -99,15 +107,19 @@ exports.getTodaysSessions = async (req, res) => {
 exports.getRecentMessages = async (req, res) => {
   try {
     const mentorId = req.params.mentorId;
-    if (req.user
-
-.id != mentorId && req.user.role !== "admin") {
+    if (req.user.id != mentorId && req.user.role !== "admin") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
     const messages = await Message.findAll({
       where: { receiverId: mentorId },
-      include: [{ model: User, as: "sender", attributes: ["id", "firstName", "lastName", "profileImage"] }],
+      include: [
+        {
+          model: User,
+          as: "sender",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
       order: [["createdAt", "DESC"]],
       limit: 3,
     });
@@ -128,18 +140,50 @@ exports.getMenteeProgress = async (req, res) => {
     }
 
     const mentorships = await Mentorship.findAll({
-      where: { mentorId, status: "active" },
-      include: [{ model: User, as: "mentee", attributes: ["id", "firstName", "lastName", "profileImage"] }],
+      where: { mentorId, status: "accepted" },
+      include: [
+        {
+          model: User,
+          as: "mentee",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
     });
 
-    const progressData = mentorships.map((mentorship) => ({
-      id: mentorship.mentee.id,
-      firstName: mentorship.mentee.firstName,
-      lastName: mentorship.mentee.lastName,
-      profileImage: mentorship.mentee.profileImage,
-      progress: mentorship.progress || 0,
-      goals: mentorship.goals || [],
-    }));
+    const progressData = mentorships.map((mentorship) => {
+      // Parse goals (TEXT) to JSON array
+      let goalsArray = [];
+      try {
+        goalsArray = JSON.parse(mentorship.goals);
+        if (!Array.isArray(goalsArray)) {
+          goalsArray = [{ title: mentorship.goals, status: "in-progress" }];
+        }
+      } catch (e) {
+        goalsArray = [{ title: mentorship.goals, status: "in-progress" }];
+      }
+
+      // Parse progress (JSON) to a percentage
+      let progressValue = 0;
+      try {
+        const progress = mentorship.progress || [];
+        if (Array.isArray(progress)) {
+          const completed = progress.filter((p) => p.completed).length;
+          progressValue =
+            progress.length > 0 ? (completed / progress.length) * 100 : 0;
+        }
+      } catch (e) {
+        progressValue = 0;
+      }
+
+      return {
+        id: mentorship.mentee.id,
+        firstName: mentorship.mentee.firstName,
+        lastName: mentorship.mentee.lastName,
+        profileImage: mentorship.mentee.profileImage,
+        progress: progressValue,
+        goals: goalsArray,
+      };
+    });
 
     res.json(progressData);
   } catch (error) {
@@ -158,7 +202,13 @@ exports.getSharedResources = async (req, res) => {
 
     const resources = await Resource.findAll({
       where: { createdById: mentorId },
-      include: [{ model: User, as: "sharedWith", attributes: ["id", "firstName", "lastName"] }],
+      include: [
+        {
+          model: User,
+          as: "sharedWith",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
       order: [["createdAt", "DESC"]],
       limit: 3,
     });
