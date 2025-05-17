@@ -104,7 +104,7 @@ const mentorDashboardRoutes = [
   { path: "/mentor/mentees", component: <MenteesPage /> },
   { path: "/mentor/mentees/requests", component: <MenteeRequestsPage /> },
   { path: "/mentor/resources", component: <MentorResources /> },
-  { path: "/mentor/resource/upload", component: <UploadResourcePage /> },
+  { path: "/mentor/resources/upload", component: <UploadResourcePage /> },
   { path: "/mentor/settings", component: <SettingsPage /> },
 ];
 
