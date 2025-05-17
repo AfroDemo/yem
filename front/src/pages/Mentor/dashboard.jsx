@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ArrowUpRight,
   Calendar,
@@ -20,20 +21,91 @@ import CardDescription from "../../components/card/cardDescription";
 import CardContent from "../../components/card/cardContent";
 import CardFooter from "../../components/card/cardFooter";
 import { useAuth } from "../../context/AuthContext";
+import {
+  getMentorDashboardMetrics,
+  getTodaysSessions,
+  getRecentMessages,
+  getMenteeProgress,
+  getSharedResources,
+  getUpcomingReports,
+} from "../../services/mentorService";
 
 export default function MentorDashboard() {
   const { user } = useAuth();
+  const [metrics, setMetrics] = useState({
+    activeMentees: 0,
+    upcomingSessions: 0,
+    hoursMentored: 0,
+    averageRating: 0,
+    reviewCount: 0,
+  });
+  const [sessions, setSessions] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [menteeProgress, setMenteeProgress] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  console.log(metrics);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [
+          metricsData,
+          sessionsData,
+          messagesData,
+          progressData,
+          resourcesData,
+          reportsData,
+        ] = await Promise.all([
+          getMentorDashboardMetrics(user.id),
+          getTodaysSessions(user.id),
+          getRecentMessages(user.id),
+          getMenteeProgress(user.id),
+          getSharedResources(user.id),
+          getUpcomingReports(user.id),
+        ]);
+
+        setMetrics(metricsData);
+        setSessions(sessionsData);
+        setMessages(messagesData);
+        setMenteeProgress(progressData);
+        setResources(resourcesData);
+        setReports(reportsData);
+      } catch (err) {
+        setError("Failed to load dashboard data. Please try again later.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user.id]);
+
+  if (loading) {
+    return <div className="text-center p-6">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center p-6 text-red-600">{error}</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Mentor Dashboard</h1>
           <p className="text-gray-500">
-            Welcome back, {user.firstName}. Here's what's happening with your mentees.
+            Welcome back, {user.firstName}. Here's what's happening with your
+            mentees.
           </p>
         </div>
         <Button asChild>
-          <Link href="/mentor/sessions/new">Schedule New Session</Link>
+          <Link to="/mentor/sessions/new">Schedule New Session</Link>
         </Button>
       </div>
 
@@ -46,8 +118,8 @@ export default function MentorDashboard() {
             <Users className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-gray-500">+2 from last month</p>
+            <div className="text-2xl font-bold">{metrics.activeMentees}</div>
+            <p className="text-xs text-gray-500">Current mentees</p>
           </CardContent>
         </Card>
         <Card>
@@ -58,7 +130,7 @@ export default function MentorDashboard() {
             <Calendar className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{metrics.upcomingSessions}</div>
             <p className="text-xs text-gray-500">Next 7 days</p>
           </CardContent>
         </Card>
@@ -70,7 +142,9 @@ export default function MentorDashboard() {
             <Clock className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24.5</div>
+            <div className="text-2xl font-bold">
+              {metrics.hoursMentored.toFixed(1)}
+            </div>
             <p className="text-xs text-gray-500">This month</p>
           </CardContent>
         </Card>
@@ -82,17 +156,23 @@ export default function MentorDashboard() {
             <Star className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.9</div>
+            <div className="text-2xl font-bold">
+              {metrics.averageRating.toFixed(1)}
+            </div>
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
                   className={`h-3 w-3 ${
-                    i < 5 ? "text-yellow-400 fill-yellow-400" : "text-gray-400"
+                    i < Math.round(metrics.averageRating)
+                      ? "text-yellow-400 fill-yellow-400"
+                      : "text-gray-400"
                   }`}
                 />
               ))}
-              <span className="text-xs text-gray-500 ml-1">(28 reviews)</span>
+              <span className="text-xs text-gray-500 ml-1">
+                ({metrics.reviewCount} reviews)
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -107,31 +187,33 @@ export default function MentorDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <SessionCard
-              name="Alex Johnson"
-              time="10:00 AM - 11:00 AM"
-              topic="Business Model Validation"
-              status="upcoming"
-              avatar="/placeholder.svg?height=40&width=40"
-            />
-            <SessionCard
-              name="Sarah Chen"
-              time="1:30 PM - 2:30 PM"
-              topic="Fundraising Strategy"
-              status="upcoming"
-              avatar="/placeholder.svg?height=40&width=40"
-            />
-            <SessionCard
-              name="David Park"
-              time="4:00 PM - 5:00 PM"
-              topic="Marketing Plan Review"
-              status="upcoming"
-              avatar="/placeholder.svg?height=40&width=40"
-            />
+            {sessions.length > 0 ? (
+              sessions.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  name={`${session.mentee.firstName} ${session.mentee.lastName}`}
+                  time={`${new Date(session.startTime).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })} - ${new Date(session.endTime).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}`}
+                  topic={session.topic}
+                  status={session.status}
+                  avatar={
+                    session.mentee.profileImage ||
+                    "/placeholder.svg?height=40&width=40"
+                  }
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No sessions scheduled for today.</p>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link href="/mentor/sessions">View All Sessions</Link>
+              <Link to="/mentor/sessions">View All Sessions</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -144,29 +226,30 @@ export default function MentorDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <MessagePreview
-              name="Emily Rodriguez"
-              time="10 min ago"
-              message="Thanks for the feedback on my pitch deck! I've made the changes you suggested."
-              avatar="/placeholder.svg?height=40&width=40"
-              unread
-            />
-            <MessagePreview
-              name="James Wilson"
-              time="2 hours ago"
-              message="I have a question about the financial projections we discussed yesterday."
-              avatar="/placeholder.svg?height=40&width=40"
-            />
-            <MessagePreview
-              name="Sophia Lee"
-              time="Yesterday"
-              message="Just wanted to confirm our session for tomorrow at 3 PM."
-              avatar="/placeholder.svg?height=40&width=40"
-            />
+            {messages.length > 0 ? (
+              messages.map((message) => (
+                <MessagePreview
+                  key={message.id}
+                  name={`${message.sender.firstName} ${message.sender.lastName}`}
+                  time={new Date(message.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  message={message.content}
+                  avatar={
+                    message.sender.profileImage ||
+                    "/placeholder.svg?height=40&width=40"
+                  }
+                  unread={!message.isRead}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No recent messages.</p>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link href="/mentor/messages">View All Messages</Link>
+              <Link to="/mentor/messages">View All Messages</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -181,44 +264,28 @@ export default function MentorDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <MenteeProgress
-              name="Alex Johnson"
-              avatar="/placeholder.svg?height=40&width=40"
-              progress={75}
-              goals={[
-                { title: "Complete Business Plan", status: "completed" },
-                { title: "Secure Initial Funding", status: "in-progress" },
-                { title: "Launch MVP", status: "not-started" },
-              ]}
-            />
-            <MenteeProgress
-              name="Sarah Chen"
-              avatar="/placeholder.svg?height=40&width=40"
-              progress={40}
-              goals={[
-                { title: "Market Research", status: "completed" },
-                { title: "Develop Marketing Strategy", status: "in-progress" },
-                { title: "Create Sales Funnel", status: "not-started" },
-              ]}
-            />
-            <MenteeProgress
-              name="David Park"
-              avatar="/placeholder.svg?height=40&width=40"
-              progress={90}
-              goals={[
-                { title: "Identify Target Market", status: "completed" },
-                { title: "Create Brand Identity", status: "completed" },
-                {
-                  title: "Launch Social Media Campaign",
-                  status: "in-progress",
-                },
-              ]}
-            />
+            {menteeProgress.length > 0 ? (
+              menteeProgress.map((mentee) => (
+                <MenteeProgress
+                  key={mentee.id}
+                  name={`${mentee.firstName} ${mentee.lastName}`}
+                  avatar={
+                    mentee.profileImage || "/placeholder.svg?height=40&width=40"
+                  }
+                  progress={mentee.progress}
+                  goals={mentee.goals}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">
+                No mentee progress data available.
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter>
           <Button variant="outline" className="w-full" asChild>
-            <Link href="/mentor/mentees">View All Mentees</Link>
+            <Link to="/mentor/mentees">View All Mentees</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -232,28 +299,25 @@ export default function MentorDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ResourceItem
-              title="Startup Financial Model Template"
-              type="Spreadsheet"
-              sharedWith="Alex Johnson"
-              date="2 days ago"
-            />
-            <ResourceItem
-              title="Pitch Deck Best Practices"
-              type="PDF"
-              sharedWith="Sarah Chen, Emily Rodriguez"
-              date="1 week ago"
-            />
-            <ResourceItem
-              title="Customer Acquisition Strategies"
-              type="Article"
-              sharedWith="David Park"
-              date="2 weeks ago"
-            />
+            {resources.length > 0 ? (
+              resources.map((resource) => (
+                <ResourceItem
+                  key={resource.id}
+                  title={resource.title}
+                  type={resource.type}
+                  sharedWith={resource.sharedWith
+                    .map((user) => `${user.firstName} ${user.lastName}`)
+                    .join(", ")}
+                  date={new Date(resource.sharedAt).toLocaleDateString()}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No resources shared recently.</p>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link href="/mentor/resources">Manage Resources</Link>
+              <Link to="/mentor/resources">Manage Resources</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -264,28 +328,31 @@ export default function MentorDashboard() {
             <CardDescription>Mentee progress reports due soon</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ReportItem
-              mentee="Alex Johnson"
-              dueDate="April 15, 2025"
-              type="Quarterly Progress"
-              status="pending"
-            />
-            <ReportItem
-              mentee="Sarah Chen"
-              dueDate="April 22, 2025"
-              type="Monthly Check-in"
-              status="pending"
-            />
-            <ReportItem
-              mentee="David Park"
-              dueDate="May 1, 2025"
-              type="Goal Assessment"
-              status="pending"
-            />
+            {reports.length > 0 ? (
+              reports.map((report) => (
+                <ReportItem
+                  key={report.id}
+                  mentee={
+                    report.mentee
+                      ? `${report.mentee.firstName} ${report.mentee.lastName}`
+                      : "Unknown Mentee"
+                  }
+                  dueDate={
+                    report.dueDate
+                      ? new Date(report.dueDate).toLocaleDateString()
+                      : "N/A"
+                  }
+                  type={report.type || "Unknown"}
+                  status={report.status || "pending"}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No upcoming reports.</p>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link href="/mentor/reports">View All Reports</Link>
+              <Link to="/mentor/reports">View All Reports</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -315,11 +382,7 @@ function SessionCard({ name, time, topic, status, avatar }) {
             : "bg-amber-100 text-amber-800 hover:bg-amber-100"
         }
       >
-        {status === "completed"
-          ? "Completed"
-          : status === "upcoming"
-          ? "Upcoming"
-          : "In Progress"}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     </div>
   );
@@ -367,9 +430,7 @@ function MenteeProgress({ name, avatar, progress, goals }) {
           </div>
         </div>
         <Button variant="ghost" size="sm" className="gap-1" asChild>
-          <Link
-            href={`/mentor/mentees/${name.toLowerCase().replace(" ", "-")}`}
-          >
+          <Link to={`/mentor/mentees/${name.toLowerCase().replace(" ", "-")}`}>
             View Profile
             <ArrowUpRight className="h-3 w-3" />
           </Link>
@@ -457,11 +518,7 @@ function ReportItem({ mentee, dueDate, type, status }) {
             : "bg-red-100 text-red-800 hover:bg-red-100"
         }
       >
-        {status === "completed"
-          ? "Completed"
-          : status === "pending"
-          ? "Pending"
-          : "Overdue"}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     </div>
   );

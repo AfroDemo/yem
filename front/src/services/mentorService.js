@@ -1,78 +1,61 @@
-import api from '../utils/api';
+import { get } from "../utils/api";
 
-// Create mentor profile
-export const createMentorProfile = async (profileData: {
-  expertise: string[];
-  experience: string;
-  company: string;
-  position: string;
-  availability: string;
-  mentorshipStyle: string;
-  maxMentees?: number;
-}) => {
+// Fetch dashboard metrics (active mentees, upcoming sessions, hours mentored, average rating)
+export const getMentorDashboardMetrics = async (mentorId) => {
   try {
-    const response = await api.post('/mentor-profiles', profileData);
+    const response = await get(`/mentors/${mentorId}/dashboard-metrics`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to create mentor profile';
+    throw new Error("Failed to fetch dashboard metrics: " + error.message);
   }
 };
 
-// Get all mentor profiles
-export const getAllMentorProfiles = async () => {
+// Fetch today's sessions
+export const getTodaysSessions = async (mentorId) => {
   try {
-    const response = await api.get('/mentor-profiles');
+    const response = await get(`/mentors/${mentorId}/sessions/today`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get mentor profiles';
+    throw new Error("Failed to fetch today's sessions: " + error.message);
   }
 };
 
-// Get mentor profile by ID
-export const getMentorProfileById = async (profileId: string) => {
+// Fetch recent messages
+export const getRecentMessages = async (mentorId) => {
   try {
-    const response = await api.get(`/mentor-profiles/${profileId}`);
+    const response = await get(`/mentors/${mentorId}/messages/recent`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get mentor profile';
+    throw new Error("Failed to fetch recent messages: " + error.message);
   }
 };
 
-// Update mentor profile
-export const updateMentorProfile = async (profileId: string, profileData: {
-  expertise?: string[];
-  experience?: string;
-  company?: string;
-  position?: string;
-  availability?: string;
-  mentorshipStyle?: string;
-  maxMentees?: number;
-  acceptingMentees?: boolean;
-}) => {
+// Fetch mentee progress
+export const getMenteeProgress = async (mentorId) => {
   try {
-    const response = await api.put(`/mentor-profiles/${profileId}`, profileData);
+    const response = await get(`/mentors/${mentorId}/mentees/progress`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to update mentor profile';
+    throw new Error("Failed to fetch mentee progress: " + error.message);
   }
 };
 
-// Get featured mentors
-export const getFeaturedMentors = async () => {
+// Fetch shared resources
+export const getSharedResources = async (mentorId) => {
   try {
-    const response = await api.get('/mentor-profiles/featured');
+    const response = await get(`/mentors/${mentorId}/resources/shared`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get featured mentors';
+    throw new Error("Failed to fetch shared resources: " + error.message);
   }
 };
 
-// Search mentors by expertise
-export const searchMentorsByExpertise = async (expertise: string) => {
+// Fetch upcoming reports
+export const getUpcomingReports = async (mentorId) => {
   try {
-    const response = await api.get(`/mentor-profiles/search?expertise=${expertise}`);
+    const response = await get(`/mentors/${mentorId}/reports/upcoming`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to search mentors';
+    throw new Error("Failed to fetch upcoming reports: " + error.message);
   }
 };

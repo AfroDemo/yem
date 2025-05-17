@@ -15,23 +15,14 @@ const eventRegistrationRoutes = require("./routes/eventRegistrations");
 const messageRoutes = require("./routes/messages");
 const conversationRoutes = require("./routes/conversations");
 const successStoryRoutes = require("./routes/successStories");
+const mentorRoutes = require("./routes/mentor");
 
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-// Serve static files first
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
-
-// Then add debugging middleware if needed
-// app.use('/uploads', (req, res, next) => {
-//   const fullPath = path.join(__dirname, 'public/uploads', req.path);
-//   console.log('Request for:', req.path);
-//   console.log('Looking in:', fullPath);
-//   console.log('File exists:', fs.existsSync(fullPath));
-//   next();
-// });
 app.use(cors());
 app.use(express.json());
 
@@ -59,6 +50,7 @@ app.use("/api/event-registrations", eventRegistrationRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/success-stories", successStoryRoutes);
+app.use("/api/mentors", mentorRoutes);
 
 // Basic route
 app.get("/", (req, res) => {
