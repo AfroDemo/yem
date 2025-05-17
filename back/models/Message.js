@@ -1,29 +1,31 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
-const User = require("./User"); // Assuming User model exists
 
 module.exports = (sequelize) => {
   const Message = sequelize.define(
     "Message",
     {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
       senderId: {
-        type: DataTypes.INTEGER, // Foreign key referencing the User model (sender)
-        references: {
-          model: "users", // Assuming 'users' table is used for the User model
-          key: "id",
-        },
+        type: DataTypes.INTEGER,
         allowNull: false,
+        references: { model: "users", key: "id" },
       },
       receiverId: {
-        type: DataTypes.INTEGER, // Foreign key referencing the User model (receiver)
-        references: {
-          model: "users", // Assuming 'users' table is used for the User model
-          key: "id",
-        },
+        type: DataTypes.INTEGER,
         allowNull: false,
+        references: { model: "users", key: "id" },
+      },
+      conversationId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: { model: "conversations", key: "id" },
       },
       content: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
       },
       read: {
@@ -33,16 +35,21 @@ module.exports = (sequelize) => {
     },
     {
       tableName: "messages",
-      timestamps: true, // Automatically adds createdAt and updatedAt fields
+      timestamps: true,
     }
   );
-  Message.associate = (models) => {
-    Message.belongsTo(models.User, {
-      foreignKey: "senderId",
-    });
+
+  Message.associate = function (models) {
+    Message.belongsTo(models.User, { foreignKey: "senderId", as: "sender" });
     Message.belongsTo(models.User, {
       foreignKey: "receiverId",
+      as: "receiver",
+    });
+    Message.belongsTo(models.Conversation, {
+      foreignKey: "conversationId",
+      as: "conversation",
     });
   };
+
   return Message;
 };

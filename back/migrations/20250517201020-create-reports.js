@@ -5,13 +5,13 @@ const { DataTypes } = require("sequelize");
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("messages", {
+    await queryInterface.createTable("reports", {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
-      senderId: {
+      mentorId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
@@ -21,21 +21,11 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
-      receiverId: {
+      menteeId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
           model: "users",
-          key: "id",
-        },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
-      },
-      conversationId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "conversations",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -45,10 +35,14 @@ module.exports = {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      read: {
-        type: DataTypes.BOOLEAN,
+      status: {
+        type: DataTypes.ENUM("pending", "submitted", "reviewed"),
         allowNull: false,
-        defaultValue: false,
+        defaultValue: "pending",
+      },
+      dueDate: {
+        type: DataTypes.DATE,
+        allowNull: false,
       },
       createdAt: {
         allowNull: false,
@@ -62,6 +56,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("messages");
+    await queryInterface.dropTable("reports");
   },
 };

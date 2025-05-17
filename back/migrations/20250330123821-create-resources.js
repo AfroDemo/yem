@@ -1,57 +1,55 @@
 "use strict";
 
+const { DataTypes } = require("sequelize");
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("resources", {
       id: {
-        allowNull: false,
-        autoIncrement: true,
+        type: DataTypes.INTEGER,
         primaryKey: true,
-        type: Sequelize.INTEGER,
+        autoIncrement: true,
+      },
+      createdById: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      },
+      sharedWithId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       title: {
-        type: Sequelize.STRING,
-      },
-      description: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       type: {
-        type: Sequelize.STRING,
-      },
-      category: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       content: {
-        type: Sequelize.STRING,
-      },
-      fileUrl: {
-        type: Sequelize.STRING,
-      },
-      externalUrl: {
-        type: Sequelize.STRING,
-      },
-      thumbnail: {
-        type: Sequelize.STRING,
-      },
-      author: {
-        type: Sequelize.STRING,
-      },
-      tags: {
-        type: Sequelize.JSON,
-      },
-      visibility: {
-        type: Sequelize.ENUM("public", "mentors", "mentees", "private"),
-        defaultValue: "public",
+        type: DataTypes.TEXT,
         allowNull: false,
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: DataTypes.DATE,
       },
     });
   },

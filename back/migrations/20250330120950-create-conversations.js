@@ -1,21 +1,37 @@
 "use strict";
 
+const { DataTypes } = require("sequelize");
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("conversations", {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
       participants: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       lastMessage: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
         allowNull: true,
         defaultValue: {},
       },
       unreadCount: {
-        type: Sequelize.JSON,
+        type: DataTypes.JSON,
+        allowNull: false,
         defaultValue: {},
+      },
+      createdAt: {
+        allowNull: false,
+        type: DataTypes.DATE,
+      },
+      updatedAt: {
+        allowNull: false,
+        type: DataTypes.DATE,
       },
     });
   },

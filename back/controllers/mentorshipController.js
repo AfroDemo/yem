@@ -37,16 +37,22 @@ exports.createMentorship = async (req, res) => {
         .json({ error: "You already have a pending request with this mentor" });
     }
 
+    // Convert goals to JSON
+    const goalsJson = Array.isArray(goals)
+      ? goals
+      : [{ title: goals, status: "in-progress" }];
+
     const newRequest = await Mentorship.create({
       mentorId,
       menteeId,
       packageType: selectedPackage,
-      goals,
+      goals: goalsJson,
       background,
       expectations,
       availability,
       timezone: timezone.toLowerCase(),
       status: "pending",
+      progress: 0,
     });
 
     // Include mentor details in the response
@@ -70,7 +76,7 @@ exports.createMentorship = async (req, res) => {
 // Get all requests for a mentor
 exports.getMentorRequests = async (req, res) => {
   try {
-    const mentorId = req.user.id; // Assuming authenticated user is the mentor
+    const mentorId = req.user.id;
 
     const requests = await Mentorship.findAll({
       where: { mentorId },
@@ -94,7 +100,7 @@ exports.getMentorRequests = async (req, res) => {
 // Get all requests for a mentee
 exports.getMenteeRequests = async (req, res) => {
   try {
-    const menteeId = req.user.id; // Assuming authenticated user is the mentee
+    const menteeId = req.user.id;
 
     const requests = await Mentorship.findAll({
       where: { menteeId },
@@ -115,14 +121,14 @@ exports.getMenteeRequests = async (req, res) => {
   }
 };
 
-// Update request status (accept/reject)
+// Update request status (active/reject/complete)
 exports.updateMentorshipStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, completedAt } = req.body;
-    const mentorId = req.user.id; // Authenticated user must be the mentor
+    const { status, endDate } = req.body;
+    const mentorId = req.user.id;
 
-    if (!["accepted", "rejected", "completed"].includes(status)) {
+    if (!["active", "rejected", "completed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status update" });
     }
 
@@ -137,27 +143,25 @@ exports.updateMentorshipStatus = async (req, res) => {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    // Allow updating from accepted to completed
     if (
       request.status !== "pending" &&
-      !(request.status === "accepted" && status === "completed")
+      !(request.status === "active" && status === "completed")
     ) {
       return res
         .status(400)
         .json({ error: "Request status cannot be changed" });
     }
 
-    // Prepare update object based on status
     const updateData = { status };
 
-    if (status === "accepted") {
+    if (status === "active") {
       updateData.startDate = new Date();
       updateData.meetingFrequency =
         request.packageType === "starter"
           ? "2 sessions/month"
           : "4 sessions/month";
     } else if (status === "completed") {
-      updateData.completedAt = completedAt || new Date();
+      updateData.endDate = endDate || new Date();
     }
 
     const updatedRequest = await request.update(updateData);
@@ -173,12 +177,12 @@ exports.updateMentorshipStatus = async (req, res) => {
 exports.getRequestDetails = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const userId = req.user.id; // Authenticated user
+    const userId = req.user.id;
 
     const request = await Mentorship.findOne({
       where: {
         id: requestId,
-        [Op.or]: [{ mentorId: userId }, { menteeId: userId }],
+        [db.Sequelize.Op.or]: [{ mentorId: userId }, { menteeId: userId }],
       },
       include: [
         {

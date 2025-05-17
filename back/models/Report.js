@@ -1,53 +1,48 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const Resource = sequelize.define(
-    "Resource",
+  const Report = sequelize.define(
+    "Report",
     {
       id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
-      createdById: {
+      mentorId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: { model: "users", key: "id" },
       },
-      sharedWithId: {
+      menteeId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: { model: "users", key: "id" },
-      },
-      title: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      type: {
-        type: DataTypes.STRING,
-        allowNull: false,
       },
       content: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      status: {
+        type: DataTypes.ENUM("pending", "submitted", "reviewed"),
+        allowNull: false,
+        defaultValue: "pending",
+      },
+      dueDate: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
     },
     {
-      tableName: "resources",
+      tableName: "reports",
       timestamps: true,
     }
   );
 
-  Resource.associate = function (models) {
-    Resource.belongsTo(models.User, {
-      foreignKey: "createdById",
-      as: "creator",
-    });
-    Resource.belongsTo(models.User, {
-      foreignKey: "sharedWithId",
-      as: "sharedWith",
-    });
+  Report.associate = function (models) {
+    Report.belongsTo(models.User, { foreignKey: "mentorId", as: "mentor" });
+    Report.belongsTo(models.User, { foreignKey: "menteeId", as: "mentee" });
   };
 
-  return Resource;
+  return Report;
 };
