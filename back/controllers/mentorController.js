@@ -112,13 +112,9 @@ exports.getRecentMessages = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Find conversations involving the mentor
+    // Find conversations involving the mentor (MySQL compatible version)
     const conversations = await Conversation.findAll({
-      where: {
-        participants: {
-          [Op.contains]: [parseInt(mentorId)],
-        },
-      },
+      where: db.sequelize.literal(`JSON_CONTAINS(participants, '[${mentorId}]')`),
       include: [
         {
           model: Message,
@@ -143,7 +139,7 @@ exports.getRecentMessages = async (req, res) => {
       limit: 3,
     });
 
-    // Flatten messages and ensure they are from conversations
+    // Rest of your code remains the same...
     const messages = conversations
       .filter((conv) => conv.messages && conv.messages.length > 0)
       .map((conv) => conv.messages[0]);
