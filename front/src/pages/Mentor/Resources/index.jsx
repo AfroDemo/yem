@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   BookOpen,
   FileText,
@@ -34,8 +35,102 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/DropDowns";
+import { useAuth } from "../../../context/AuthContext";
+import { get, del } from "../../../utils/api";
 
 export default function MentorResources() {
+  const { user } = useAuth();
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
+  const [activeTab, setActiveTab] = useState("all");
+  const [stats, setStats] = useState({
+    total: 0,
+    shared: 0,
+    types: {},
+  });
+
+  useEffect(() => {
+    fetchResources();
+  }, [user.id, searchQuery, sortBy, activeTab]);
+
+  const fetchResources = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        mentorId: user.id,
+        ...(searchQuery && { query: searchQuery }),
+        ...(activeTab !== "all" && { type: activeTab }),
+      });
+
+      const response = await get(`/resources?${params}`);
+      const fetchedResources = response.data;
+
+      setResources(fetchedResources);
+
+      // Calculate stats
+      const typeCounts = fetchedResources.reduce((acc, res) => {
+        acc[res.type] = (acc[res.type] || 0) + 1;
+        return acc;
+      }, {});
+
+      setStats({
+        total: fetchedResources.length,
+        shared: fetchedResources.filter((r) => r.sharedWith.length > 0).length,
+        types: typeCounts,
+      });
+    } catch (err) {
+      setError("Failed to load resources. Please try again later.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (resourceId) => {
+    try {
+      await del(`/resources/${resourceId}`);
+      setResources(resources.filter((r) => r.id !== resourceId));
+    } catch (err) {
+      console.error("Delete resource error:", err);
+      setError("Failed to delete resource.");
+    }
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const sortResources = (resources) => {
+    switch (sortBy) {
+      case "name":
+        return [...resources].sort((a, b) => a.title.localeCompare(b.title));
+      case "type":
+        return [...resources].sort((a, b) => a.type.localeCompare(b.type));
+      case "shared":
+        return [...resources].sort(
+          (a, b) => b.sharedWith.length - a.sharedWith.length
+        );
+      case "recent":
+      default:
+        return [...resources].sort(
+          (a, b) => new Date(b.publishDate) - new Date(a.publishDate)
+        );
+    }
+  };
+
+  const groupedResources = sortResources(resources).reduce((acc, resource) => {
+    const category = resource.category || "Other";
+    acc[category] = acc[category] || [];
+    acc[category].push(resource);
+    return acc;
+  }, {});
+
+  if (loading) return <div className="text-center p-6">Loading...</div>;
+  if (error) return <div className="text-center p-6 text-red-600">{error}</div>;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -50,9 +145,11 @@ export default function MentorResources() {
             <FolderPlus className="mr-2 h-4 w-4" />
             New Folder
           </Button>
-          <Button onClick={()=>{window.location.href='/mentor/resource/upload'}}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Resource
+          <Button asChild>
+            <a href="/mentor/resources/upload">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Resource
+            </a>
           </Button>
         </div>
       </div>
@@ -66,13 +163,15 @@ export default function MentorResources() {
                 type="search"
                 placeholder="Search resources..."
                 className="pl-8"
+                value={searchQuery}
+                onChange={handleSearch}
               />
             </div>
             <Button variant="outline" className="flex gap-2">
               <Filter className="h-4 w-4" />
               Filters
             </Button>
-            <Select defaultValue="recent">
+            <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -85,236 +184,50 @@ export default function MentorResources() {
             </Select>
           </div>
 
-          <Tabs defaultValue="all">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="templates">Templates</TabsTrigger>
-              <TabsTrigger value="videos">Videos</TabsTrigger>
-              <TabsTrigger value="links">Links</TabsTrigger>
+              <TabsTrigger value="Document">Documents</TabsTrigger>
+              <TabsTrigger value="Spreadsheet">Spreadsheets</TabsTrigger>
+              <TabsTrigger value="Video">Videos</TabsTrigger>
+              <TabsTrigger value="Link">Links</TabsTrigger>
             </TabsList>
-            <TabsContent value="all" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <h3 className="font-medium">Business Planning</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ResourceCard
-                    title="Startup Financial Model Template"
-                    type="Spreadsheet"
-                    size="245 KB"
-                    dateAdded="April 2, 2025"
-                    sharedWith={["Alex Johnson", "Sarah Chen"]}
-                    description="Comprehensive financial model template for startups, including P&L, cash flow, and balance sheet projections."
-                  />
-                  <ResourceCard
-                    title="Business Plan Template"
-                    type="Document"
-                    size="125 KB"
-                    dateAdded="March 28, 2025"
-                    sharedWith={[
-                      "Alex Johnson",
-                      "David Park",
-                      "Emily Rodriguez",
-                    ]}
-                    description="Structured template for creating a comprehensive business plan with section guidance."
-                  />
-                  <ResourceCard
-                    title="Market Research Guide"
-                    type="PDF"
-                    size="1.2 MB"
-                    dateAdded="March 15, 2025"
-                    sharedWith={["Sarah Chen", "Emily Rodriguez"]}
-                    description="Step-by-step guide for conducting effective market research for new ventures."
-                  />
-                  <ResourceCard
-                    title="Competitive Analysis Framework"
-                    type="Spreadsheet"
-                    size="180 KB"
-                    dateAdded="March 10, 2025"
-                    sharedWith={["Alex Johnson", "David Park"]}
-                    description="Template for analyzing competitors across key dimensions with visualization tools."
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-medium">Fundraising</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ResourceCard
-                    title="Pitch Deck Template"
-                    type="Presentation"
-                    size="3.5 MB"
-                    dateAdded="April 5, 2025"
-                    sharedWith={["Alex Johnson", "Sarah Chen"]}
-                    description="Investor-ready pitch deck template with guidance for each slide."
-                  />
-                  <ResourceCard
-                    title="Startup Valuation Methods"
-                    type="PDF"
-                    size="850 KB"
-                    dateAdded="March 25, 2025"
-                    sharedWith={["Alex Johnson"]}
-                    description="Overview of different valuation methodologies for early-stage startups."
-                  />
-                  <ResourceCard
-                    title="Term Sheet Glossary"
-                    type="Document"
-                    size="95 KB"
-                    dateAdded="March 20, 2025"
-                    sharedWith={["Sarah Chen"]}
-                    description="Comprehensive glossary of terms commonly found in investment term sheets."
-                  />
-                  <ResourceCard
-                    title="Investor Meeting Checklist"
-                    type="PDF"
-                    size="75 KB"
-                    dateAdded="March 18, 2025"
-                    sharedWith={["Alex Johnson", "Sarah Chen"]}
-                    description="Preparation checklist for investor meetings and due diligence."
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-medium">Marketing & Growth</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ResourceCard
-                    title="Digital Marketing Strategy Template"
-                    type="Document"
-                    size="210 KB"
-                    dateAdded="April 8, 2025"
-                    sharedWith={["David Park", "Emily Rodriguez"]}
-                    description="Comprehensive template for creating a digital marketing strategy with channel planning."
-                  />
-                  <ResourceCard
-                    title="Customer Acquisition Calculator"
-                    type="Spreadsheet"
-                    size="150 KB"
-                    dateAdded="April 1, 2025"
-                    sharedWith={["David Park"]}
-                    description="Tool for calculating customer acquisition costs and lifetime value across channels."
-                  />
-                  <ResourceCard
-                    title="Content Marketing Planner"
-                    type="Spreadsheet"
-                    size="185 KB"
-                    dateAdded="March 22, 2025"
-                    sharedWith={["Emily Rodriguez"]}
-                    description="Editorial calendar and content planning tool with performance tracking."
-                  />
-                  <ResourceCard
-                    title="Social Media Strategy Guide"
-                    type="PDF"
-                    size="1.5 MB"
-                    dateAdded="March 15, 2025"
-                    sharedWith={["David Park", "Emily Rodriguez"]}
-                    description="Platform-specific strategies for building brand presence on social media."
-                  />
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="documents" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResourceCard
-                  title="Business Plan Template"
-                  type="Document"
-                  size="125 KB"
-                  dateAdded="March 28, 2025"
-                  sharedWith={["Alex Johnson", "David Park", "Emily Rodriguez"]}
-                  description="Structured template for creating a comprehensive business plan with section guidance."
-                />
-                <ResourceCard
-                  title="Term Sheet Glossary"
-                  type="Document"
-                  size="95 KB"
-                  dateAdded="March 20, 2025"
-                  sharedWith={["Sarah Chen"]}
-                  description="Comprehensive glossary of terms commonly found in investment term sheets."
-                />
-                <ResourceCard
-                  title="Digital Marketing Strategy Template"
-                  type="Document"
-                  size="210 KB"
-                  dateAdded="April 8, 2025"
-                  sharedWith={["David Park", "Emily Rodriguez"]}
-                  description="Comprehensive template for creating a digital marketing strategy with channel planning."
-                />
-              </div>
-            </TabsContent>
-            <TabsContent value="templates" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResourceCard
-                  title="Startup Financial Model Template"
-                  type="Spreadsheet"
-                  size="245 KB"
-                  dateAdded="April 2, 2025"
-                  sharedWith={["Alex Johnson", "Sarah Chen"]}
-                  description="Comprehensive financial model template for startups, including P&L, cash flow, and balance sheet projections."
-                />
-                <ResourceCard
-                  title="Pitch Deck Template"
-                  type="Presentation"
-                  size="3.5 MB"
-                  dateAdded="April 5, 2025"
-                  sharedWith={["Alex Johnson", "Sarah Chen"]}
-                  description="Investor-ready pitch deck template with guidance for each slide."
-                />
-                <ResourceCard
-                  title="Competitive Analysis Framework"
-                  type="Spreadsheet"
-                  size="180 KB"
-                  dateAdded="March 10, 2025"
-                  sharedWith={["Alex Johnson", "David Park"]}
-                  description="Template for analyzing competitors across key dimensions with visualization tools."
-                />
-                <ResourceCard
-                  title="Customer Acquisition Calculator"
-                  type="Spreadsheet"
-                  size="150 KB"
-                  dateAdded="April 1, 2025"
-                  sharedWith={["David Park"]}
-                  description="Tool for calculating customer acquisition costs and lifetime value across channels."
-                />
-              </div>
-            </TabsContent>
-            <TabsContent value="videos" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResourceCard
-                  title="Pitch Presentation Techniques"
-                  type="Video"
-                  size="45 MB"
-                  dateAdded="April 10, 2025"
-                  sharedWith={["Alex Johnson", "Sarah Chen"]}
-                  description="Video tutorial on effective pitch presentation techniques and common pitfalls to avoid."
-                />
-                <ResourceCard
-                  title="Financial Modeling Walkthrough"
-                  type="Video"
-                  size="65 MB"
-                  dateAdded="April 3, 2025"
-                  sharedWith={["Alex Johnson"]}
-                  description="Step-by-step walkthrough of building a financial model for your startup."
-                />
-              </div>
-            </TabsContent>
-            <TabsContent value="links" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResourceCard
-                  title="Startup Funding Resources"
-                  type="Link"
-                  dateAdded="April 7, 2025"
-                  sharedWith={["Alex Johnson", "Sarah Chen"]}
-                  description="Curated list of funding resources, grants, and accelerator programs for startups."
-                  url="https://example.com/funding-resources"
-                />
-                <ResourceCard
-                  title="Marketing Analytics Tools"
-                  type="Link"
-                  dateAdded="April 5, 2025"
-                  sharedWith={["David Park"]}
-                  description="Collection of free and paid marketing analytics tools for startups."
-                  url="https://example.com/marketing-tools"
-                />
-              </div>
+            <TabsContent value={activeTab} className="space-y-4 mt-4">
+              {Object.entries(groupedResources).map(
+                ([category, categoryResources]) => (
+                  <div key={category} className="space-y-2">
+                    <h3 className="font-medium">{category}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {categoryResources.map((resource) => (
+                        <ResourceCard
+                          key={resource.id}
+                          title={resource.title}
+                          type={resource.type}
+                          size={
+                            resource.fileUrl
+                              ? `${(Math.random() * 10).toFixed(1)} MB`
+                              : null
+                          }
+                          dateAdded={new Date(
+                            resource.publishDate
+                          ).toLocaleDateString()}
+                          sharedWith={resource.sharedWith.map(
+                            (u) => `${u.firstName} ${u.lastName}`
+                          )}
+                          description={resource.description}
+                          url={
+                            resource.type === "Link" ? resource.fileUrl : null
+                          }
+                          onDelete={() => handleDelete(resource.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
+              {resources.length === 0 && (
+                <p className="text-gray-500">No resources found.</p>
+              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -338,7 +251,7 @@ export default function MentorResources() {
                     <p className="text-sm text-gray-500">In your library</p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold">32</span>
+                <span className="text-2xl font-bold">{stats.total}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-gray-100 rounded-lg">
                 <div className="flex items-center gap-3">
@@ -350,19 +263,7 @@ export default function MentorResources() {
                     <p className="text-sm text-gray-500">With mentees</p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold">24</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-100 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-2 rounded-md">
-                    <BookOpen className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Resource Views</p>
-                    <p className="text-sm text-gray-500">Last 30 days</p>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold">87</span>
+                <span className="text-2xl font-bold">{stats.shared}</span>
               </div>
             </CardContent>
           </Card>
@@ -373,36 +274,34 @@ export default function MentorResources() {
               <CardDescription>Breakdown by format</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
-                <Badge className="mr-2 bg-blue-100 text-blue-800 hover:bg-blue-100">
-                  12
-                </Badge>
-                Documents
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Badge className="mr-2 bg-green-100 text-green-800 hover:bg-green-100">
-                  8
-                </Badge>
-                Spreadsheets
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Badge className="mr-2 bg-red-100 text-red-800 hover:bg-red-100">
-                  6
-                </Badge>
-                PDFs
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Badge className="mr-2 bg-purple-100 text-purple-800 hover:bg-purple-100">
-                  4
-                </Badge>
-                Presentations
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Badge className="mr-2 bg-amber-100 text-amber-800 hover:bg-amber-100">
-                  2
-                </Badge>
-                Videos
-              </Button>
+              {Object.entries(stats.types).map(([type, count]) => (
+                <Button
+                  key={type}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Badge
+                    className={`mr-2 ${
+                      type === "PDF"
+                        ? "bg-red-100 text-red-800 hover:bg-red-100"
+                        : type === "Document"
+                        ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                        : type === "Spreadsheet"
+                        ? "bg-green-100 text-green-800 hover:bg-green-100"
+                        : type === "Presentation"
+                        ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                        : type === "Video"
+                        ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
+                        : type === "Link"
+                        ? "bg-indigo-100 text-indigo-800 hover:bg-indigo-100"
+                        : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                    }`}
+                  >
+                    {count}
+                  </Badge>
+                  {type}
+                </Button>
+              ))}
             </CardContent>
           </Card>
 
@@ -412,44 +311,39 @@ export default function MentorResources() {
               <CardDescription>Resources shared with mentees</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-medium text-sm">
-                    Startup Financial Model Template
-                  </p>
-                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                    New
-                  </Badge>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  Shared with Alex Johnson, Sarah Chen
-                </p>
-                <p className="text-xs text-gray-500">April 2, 2025</p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-medium text-sm">
-                    Digital Marketing Strategy Template
-                  </p>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  Shared with David Park, Emily Rodriguez
-                </p>
-                <p className="text-xs text-gray-500">April 8, 2025</p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-medium text-sm">Pitch Deck Template</p>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  Shared with Alex Johnson, Sarah Chen
-                </p>
-                <p className="text-xs text-gray-500">April 5, 2025</p>
-              </div>
+              {resources
+                .filter((r) => r.sharedWith.length > 0)
+                .slice(0, 3)
+                .map((resource) => (
+                  <div key={resource.id} className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-medium text-sm">{resource.title}</p>
+                      {new Date(resource.publishDate) >
+                        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                          New
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Shared with{" "}
+                      {resource.sharedWith
+                        .map((u) => `${u.firstName} ${u.lastName}`)
+                        .join(", ")}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(resource.publishDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              {resources.filter((r) => r.sharedWith.length > 0).length ===
+                0 && (
+                <p className="text-gray-500">No recently shared resources.</p>
+              )}
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full">
-                View All Shared Resources
+              <Button variant="outline" className="w-full" asChild>
+                <a href="/mentor/resources">View All Shared Resources</a>
               </Button>
             </CardFooter>
           </Card>
@@ -467,6 +361,7 @@ function ResourceCard({
   sharedWith,
   description,
   url,
+  onDelete,
 }) {
   return (
     <Card>
@@ -582,7 +477,7 @@ function ResourceCard({
               <DropdownMenuItem>Download</DropdownMenuItem>
               <DropdownMenuItem>Share</DropdownMenuItem>
               <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem className="text-red-600" onClick={onDelete}>
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

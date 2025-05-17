@@ -12,16 +12,15 @@ module.exports = (sequelize) => {
       createdById: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: { model: "users", key: "id" },
-      },
-      sharedWithId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: { model: "users", key: "id" },
+        references: { model: "Users", key: "id" },
       },
       title: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
       type: {
         type: DataTypes.STRING,
@@ -29,7 +28,35 @@ module.exports = (sequelize) => {
       },
       content: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      category: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      fileUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      tags: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: [],
+      },
+      publishDate: {
+        type: DataTypes.DATE,
         allowNull: false,
+        defaultValue: DataTypes.NOW,
+      },
+      isDraft: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      isFeatured: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
     },
     {
@@ -43,8 +70,10 @@ module.exports = (sequelize) => {
       foreignKey: "createdById",
       as: "creator",
     });
-    Resource.belongsTo(models.User, {
-      foreignKey: "sharedWithId",
+    Resource.belongsToMany(models.User, {
+      through: "ResourceShares",
+      foreignKey: "resourceId",
+      otherKey: "userId",
       as: "sharedWith",
     });
   };

@@ -1,102 +1,122 @@
-import api from '../utils/api';
+import { get, post, put, del } from "../utils/api";
 
-// Create resource
-export const createResource = async (resourceData: {
-  title: string;
-  description: string;
-  type: string;
-  content?: string;
-  tags?: string[];
-  category: string;
-  fileUrl?: string;
-}) => {
+export const createResource = async (resourceData) => {
+  const formData = new FormData();
+  formData.append("title", resourceData.title);
+  formData.append("description", resourceData.description);
+  formData.append("type", resourceData.type);
+  formData.append("category", resourceData.category);
+  formData.append("tags", JSON.stringify(resourceData.tags));
+  formData.append("isDraft", resourceData.isDraft);
+  formData.append("isFeatured", resourceData.isFeatured);
+  formData.append("sharedWithIds", JSON.stringify(resourceData.sharedWithIds));
+
+  if (resourceData.file) {
+    formData.append("file", resourceData.file);
+  }
+  if (resourceData.fileUrl) {
+    formData.append("fileUrl", resourceData.fileUrl);
+  }
+
   try {
-    const response = await api.post('/resources', resourceData);
+    const response = await post("/resources", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to create resource';
+    throw new Error(
+      error.response?.data?.message || "Failed to create resource"
+    );
   }
 };
 
-// Get all resources
-export const getAllResources = async (filters?: {
-  type?: string;
-  category?: string;
-  tag?: string;
-}) => {
+export const getMentees = async (mentorId) => {
   try {
-    let url = '/resources';
-    if (filters) {
-      const queryParams = new URLSearchParams();
-      if (filters.type) queryParams.append('type', filters.type);
-      if (filters.category) queryParams.append('category', filters.category);
-      if (filters.tag) queryParams.append('tag', filters.tag);
-      
-      if (queryParams.toString()) {
-        url += `?${queryParams.toString()}`;
-      }
+    const response = await get(`/mentor/${mentorId}/mentees`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to fetch mentees");
+  }
+};
+
+export const getResources = async (params = {}) => {
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await get(
+      `/resources${queryString ? `?${queryString}` : ""}`
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch resources"
+    );
+  }
+};
+
+export const getResourceById = async (id) => {
+  try {
+    const response = await get(`/resources/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch resource"
+    );
+  }
+};
+
+export const updateResource = async (id, resourceData) => {
+  const formData = new FormData();
+  Object.entries(resourceData).forEach(([key, value]) => {
+    if (key === "tags" || key === "sharedWithIds") {
+      formData.append(key, JSON.stringify(value));
+    } else if (value !== null && value !== undefined) {
+      formData.append(key, value);
     }
-    
-    const response = await api.get(url);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data?.message || 'Failed to get resources';
-  }
-};
+  });
 
-// Get resource by ID
-export const getResourceById = async (resourceId: string) => {
   try {
-    const response = await api.get(`/resources/${resourceId}`);
+    const response = await put(`/resources/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get resource';
+    throw new Error(
+      error.response?.data?.message || "Failed to update resource"
+    );
   }
 };
 
-// Update resource
-export const updateResource = async (resourceId: string, resourceData: {
-  title?: string;
-  description?: string;
-  content?: string;
-  tags?: string[];
-  category?: string;
-  fileUrl?: string;
-}) => {
+export const deleteResource = async (id) => {
   try {
-    const response = await api.put(`/resources/${resourceId}`, resourceData);
+    const response = await del(`/resources/${id}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to update resource';
+    throw new Error(
+      error.response?.data?.message || "Failed to delete resource"
+    );
   }
 };
 
-// Delete resource
-export const deleteResource = async (resourceId: string) => {
-  try {
-    const response = await api.delete(`/resources/${resourceId}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data?.message || 'Failed to delete resource';
-  }
-};
-
-// Get featured resources
 export const getFeaturedResources = async () => {
   try {
-    const response = await api.get('/resources/featured');
+    const response = await get("/resources/featured");
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get featured resources';
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch featured resources"
+    );
   }
 };
 
-// Search resources
-export const searchResources = async (query: string) => {
+export const searchResources = async (query) => {
   try {
-    const response = await api.get(`/resources/search?query=${query}`);
+    const response = await get(
+      `/resources/search?query=${encodeURIComponent(query)}`
+    );
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to search resources';
+    throw new Error(
+      error.response?.data?.message || "Failed to search resources"
+    );
   }
 };

@@ -1,124 +1,212 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowLeft, File, FileText, Info, Link2, Plus, Upload, X } from "lucide-react"
-import Button from "../../../components/button"
-import { Link } from "react-router-dom"
-import Card from "../../../components/card/card"
-import CardHeader from "../../../components/card/cardHeader"
-import CardTitle from "../../../components/card/cardTitle"
-import CardDescription from "../../../components/card/cardDescription"
-import CardContent from "../../../components/card/cardContent"
-import Label from "../../../components/Label"
-import Input from "../../../components/Input"
-import Select from "../../../components/select/select"
-import SelectTrigger from "../../../components/select/SelectTrigger"
-import SelectValue from "../../../components/select/SelectValue"
-import SelectItem from "../../../components/select/SelectItem"
-import Textarea from "../../../components/Textarea"
-import Badge from "../../../components/badge"
-import Switch from "../../../components/Switch"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/Tooltip"
-import Avatar from "../../../components/avatar/Avatar"
-import AvatarImage from "../../../components/avatar/AvatarImage"
-import AvatarFallback from "../../../components/avatar/AvatarFallback"
-import SelectContent from "../../../components/select/SelectContent"
-import CardFooter from "../../../components/card/cardFooter"
-import { RadioGroup, RadioGroupItem } from "../../../components/RadioGroup"
+import { useState, useEffect } from "react";
+import { ArrowLeft, File, FileText, Info, Link2, Plus, Upload, X } from "lucide-react";
+import Button from "../../../components/button";
+import { Link, useNavigate } from "react-router-dom";
+import Card from "../../../components/card/card";
+import CardHeader from "../../../components/card/cardHeader";
+import CardTitle from "../../../components/card/cardTitle";
+import CardDescription from "../../../components/card/cardDescription";
+import CardContent from "../../../components/card/cardContent";
+import Label from "../../../components/Label";
+import Input from "../../../components/Input";
+import Select from "../../../components/select/select";
+import SelectTrigger from "../../../components/select/SelectTrigger";
+import SelectValue from "../../../components/select/SelectValue";
+import SelectItem from "../../../components/select/SelectItem";
+import Textarea from "../../../components/Textarea";
+import Badge from "../../../components/badge";
+import Switch from "../../../components/Switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/Tooltip";
+import Avatar from "../../../components/avatar/Avatar";
+import AvatarImage from "../../../components/avatar/AvatarImage";
+import AvatarFallback from "../../../components/avatar/AvatarFallback";
+import SelectContent from "../../../components/select/SelectContent";
+import CardFooter from "../../../components/card/cardFooter";
+import { RadioGroup, RadioGroupItem } from "../../../components/RadioGroup";
+import { useAuth } from "../../../context/AuthContext";
+import { createResource, getMentees } from "../../../services/resourceService";
 
 export default function UploadResourcePage() {
-  const [resourceType, setResourceType] = useState("file")
-  const [fileType, setFileType] = useState("")
-  const [selectedFile, setSelectedFile] = useState(null)
-  const [selectedMentees, setSelectedMentees] = useState([])
-  const [tags, setTags] = useState([])
-  const [currentTag, setCurrentTag] = useState("")
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    resourceType: "file",
+    title: "",
+    description: "",
+    category: "",
+    fileType: "",
+    isDraft: false,
+    isFeatured: false,
+    sendNotification: true,
+    file: null,
+    url: "",
+    tags: [],
+    sharedWithIds: [],
+  });
+  const [mentees, setMentees] = useState([]);
+  const [currentTag, setCurrentTag] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState(null);
 
-  const mentees = [
-    { id: 1, name: "Alex Johnson", avatar: "/placeholder.svg?height=40&width=40" },
-    { id: 2, name: "Sarah Chen", avatar: "/placeholder.svg?height=40&width=40" },
-    { id: 3, name: "David Park", avatar: "/placeholder.svg?height=40&width=40" },
-    { id: 4, name: "Emily Rodriguez", avatar: "/placeholder.svg?height=40&width=40" },
-    { id: 5, name: "Michael Brown", avatar: "/placeholder.svg?height=40&width=40" },
-    { id: 6, name: "Jessica Taylor", avatar: "/placeholder.svg?height=40&width=40" },
-  ]
+  useEffect(() => {
+    fetchMentees();
+  }, [user.id]);
+
+  const fetchMentees = async () => {
+    try {
+      const response = await getMentees(user.id);
+      setMentees(response.map(mentee => ({
+        id: mentee.id,
+        name: `${mentee.firstName} ${mentee.lastName}`,
+        avatar: mentee.profileImage || "/placeholder.svg?height=40&width=40",
+      })));
+    } catch (err) {
+      setApiError("Failed to load mentees. Please try again.");
+      console.error(err);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!form.title.trim()) newErrors.title = "Title is required";
+    if (!form.category) newErrors.category = "Category is required";
+    if (form.resourceType === "file" && !form.file) newErrors.file = "File is required";
+    if (form.resourceType === "file" && !form.fileType) newErrors.fileType = "File type is required";
+    if (form.resourceType === "link" && !form.url.trim()) newErrors.url = "URL is required";
+    if (form.resourceType === "link" && form.url && !isValidUrl(form.url)) {
+      newErrors.url = "Please enter a valid URL";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setSelectedFile(file)
+      const file = e.target.files[0];
+      const extension = file.name.split(".").pop().toLowerCase();
+      let fileType = "Other";
+      
+      if (["doc", "docx"].includes(extension)) fileType = "Document";
+      else if (["xls", "xlsx", "csv"].includes(extension)) fileType = "Spreadsheet";
+      else if (extension === "pdf") fileType = "PDF";
+      else if (["ppt", "pptx"].includes(extension)) fileType = "Presentation";
+      else if (["mp4", "mov", "avi"].includes(extension)) fileType = "Video";
 
-      // Auto-detect file type
-      const extension = file.name.split(".").pop().toLowerCase()
-      if (["doc", "docx"].includes(extension)) {
-        setFileType("Document")
-      } else if (["xls", "xlsx", "csv"].includes(extension)) {
-        setFileType("Spreadsheet")
-      } else if (extension === "pdf") {
-        setFileType("PDF")
-      } else if (["ppt", "pptx"].includes(extension)) {
-        setFileType("Presentation")
-      } else if (["mp4", "mov", "avi"].includes(extension)) {
-        setFileType("Video")
-      } else {
-        setFileType("Other")
-      }
+      setForm({ ...form, file, fileType });
+      setErrors({ ...errors, file: null, fileType: null });
     }
-  }
+  };
 
   const toggleMentee = (menteeId) => {
-    if (selectedMentees.includes(menteeId)) {
-      setSelectedMentees(selectedMentees.filter((id) => id !== menteeId))
-    } else {
-      setSelectedMentees([...selectedMentees, menteeId])
-    }
-  }
+    setForm(prev => ({
+      ...prev,
+      sharedWithIds: prev.sharedWithIds.includes(menteeId)
+        ? prev.sharedWithIds.filter(id => id !== menteeId)
+        : [...prev.sharedWithIds, menteeId]
+    }));
+  };
 
   const addTag = () => {
-    if (currentTag && !tags.includes(currentTag)) {
-      setTags([...tags, currentTag])
-      setCurrentTag("")
+    if (currentTag.trim() && !form.tags.includes(currentTag.trim())) {
+      setForm({ ...form, tags: [...form.tags, currentTag.trim()] });
+      setCurrentTag("");
     }
-  }
+  };
 
   const removeTag = (tagToRemove) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove))
-  }
+    setForm({ ...form, tags: form.tags.filter(tag => tag !== tagToRemove) });
+  };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && currentTag) {
-      e.preventDefault()
-      addTag()
+    if (e.key === "Enter" && currentTag.trim()) {
+      e.preventDefault();
+      addTag();
     }
-  }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setApiError(null);
+
+    try {
+      const resourceData = {
+        title: form.title,
+        description: form.description,
+        type: form.resourceType === "link" ? "Link" : form.fileType,
+        category: form.category,
+        tags: form.tags,
+        isDraft: form.isDraft,
+        isFeatured: form.isFeatured,
+        sharedWithIds: form.sharedWithIds,
+        file: form.resourceType === "file" ? form.file : null,
+        fileUrl: form.resourceType === "link" ? form.url : null,
+      };
+
+      await createResource(resourceData);
+      navigate("/mentor/resources");
+    } catch (err) {
+      setApiError(err.message || "Failed to upload resource. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/mentor/resources">
+          <Link to="/mentor/resources">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
         <h1 className="text-3xl font-bold">Upload Resource</h1>
       </div>
 
+      {apiError && <div className="text-red-600">{apiError}</div>}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Resource Information</CardTitle>
-              <CardDescription>Provide details about the resource you're uploading</CardDescription>
+              <CardDescription>Provide details about the resource</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Resource Title</Label>
-                <Input id="title" placeholder="Enter a descriptive title..." />
+                <Input
+                  id="title"
+                  placeholder="Enter a descriptive title..."
+                  value={form.title}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
+                  className={errors.title ? "border-red-500" : ""}
+                />
+                {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label>Resource Type</Label>
-                <RadioGroup defaultValue="file" onValueChange={setResourceType} className="flex flex-col space-y-1">
+                <RadioGroup
+                  value={form.resourceType}
+                  onValueChange={value => setForm({ ...form, resourceType: value, file: null, url: "" })}
+                  className="flex flex-col space-y-1"
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="file" id="file" />
                     <Label htmlFor="file" className="flex items-center cursor-pointer">
@@ -136,22 +224,27 @@ export default function UploadResourcePage() {
                 </RadioGroup>
               </div>
 
-              {resourceType === "file" ? (
+              {form.resourceType === "file" ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>File</Label>
                     <div
-                      className="border-2 border-dashed rounded-md p-6 text-center hover:bg-gray-100/50 transition-colors cursor-pointer"
+                      className={`border-2 border-dashed rounded-md p-6 text-center hover:bg-gray-100/50 transition-colors cursor-pointer ${errors.file ? "border-red-500" : ""}`}
                       onClick={() => document.getElementById("file-upload").click()}
                     >
-                      <input type="file" id="file-upload" className="hidden" onChange={handleFileChange} />
+                      <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
                       <div className="flex flex-col items-center gap-2">
                         <File className="h-8 w-8 text-gray-500" />
-                        {selectedFile ? (
+                        {form.file ? (
                           <div className="flex flex-col items-center">
-                            <p className="text-sm font-medium">{selectedFile.name}</p>
+                            <p className="text-sm font-medium">{form.file.name}</p>
                             <p className="text-xs text-gray-500">
-                              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                              {(form.file.size / 1024 / 1024).toFixed(2)} MB
                             </p>
                           </div>
                         ) : (
@@ -166,12 +259,16 @@ export default function UploadResourcePage() {
                         )}
                       </div>
                     </div>
+                    {errors.file && <p className="text-red-500 text-xs">{errors.file}</p>}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="file-type">File Type</Label>
-                    <Select value={fileType} onValueChange={setFileType}>
-                      <SelectTrigger id="file-type">
+                    <Select
+                      value={form.fileType}
+                      onValueChange={value => setForm({ ...form, fileType: value })}
+                    >
+                      <SelectTrigger id="file-type" className={errors.fileType ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select file type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -183,27 +280,44 @@ export default function UploadResourcePage() {
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.fileType && <p className="text-red-500 text-xs">{errors.fileType}</p>}
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="url">Resource URL</Label>
-                  <Input id="url" placeholder="https://..." />
+                  <Input
+                    id="url"
+                    placeholder="https://..."
+                    value={form.url}
+                    onChange={e => setForm({ ...form, url: e.target.value })}
+                    className={errors.url ? "border-red-500" : ""}
+                  />
+                  {errors.url && <p className="text-red-500 text-xs">{errors.url}</p>}
                 </div>
               )}
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Provide a detailed description of this resource..." rows={4} />
+                <Textarea
+                  id="description"
+                  placeholder="Provide a detailed description of this resource..."
+                  rows={4}
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                />
                 <p className="text-xs text-gray-500">
-                  Explain what this resource is for and how mentees can use it.
+                  Explain what this resource is for and how mente celebrated can use it.
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select>
-                  <SelectTrigger id="category">
+                <Select
+                  value={form.category}
+                  onValueChange={value => setForm({ ...form, category: value })}
+                >
+                  <SelectTrigger id="category" className={errors.category ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -217,6 +331,7 @@ export default function UploadResourcePage() {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.category && <p className="text-red-500 text-xs">{errors.category}</p>}
               </div>
 
               <div className="space-y-2">
@@ -225,16 +340,16 @@ export default function UploadResourcePage() {
                   <Input
                     placeholder="Add tags..."
                     value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
+                    onChange={e => setCurrentTag(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
-                  <Button type="button" onClick={addTag} disabled={!currentTag}>
+                  <Button type="button" onClick={addTag} disabled={!currentTag.trim()}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                {tags.length > 0 && (
+                {form.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {tags.map((tag, index) => (
+                    {form.tags.map((tag, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-1">
                         {tag}
                         <Button
@@ -264,7 +379,15 @@ export default function UploadResourcePage() {
                   <Label>Share with all mentees</Label>
                   <p className="text-sm text-gray-500">Make this resource available to all your mentees</p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={form.sharedWithIds.length === mentees.length}
+                  onCheckedChange={checked =>
+                    setForm({
+                      ...form,
+                      sharedWithIds: checked ? mentees.map(m => m.id) : []
+                    })
+                  }
+                />
               </div>
 
               <div className="space-y-2">
@@ -282,11 +405,11 @@ export default function UploadResourcePage() {
                   </TooltipProvider>
                 </Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {mentees.map((mentee) => (
+                  {mentees.map(mentee => (
                     <div
                       key={mentee.id}
                       className={`flex items-center gap-3 p-2 rounded-md border cursor-pointer hover:bg-gray-100/50 ${
-                        selectedMentees.includes(mentee.id) ? "bg-blue-50 border-blue-200" : ""
+                        form.sharedWithIds.includes(mentee.id) ? "bg-blue-50 border-blue-200" : ""
                       }`}
                       onClick={() => toggleMentee(mentee.id)}
                     >
@@ -295,7 +418,7 @@ export default function UploadResourcePage() {
                         <AvatarFallback>{mentee.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{mentee.name}</span>
-                      {selectedMentees.includes(mentee.id) && <Badge className="ml-auto">Selected</Badge>}
+                      {form.sharedWithIds.includes(mentee.id) && <Badge className="ml-auto">Selected</Badge>}
                     </div>
                   ))}
                 </div>
@@ -306,7 +429,10 @@ export default function UploadResourcePage() {
                   <Label>Send notification</Label>
                   <p className="text-sm text-gray-500">Notify selected mentees about this resource</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={form.sendNotification}
+                  onCheckedChange={checked => setForm({ ...form, sendNotification: checked })}
+                />
               </div>
             </CardContent>
           </Card>
@@ -323,92 +449,85 @@ export default function UploadResourcePage() {
                 <div className="flex items-start space-x-3">
                   <div
                     className={`p-2 rounded-md ${
-                      fileType === "PDF"
-                        ? "bg-red-100"
-                        : fileType === "Document"
-                          ? "bg-blue-100"
-                          : fileType === "Spreadsheet"
-                            ? "bg-green-100"
-                            : fileType === "Presentation"
-                              ? "bg-amber-100"
-                              : fileType === "Video"
-                                ? "bg-purple-100"
-                                : "bg-gray-100"
+                      form.fileType === "PDF" ? "bg-red-100" :
+                      form.fileType === "Document" ? "bg-blue-100" :
+                      form.fileType === "Spreadsheet" ? "bg-green-100" :
+                      form.fileType === "Presentation" ? "bg-amber-100" :
+                      form.fileType === "Video" ? "bg-purple-100" :
+                      form.resourceType === "link" ? "bg-indigo-100" :
+                      "bg-gray-100"
                     }`}
                   >
                     <FileText
                       className={`h-4 w-4 ${
-                        fileType === "PDF"
-                          ? "text-red-600"
-                          : fileType === "Document"
-                            ? "text-blue-600"
-                            : fileType === "Spreadsheet"
-                              ? "text-green-600"
-                              : fileType === "Presentation"
-                                ? "text-amber-600"
-                                : fileType === "Video"
-                                  ? "text-purple-600"
-                                  : "text-gray-600"
+                        form.fileType === "PDF" ? "text-red-600" :
+                        form.fileType === "Document" ? "text-blue-600" :
+                        form.fileType === "Spreadsheet" ? "text-green-600" :
+                        form.fileType === "Presentation" ? "text-amber-600" :
+                        form.fileType === "Video" ? "text-purple-600" :
+                        form.resourceType === "link" ? "text-indigo-600" :
+                        "text-gray-600"
                       }`}
                     />
                   </div>
                   <div>
-                    <h4 className="font-medium">{document.getElementById("title")?.value || "Resource Title"}</h4>
+                    <h4 className="font-medium">{form.title || "Resource Title"}</h4>
                     <div className="flex items-center mt-1">
                       <Badge
                         className={`${
-                          fileType === "PDF"
-                            ? "bg-red-100 text-red-800 hover:bg-red-100"
-                            : fileType === "Document"
-                              ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                              : fileType === "Spreadsheet"
-                                ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                : fileType === "Presentation"
-                                  ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                                  : fileType === "Video"
-                                    ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
-                                    : resourceType === "link"
-                                      ? "bg-indigo-100 text-indigo-800 hover:bg-indigo-100"
-                                      : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                          form.fileType === "PDF" ? "bg-red-100 text-red-800 hover:bg-red-100" :
+                          form.fileType === "Document" ? "bg-blue-100 text-blue-800 hover:bg-blue-100" :
+                          form.fileType === "Spreadsheet" ? "bg-green-100 text-green-800 hover:bg-green-100" :
+                          form.fileType === "Presentation" ? "bg-amber-100 text-amber-800 hover:bg-amber-100" :
+                          form.fileType === "Video" ? "bg-purple-100 text-purple-800 hover:bg-purple-100" :
+                          form.resourceType === "link" ? "bg-indigo-100 text-indigo-800 hover:bg-indigo-100" :
+                          "bg-gray-100 text-gray-800 hover:bg-gray-100"
                         }`}
                       >
-                        {resourceType === "link" ? "Link" : fileType || "File"}
+                        {form.resourceType === "link" ? "Link" : form.fileType || "File"}
                       </Badge>
-                      {selectedFile && (
+                      {form.file && (
                         <span className="text-xs text-gray-500 ml-2">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                          {(form.file.size / 1024 / 1024).toFixed(2)} MB
                         </span>
+                      )}
+                      {form.url && (
+                        <a href={form.url} className="text-xs text-blue-600 ml-2 hover:underline truncate max-w-[150px]">
+                          {form.url}
+                        </a>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">Added: {new Date().toLocaleDateString()}</p>
-                    {selectedMentees.length > 0 && (
+                    {form.sharedWithIds.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs text-gray-500">Shared with:</p>
                         <div className="flex -space-x-2 mt-1">
-                          {selectedMentees.slice(0, 3).map((menteeId) => {
-                            const mentee = mentees.find((m) => m.id === menteeId)
-                            return (
+                          {form.sharedWithIds.slice(0, 3).map(menteeId => {
+                            const mentee = mentees.find(m => m.id === menteeId);
+                            return mentee ? (
                               <Avatar key={menteeId} className="border-2 border-white h-6 w-6">
                                 <AvatarFallback className="text-xs">
-                                  {mentee.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
+                                  {mentee.name.split(" ").map(n => n[0]).join("")}
                                 </AvatarFallback>
                               </Avatar>
-                            )
+                            ) : null;
                           })}
-                          {selectedMentees.length > 3 && (
+                          {form.sharedWithIds.length > 3 && (
                             <div className="flex items-center justify-center border-2 border-white bg-gray-100 h-6 w-6 rounded-full text-xs">
-                              +{selectedMentees.length - 3}
+                              +{form.sharedWithIds.length - 3}
                             </div>
                           )}
                         </div>
                       </div>
                     )}
-                    <p className="text-sm mt-2">
-                      {document.getElementById("description")?.value || "Resource description will appear here."}
-                    </p>
+                    <p className="text-sm mt-2">{form.description || "Resource description will appear here."}</p>
+                    {form.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {form.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline">{tag}</Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -425,29 +544,34 @@ export default function UploadResourcePage() {
                   <Label>Save as draft</Label>
                   <p className="text-sm text-gray-500">Save without publishing</p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={form.isDraft}
+                  onCheckedChange={checked => setForm({ ...form, isDraft: checked })}
+                />
               </div>
-
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Feature resource</Label>
-                  <p className="text-sm text-gray-500">Highlight in resource library</p>
+                  <Label>Feature this resource</Label>
+                  <p className="text-sm text-gray-500">Highlight on your profile</p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={form.isFeatured}
+                  onCheckedChange={checked => setForm({ ...form, isFeatured: checked })}
+                />
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-              <Button className="w-full">
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Resource
-              </Button>
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/mentor/resources">Cancel</Link>
+            <CardFooter>
+              <Button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? "Uploading..." : "Upload Resource"}
               </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }
