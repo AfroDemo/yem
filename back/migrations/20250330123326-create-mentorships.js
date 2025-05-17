@@ -1,32 +1,35 @@
 "use strict";
 
-const { DataTypes } = require('sequelize');
+const { DataTypes } = require("sequelize");
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("mentorships", {
       id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
         type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
       },
       mentorId: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         references: {
           model: "users",
           key: "id",
         },
-        allowNull: false,
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       menteeId: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         references: {
           model: "users",
           key: "id",
         },
-        allowNull: false,
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       packageType: {
         type: DataTypes.STRING,
@@ -34,17 +37,16 @@ module.exports = {
       },
       status: {
         type: DataTypes.ENUM("pending", "accepted", "rejected", "completed"),
-        defaultValue: "pending",
         allowNull: false,
+        defaultValue: "pending",
       },
       goals: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
       progress: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
+        type: DataTypes.JSON,
+        allowNull: true,
       },
       background: {
         type: DataTypes.TEXT,
@@ -64,21 +66,27 @@ module.exports = {
       },
       startDate: {
         type: DataTypes.DATE,
+        allowNull: true,
       },
       endDate: {
         type: DataTypes.DATE,
+        allowNull: true,
       },
       meetingFrequency: {
         type: DataTypes.STRING,
+        allowNull: true,
       },
       nextMeetingDate: {
         type: DataTypes.DATE,
+        allowNull: true,
       },
       feedback: {
         type: DataTypes.JSON,
+        allowNull: true,
       },
       notes: {
         type: DataTypes.TEXT,
+        allowNull: true,
       },
       createdAt: {
         allowNull: false,

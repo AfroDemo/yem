@@ -1,26 +1,23 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db");
-const User = require("./User"); // Assuming User model exists
 
 module.exports = (sequelize) => {
   const Mentorship = sequelize.define(
     "Mentorship",
     {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
       mentorId: {
         type: DataTypes.INTEGER,
-        references: {
-          model: "users",
-          key: "id",
-        },
         allowNull: false,
+        references: { model: "users", key: "id" },
       },
       menteeId: {
         type: DataTypes.INTEGER,
-        references: {
-          model: "users",
-          key: "id",
-        },
         allowNull: false,
+        references: { model: "users", key: "id" },
       },
       packageType: {
         type: DataTypes.STRING,
@@ -30,16 +27,19 @@ module.exports = (sequelize) => {
         },
       },
       status: {
-        type: DataTypes.ENUM("pending", "accepted", "rejected", "completed"),
+        type: DataTypes.ENUM("pending", "active", "rejected", "completed"),
         defaultValue: "pending",
         allowNull: false,
       },
       goals: {
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       progress: {
-        type: DataTypes.JSON, // Storing progress as a JSON array
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        validate: { min: 0, max: 100 },
       },
       background: {
         type: DataTypes.TEXT,
@@ -62,37 +62,39 @@ module.exports = (sequelize) => {
       },
       startDate: {
         type: DataTypes.DATE,
+        allowNull: true,
       },
       endDate: {
         type: DataTypes.DATE,
+        allowNull: true,
       },
       meetingFrequency: {
         type: DataTypes.STRING,
+        allowNull: true,
       },
       nextMeetingDate: {
         type: DataTypes.DATE,
+        allowNull: true,
       },
       feedback: {
         type: DataTypes.JSON,
+        allowNull: true,
       },
       notes: {
         type: DataTypes.TEXT,
+        allowNull: true,
       },
     },
     {
       tableName: "mentorships",
-      timestamps: true, // Automatically adds createdAt and updatedAt fields
+      timestamps: true,
     }
   );
-  Mentorship.associate = (models) => {
-    Mentorship.belongsTo(models.User, {
-      foreignKey: "mentorId",
-      as: "mentor",
-    });
-    Mentorship.belongsTo(models.User, {
-      foreignKey: "menteeId",
-      as: "mentee",
-    });
+
+  Mentorship.associate = function (models) {
+    Mentorship.belongsTo(models.User, { foreignKey: "mentorId", as: "mentor" });
+    Mentorship.belongsTo(models.User, { foreignKey: "menteeId", as: "mentee" });
   };
+
   return Mentorship;
 };
