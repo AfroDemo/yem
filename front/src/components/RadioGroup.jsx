@@ -38,8 +38,15 @@ export function RadioGroupItem({
   className = "",
   ...props
 }) {
+  const handleKeyDown = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      onSelect?.();
+    }
+  };
+
   return (
-    <div className={`flex items-start space-x-3 ${className}`} {...props}>
+    <div className={`group flex items-start space-x-3 ${className}`} {...props}>
       <button
         type="button"
         role="radio"
@@ -47,19 +54,22 @@ export function RadioGroupItem({
         aria-labelledby={`${id}-label`}
         id={id}
         onClick={onSelect}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
         className={`
           mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center 
-          transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary
+          transition-colors duration-200 ease-in-out
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/70
           ${
             checked
-              ? "border-primary bg-primary"
-              : "border-gray-300 hover:border-gray-400 bg-white"
+              ? "border-primary bg-primary group-hover:bg-primary-dark"
+              : "border-gray-300 bg-white group-hover:border-gray-400"
           } 
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
         {checked && (
-          <span className="block w-2.5 h-2.5 rounded-full bg-white"></span>
+          <span className="block w-2.5 h-2.5 rounded-full bg-white transition-transform duration-200 transform scale-100" />
         )}
       </button>
       <label
