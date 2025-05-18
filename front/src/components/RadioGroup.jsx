@@ -2,9 +2,19 @@
 
 import React from "react";
 
-export function RadioGroup({ value, onValueChange, children, className = "" }) {
+export function RadioGroup({
+  value,
+  onValueChange,
+  children,
+  className = "",
+  ...props
+}) {
   return (
-    <div role="radiogroup" className={`flex flex-col space-y-2 ${className}`}>
+    <div
+      role="radiogroup"
+      className={`flex flex-col space-y-3 ${className}`}
+      {...props}
+    >
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           return React.cloneElement(child, {
@@ -21,32 +31,42 @@ export function RadioGroup({ value, onValueChange, children, className = "" }) {
 export function RadioGroupItem({
   value,
   id,
-  checked,
+  checked = false,
   onSelect,
   children,
   disabled = false,
+  className = "",
+  ...props
 }) {
   return (
-    <div className="flex items-center space-x-2">
+    <div className={`flex items-start space-x-3 ${className}`} {...props}>
       <button
         type="button"
         role="radio"
         aria-checked={checked}
+        aria-labelledby={`${id}-label`}
         id={id}
         onClick={onSelect}
         disabled={disabled}
-        className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
-          checked
-            ? "border-primary bg-primary"
-            : "border-gray-300 hover:border-gray-400"
-        } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        className={`
+          mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center 
+          transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary
+          ${
+            checked
+              ? "border-primary bg-primary"
+              : "border-gray-300 hover:border-gray-400 bg-white"
+          } 
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
-        {checked && <div className="w-2 h-2 rounded-full bg-white"></div>}
+        {checked && (
+          <span className="block w-2.5 h-2.5 rounded-full bg-white"></span>
+        )}
       </button>
       <label
+        id={`${id}-label`}
         htmlFor={id}
-        className={`flex items-center text-sm ${
-          disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+        className={`flex flex-col text-base ${
+          disabled ? "opacity-70 cursor-not-allowed" : "cursor-pointer"
         }`}
       >
         {children}

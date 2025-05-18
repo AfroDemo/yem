@@ -246,22 +246,36 @@ export default function UploadResourcePage() {
                 <RadioGroup
                   value={form.resourceType}
                   onValueChange={(value) =>
-                    setForm({
-                      ...form,
-                      resourceType: value,
-                      file: null,
-                      fileUrl: "",
-                      fileType: "",
-                    })
+                    setForm({ ...form, resourceType: value })
                   }
+                  className="my-4"
                 >
-                  <RadioGroupItem value="file" id="file">
-                    <Upload className="mr-2 h-4 w-4" />
-                    File Upload
+                  <RadioGroupItem
+                    value="file"
+                    id="file-option"
+                    className="hover:bg-gray-50 p-2 rounded"
+                  >
+                    <div className="flex items-center">
+                      <Upload className="mr-2 h-5 w-5 text-gray-700" />
+                      <span className="font-medium">File Upload</span>
+                    </div>
+                    <span className="text-sm text-gray-500 mt-1">
+                      Upload documents, spreadsheets, or presentations
+                    </span>
                   </RadioGroupItem>
-                  <RadioGroupItem value="link" id="link">
-                    <Link2 className="mr-2 h-4 w-4" />
-                    External Link
+
+                  <RadioGroupItem
+                    value="link"
+                    id="link-option"
+                    className="hover:bg-gray-50 p-2 rounded"
+                  >
+                    <div className="flex items-center">
+                      <Link2 className="mr-2 h-5 w-5 text-gray-700" />
+                      <span className="font-medium">External Link</span>
+                    </div>
+                    <span className="text-sm text-gray-500 mt-1">
+                      Share links to web resources or online documents
+                    </span>
                   </RadioGroupItem>
                 </RadioGroup>
               </div>
