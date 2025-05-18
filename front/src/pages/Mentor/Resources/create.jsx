@@ -240,7 +240,9 @@ export default function UploadResourcePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Resource Type</Label>
+                <Label asChild>
+                  <span>Resource Type</span>
+                </Label>
                 <RadioGroup
                   value={form.resourceType}
                   onValueChange={(value) =>
@@ -252,28 +254,15 @@ export default function UploadResourcePage() {
                       fileType: "",
                     })
                   }
-                  className="flex flex-col space-y-1"
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="file" id="file" />
-                    <Label
-                      htmlFor="file"
-                      className="flex items-center cursor-pointer"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      File Upload
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="link" id="link" />
-                    <Label
-                      htmlFor="link"
-                      className="flex items-center cursor-pointer"
-                    >
-                      <Link2 className="mr-2 h-4 w-4" />
-                      External Link
-                    </Label>
-                  </div>
+                  <RadioGroupItem value="file" id="file">
+                    <Upload className="mr-2 h-4 w-4" />
+                    File Upload
+                  </RadioGroupItem>
+                  <RadioGroupItem value="link" id="link">
+                    <Link2 className="mr-2 h-4 w-4" />
+                    External Link
+                  </RadioGroupItem>
                 </RadioGroup>
               </div>
 
