@@ -2,8 +2,9 @@ import { get, post, put, del } from "../utils/api";
 
 export const createResource = async (resourceData) => {
   const formData = new FormData();
+  formData.append("createdById", resourceData.createdById);
   formData.append("title", resourceData.title);
-  formData.append("description", resourceData.description);
+  formData.append("description", resourceData.description || "");
   formData.append("type", resourceData.type);
   formData.append("category", resourceData.category);
   formData.append("tags", JSON.stringify(resourceData.tags));
@@ -24,6 +25,7 @@ export const createResource = async (resourceData) => {
     });
     return response.data;
   } catch (error) {
+    console.error("Create resource error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to create resource"
     );
@@ -32,9 +34,10 @@ export const createResource = async (resourceData) => {
 
 export const getMentees = async (mentorId) => {
   try {
-    const response = await get(`/mentor/${mentorId}/mentees`);
+    const response = await get(`/mentors/${mentorId}/mentees`);
     return response.data;
   } catch (error) {
+    console.error("Get mentees error:", error.response || error);
     throw new Error(error.response?.data?.message || "Failed to fetch mentees");
   }
 };
@@ -47,6 +50,7 @@ export const getResources = async (params = {}) => {
     );
     return response.data;
   } catch (error) {
+    console.error("Get resources error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to fetch resources"
     );
@@ -58,6 +62,7 @@ export const getResourceById = async (id) => {
     const response = await get(`/resources/${id}`);
     return response.data;
   } catch (error) {
+    console.error("Get resource by ID error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to fetch resource"
     );
@@ -67,10 +72,15 @@ export const getResourceById = async (id) => {
 export const updateResource = async (id, resourceData) => {
   const formData = new FormData();
   Object.entries(resourceData).forEach(([key, value]) => {
-    if (key === "tags" || key === "sharedWithIds") {
-      formData.append(key, JSON.stringify(value));
-    } else if (value !== null && value !== undefined) {
-      formData.append(key, value);
+    if (value !== null && value !== undefined) {
+      // Send tags and sharedWithIds as arrays (not JSON) for updateResource
+      if (key === "tags" || key === "sharedWithIds") {
+        value.forEach((item, index) =>
+          formData.append(`${key}[${index}]`, item)
+        );
+      } else {
+        formData.append(key, value);
+      }
     }
   });
 
@@ -80,6 +90,7 @@ export const updateResource = async (id, resourceData) => {
     });
     return response.data;
   } catch (error) {
+    console.error("Update resource error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to update resource"
     );
@@ -91,6 +102,7 @@ export const deleteResource = async (id) => {
     const response = await del(`/resources/${id}`);
     return response.data;
   } catch (error) {
+    console.error("Delete resource error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to delete resource"
     );
@@ -102,6 +114,7 @@ export const getFeaturedResources = async () => {
     const response = await get("/resources/featured");
     return response.data;
   } catch (error) {
+    console.error("Get featured resources error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to fetch featured resources"
     );
@@ -115,6 +128,7 @@ export const searchResources = async (query) => {
     );
     return response.data;
   } catch (error) {
+    console.error("Search resources error:", error.response || error);
     throw new Error(
       error.response?.data?.message || "Failed to search resources"
     );

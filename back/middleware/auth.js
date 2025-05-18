@@ -66,9 +66,23 @@ const menteeAuth = (req, res, next) => {
   }
 };
 
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res
+      .status(400)
+      .json({ message: `File upload error: ${err.message}` });
+  } else if (err) {
+    req.fileValidationError = err;
+    next();
+  } else {
+    next();
+  }
+};
+
 module.exports = {
   auth,
   adminAuth,
   mentorAuth,
   menteeAuth,
+  handleMulterError,
 };

@@ -114,7 +114,9 @@ exports.getRecentMessages = async (req, res) => {
 
     // Find conversations involving the mentor (MySQL compatible version)
     const conversations = await Conversation.findAll({
-      where: db.sequelize.literal(`JSON_CONTAINS(participants, '[${mentorId}]')`),
+      where: db.sequelize.literal(
+        `JSON_CONTAINS(participants, '[${mentorId}]')`
+      ),
       include: [
         {
           model: Message,
@@ -254,5 +256,45 @@ exports.getUpcomingReports = async (req, res) => {
   } catch (error) {
     console.error("Get upcoming reports error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+exports.getMentees = async (req, res) => {
+  try {
+    const { mentorId } = req.params;
+
+    // Verify mentor exists
+    const mentor = await User.findByPk(mentorId);
+    if (!mentor || mentor.role !== "mentor") {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
+
+    // Fetch active mentorships with mentee details
+    const mentorships = await Mentorship.findAll({
+      where: {
+        mentorId,
+        status: "active",
+      },
+      include: [
+        {
+          model: User,
+          as: "mentee",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
+    });
+
+    // Extract mentee data
+    const mentees = mentorships.map((mentorship) => ({
+      id: mentorship.mentee.id,
+      firstName: mentorship.mentee.firstName,
+      lastName: mentorship.mentee.lastName,
+      profileImage: mentorship.mentee.profileImage,
+    }));
+
+    res.status(200).json(mentees);
+  } catch (error) {
+    console.error("Get mentees error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

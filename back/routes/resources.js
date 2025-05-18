@@ -1,36 +1,37 @@
-const express = require('express');
-const { 
+const express = require("express");
+const {
   createResource,
   getAllResources,
   getResourceById,
   updateResource,
   deleteResource,
   getFeaturedResources,
-  searchResources
-} = require('../controllers/resourceController');
-const { auth, mentorAuth } = require('../middleware/auth');
+  searchResources,
+} = require("../controllers/resourceController");
+const { auth, mentorAuth, handleMulterError } = require("../middleware/auth");
+const upload = require("../utils/upload");
 
 const router = express.Router();
 
 // Create resource (mentors and admins only)
-router.post('/', auth, mentorAuth, createResource);
+router.post("/", upload.single("file"),handleMulterError, auth, mentorAuth, createResource);
 
 // Get all resources
-router.get('/', getAllResources);
+router.get("/", getAllResources);
 
 // Get resource by ID
-router.get('/:id', getResourceById);
+router.get("/:id", getResourceById);
 
 // Update resource
-router.put('/:id', auth, updateResource);
+router.put("/:id", auth, updateResource);
 
 // Delete resource
-router.delete('/:id', auth, deleteResource);
+router.delete("/:id", auth, deleteResource);
 
 // Get featured resources
-router.get('/featured', getFeaturedResources);
+router.get("/featured", getFeaturedResources);
 
 // Search resources
-router.get('/search', searchResources);
+router.get("/search", searchResources);
 
 module.exports = router;

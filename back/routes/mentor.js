@@ -6,6 +6,7 @@ const {
   getMenteeProgress,
   getSharedResources,
   getUpcomingReports,
+  getMentees,
 } = require("../controllers/mentorController");
 const { auth } = require("../middleware/auth");
 
@@ -17,5 +18,6 @@ router.get("/:mentorId/messages/recent", auth, getRecentMessages);
 router.get("/:mentorId/mentees/progress", auth, getMenteeProgress);
 router.get("/:mentorId/resources/shared", auth, getSharedResources);
 router.get("/:mentorId/reports/upcoming", auth, getUpcomingReports);
+router.get("/:mentorId/mentees", auth, getMentees);
 
 module.exports = router;

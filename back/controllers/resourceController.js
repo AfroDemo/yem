@@ -1,66 +1,58 @@
 const { Op } = require("sequelize");
+const { uploadFile } = require("../utils/fileUpload");
 const Resource = require("../models").Resource;
 const User = require("../models").User;
 
 // Create resource
 exports.createResource = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      type,
-      content,
-      tags,
-      category,
-      fileUrl,
-      isDraft,
-      isFeatured,
-      sharedWithIds,
-    } = req.body;
-    const createdById = req.user.id;
-
-    const user = await User.findByPk(createdById);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    // Handle multer file filter errors
+    if (req.fileValidationError) {
+      return res.status(400).json({ message: req.fileValidationError.message });
     }
 
+    const { createdById, title, description, type, category, tags, isDraft, isFeatured, fileUrl, sharedWithIds } = req.body;
+    let finalFileUrl = fileUrl;
+
+    // Handle file upload if present
+    if (req.file) {
+      finalFileUrl = await uploadFile(req.file);
+    }
+
+    // Validate required fields
+    if (!createdById || !title || !type) {
+      return res.status(400).json({ message: 'Missing required fields: createdById, title, and type are required' });
+    }
+
+    // Create resource
     const resource = await Resource.create({
-      title,
-      description,
-      type,
-      content,
-      tags,
-      category,
-      fileUrl,
       createdById,
-      isDraft: isDraft || false,
-      isFeatured: isFeatured || false,
-      publishDate: new Date(),
+      title,
+      description: description || null,
+      type,
+      category: category || null,
+      fileUrl: finalFileUrl || null,
+      tags: tags ? JSON.parse(tags) : [],
+      isDraft: isDraft === 'true' || isDraft === true,
+      isFeatured: isFeatured === 'true' || isFeatured === true,
     });
 
-    if (sharedWithIds && Array.isArray(sharedWithIds)) {
-      await resource.setSharedWith(sharedWithIds);
+    // Handle sharing with mentees
+    if (sharedWithIds) {
+      const userIds = JSON.parse(sharedWithIds);
+      if (Array.isArray(userIds) && userIds.length > 0) {
+        const shares = userIds.map((userId) => ({
+          resourceId: resource.id,
+          userId,
+        }));
+        await ResourceShare.bulkCreate(shares);
+      }
     }
 
-    const savedResource = await Resource.findByPk(resource.id, {
-      include: [
-        {
-          model: User,
-          as: "creator",
-          attributes: ["id", "firstName", "lastName", "profileImage"],
-        },
-        {
-          model: User,
-          as: "sharedWith",
-          attributes: ["id", "firstName", "lastName"],
-        },
-      ],
-    });
-
-    res.status(201).json(savedResource);
+    res.status(201).json(resource);
   } catch (error) {
-    console.error("Create resource error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error('Create resource error:', error);
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 };
 
