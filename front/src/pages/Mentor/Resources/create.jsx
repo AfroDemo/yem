@@ -20,10 +20,6 @@ import CardDescription from "../../../components/card/cardDescription";
 import CardContent from "../../../components/card/cardContent";
 import Label from "../../../components/Label";
 import Input from "../../../components/Input";
-import Select from "../../../components/select/select";
-import SelectTrigger from "../../../components/select/SelectTrigger";
-import SelectValue from "../../../components/select/SelectValue";
-import SelectItem from "../../../components/select/SelectItem";
 import Textarea from "../../../components/Textarea";
 import Badge from "../../../components/badge";
 import Switch from "../../../components/Switch";
@@ -36,11 +32,17 @@ import {
 import Avatar from "../../../components/avatar/Avatar";
 import AvatarImage from "../../../components/avatar/AvatarImage";
 import AvatarFallback from "../../../components/avatar/AvatarFallback";
-import SelectContent from "../../../components/select/SelectContent";
 import CardFooter from "../../../components/card/cardFooter";
 import { RadioGroup, RadioGroupItem } from "../../../components/RadioGroup";
 import { useAuth } from "../../../context/AuthContext";
 import { createResource, getMentees } from "../../../services/resourceService";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
 
 export default function UploadResourcePage() {
   const { user } = useAuth();
@@ -49,7 +51,7 @@ export default function UploadResourcePage() {
     resourceType: "file",
     title: "",
     description: "",
-    content: "", // Added content field
+    content: "",
     category: "",
     fileType: "",
     isDraft: false,
@@ -67,11 +69,12 @@ export default function UploadResourcePage() {
 
   useEffect(() => {
     fetchMentees();
-  }, [user.id]);
+  }, [user?.id]);
 
   const fetchMentees = async () => {
     try {
       const response = await getMentees(user.id);
+      console.log("Mentees response:", response);
       setMentees(
         response.map((mentee) => ({
           id: mentee.id,
@@ -83,7 +86,7 @@ export default function UploadResourcePage() {
       setApiError(
         "No mentees found or failed to load mentees. You can still upload the resource."
       );
-      console.error(err);
+      console.error("Fetch mentees error:", err);
     }
   };
 
@@ -136,12 +139,18 @@ export default function UploadResourcePage() {
   };
 
   const toggleMentee = (menteeId) => {
-    setForm((prev) => ({
-      ...prev,
-      sharedWithIds: prev.sharedWithIds.includes(menteeId)
+    setForm((prev) => {
+      const newSharedWithIds = prev.sharedWithIds.includes(menteeId)
         ? prev.sharedWithIds.filter((id) => id !== menteeId)
-        : [...prev.sharedWithIds, menteeId],
-    }));
+        : [...prev.sharedWithIds, menteeId];
+      console.log(
+        "Toggling mentee:",
+        menteeId,
+        "New sharedWithIds:",
+        newSharedWithIds
+      );
+      return { ...prev, sharedWithIds: newSharedWithIds };
+    });
   };
 
   const addTag = () => {
@@ -170,11 +179,30 @@ export default function UploadResourcePage() {
     setApiError(null);
 
     try {
+      // Ensure tags and sharedWithIds are arrays
+      if (!Array.isArray(form.tags)) {
+        console.warn("form.tags is not an array:", form.tags);
+        setForm((prev) => ({ ...prev, tags: [] }));
+        throw new Error("Tags must be an array");
+      }
+      if (!Array.isArray(form.sharedWithIds)) {
+        console.warn("form.sharedWithIds is not an array:", form.sharedWithIds);
+        setForm((prev) => ({ ...prev, sharedWithIds: [] }));
+        throw new Error("Shared mentees must be an array");
+      }
+
+      console.log("form.tags:", form.tags, typeof form.tags);
+      console.log(
+        "form.sharedWithIds:",
+        form.sharedWithIds,
+        typeof form.sharedWithIds
+      );
+
       const formData = new FormData();
       formData.append("createdById", user.id);
       formData.append("title", form.title);
       formData.append("description", form.description || "");
-      formData.append("content", form.content || ""); // Added content
+      formData.append("content", form.content || "");
       formData.append(
         "type",
         form.resourceType === "link" ? "Link" : form.fileType
@@ -189,14 +217,17 @@ export default function UploadResourcePage() {
         formData.append("file", form.file);
       }
       formData.append("sharedWithIds", JSON.stringify(form.sharedWithIds));
-
-      await createResource(formData);
-      navigate("/mentor/resources");
+      console.log(formData);
+      // await createResource(formData);
+      // navigate("/mentor/resources");
     } catch (err) {
-      setApiError(
-        err.message || "Failed to upload resource. Please try again."
-      );
-      console.error(err);
+      const errorMessage =
+        err.message === "Tags must be an array" ||
+        err.message === "Shared mentees must be an array"
+          ? "Invalid form data. Please refresh and try again."
+          : err.message || "Failed to upload resource. Please try again.";
+      setApiError(errorMessage);
+      console.error("Submit error:", err);
     } finally {
       setLoading(false);
     }
@@ -213,7 +244,14 @@ export default function UploadResourcePage() {
         <h1 className="text-3xl font-bold">Upload Resource</h1>
       </div>
 
-      {apiError && <div className="text-red-600">{apiError}</div>}
+      {apiError && (
+        <div className="text-red-600 flex items-center gap-2">
+          {apiError}
+          <Button variant="link" onClick={handleSubmit}>
+            Retry
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -332,15 +370,17 @@ export default function UploadResourcePage() {
                     <Label htmlFor="file-type">File Type</Label>
                     <Select
                       value={form.fileType}
-                      onValueChange={(value) =>
-                        setForm({ ...form, fileType: value })
-                      }
+                      onValueChange={(value) => {
+                        setForm({ ...form, fileType: value });
+                        setErrors({ ...errors, fileType: false });
+                      }}
+                      error={errors.fileType}
                     >
-                      <SelectTrigger
-                        id="file-type"
-                        className={errors.fileType ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="Select file type" />
+                      <SelectTrigger error={errors.fileType}>
+                        <SelectValue
+                          placeholder="Select file type"
+                          value={form.fileType}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Document">Document</SelectItem>
