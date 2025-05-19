@@ -179,53 +179,30 @@ export default function UploadResourcePage() {
     setApiError(null);
 
     try {
-      // Ensure tags and sharedWithIds are arrays
-      if (!Array.isArray(form.tags)) {
-        console.warn("form.tags is not an array:", form.tags);
-        setForm((prev) => ({ ...prev, tags: [] }));
-        throw new Error("Tags must be an array");
-      }
-      if (!Array.isArray(form.sharedWithIds)) {
-        console.warn("form.sharedWithIds is not an array:", form.sharedWithIds);
-        setForm((prev) => ({ ...prev, sharedWithIds: [] }));
-        throw new Error("Shared mentees must be an array");
-      }
+      // Prepare data for submission
+      const resourceData = {
+        createdById: user.id,
+        title: form.title,
+        description: form.description || "",
+        content: form.content || "",
+        type: form.resourceType === "link" ? "Link" : form.fileType,
+        category: form.category,
+        tags: form.tags,
+        isDraft: form.isDraft,
+        isFeatured: form.isFeatured,
+        file: form.resourceType === "file" ? form.file : null,
+        fileUrl: form.resourceType === "link" ? form.fileUrl : null,
+        sharedWithIds: form.sharedWithIds,
+      };
 
-      console.log("form.tags:", form.tags, typeof form.tags);
-      console.log(
-        "form.sharedWithIds:",
-        form.sharedWithIds,
-        typeof form.sharedWithIds
-      );
-
-      const formData = new FormData();
-      formData.append("createdById", user.id);
-      formData.append("title", form.title);
-      formData.append("description", form.description || "");
-      formData.append("content", form.content || "");
-      formData.append(
-        "type",
-        form.resourceType === "link" ? "Link" : form.fileType
-      );
-      formData.append("category", form.category);
-      formData.append("tags", JSON.stringify(form.tags));
-      formData.append("isDraft", form.isDraft);
-      formData.append("isFeatured", form.isFeatured);
-      if (form.resourceType === "link") {
-        formData.append("fileUrl", form.fileUrl);
-      } else if (form.file) {
-        formData.append("file", form.file);
-      }
-      formData.append("sharedWithIds", JSON.stringify(form.sharedWithIds));
-      console.log(formData);
-      // await createResource(formData);
-      // navigate("/mentor/resources");
+      await createResource(resourceData);
+      navigate("/mentor/resources");
     } catch (err) {
       const errorMessage =
-        err.message === "Tags must be an array" ||
-        err.message === "Shared mentees must be an array"
-          ? "Invalid form data. Please refresh and try again."
-          : err.message || "Failed to upload resource. Please try again.";
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to upload resource. Please try again.";
+
       setApiError(errorMessage);
       console.error("Submit error:", err);
     } finally {

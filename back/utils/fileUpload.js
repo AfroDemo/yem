@@ -4,7 +4,7 @@ const fs = require("fs").promises;
 exports.uploadFile = async (file) => {
   try {
     const fileName = `resource-${Date.now()}${path.extname(file.originalname)}`;
-    const finalPath = path.join(__dirname, "../../public/uploads", fileName);
+    const finalPath = path.join(__dirname, "../public/uploads", fileName);
     const finalDir = path.dirname(finalPath);
 
     // Ensure the uploads directory exists
