@@ -59,7 +59,7 @@ exports.getDashboardMetrics = async (req, res) => {
         : 0;
 
     res.json({
-      active也在: activeMentees,
+      activeMentees: activeMentees,
       upcomingSessions,
       hoursMentored,
       averageRating,
