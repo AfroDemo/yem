@@ -47,8 +47,6 @@ export default function MentorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  console.log(metrics);
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
