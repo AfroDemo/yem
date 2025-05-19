@@ -5,7 +5,6 @@ const User = require("../models").User;
 
 // Create resource
 exports.createResource = async (req, res) => {
-  console.log(req.body)
   try {
     // Handle multer file filter errors
     if (req.fileValidationError) {

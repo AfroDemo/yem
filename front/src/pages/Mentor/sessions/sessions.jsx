@@ -51,7 +51,7 @@ export default function SessionsPage() {
     duration: "30",
     type: "virtual",
     agenda: "",
-    menteeIds: [],
+    menteeId: "", // Changed from menteeIds
     resourceIds: [],
   });
   const [mentees, setMentees] = useState([]);
@@ -64,9 +64,10 @@ export default function SessionsPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetchMentees();
-    fetchResources();
-    fetchSessions();
+    setLoading(true);
+    Promise.all([fetchMentees(), fetchResources(), fetchSessions()]).finally(
+      () => setLoading(false)
+    );
   }, [user]);
 
   const fetchMentees = async () => {
@@ -109,18 +110,14 @@ export default function SessionsPage() {
     if (!form.title.trim()) newErrors.title = "Title is required";
     if (!form.date) newErrors.date = "Date is required";
     if (!form.time) newErrors.time = "Time is required";
-    if (!form.menteeIds.length) newErrors.menteeIds = "Select at least one mentee";
+    if (!form.menteeId) newErrors.menteeId = "Select a mentee";
+    if (!form.duration) newErrors.duration = "Duration is required";
+    if (!form.type) newErrors.type = "Session type is required";
+    const selectedDateTime = new Date(`${form.date}T${form.time}`);
+    if (selectedDateTime < new Date())
+      newErrors.date = "Session cannot be scheduled in the past";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const toggleMentee = (menteeId) => {
-    setForm((prev) => ({
-      ...prev,
-      menteeIds: prev.menteeIds.includes(menteeId)
-        ? prev.menteeIds.filter((id) => id !== menteeId)
-        : [...prev.menteeIds, menteeId],
-    }));
   };
 
   const toggleResource = (resourceId) => {
@@ -142,12 +139,12 @@ export default function SessionsPage() {
     try {
       const sessionData = {
         mentorId: user.id,
+        menteeId: form.menteeId, // Changed from menteeIds
         title: form.title,
         dateTime: new Date(`${form.date}T${form.time}`).toISOString(),
         duration: parseInt(form.duration),
         type: form.type,
         agenda: form.agenda || "",
-        menteeIds: form.menteeIds,
         resourceIds: form.resourceIds,
       };
 
@@ -177,7 +174,7 @@ export default function SessionsPage() {
       duration: session.duration.toString(),
       type: session.type,
       agenda: session.agenda,
-      menteeIds: session.mentees.map((m) => m.id),
+      menteeId: session.mentee.id, // Changed from mentees
       resourceIds: session.resources.map((r) => r.id),
     });
     setEditingSessionId(session.id);
@@ -203,7 +200,7 @@ export default function SessionsPage() {
       duration: "30",
       type: "virtual",
       agenda: "",
-      menteeIds: [],
+      menteeId: "", // Changed from menteeIds
       resourceIds: [],
     });
     setErrors({});
@@ -224,7 +221,15 @@ export default function SessionsPage() {
       {apiError && (
         <div className="text-red-600 flex items-center gap-2">
           {apiError}
-          <Button variant="link" onClick={handleSubmit}>
+          <Button
+            variant="link"
+            onClick={() => {
+              setApiError(null);
+              fetchMentees();
+              fetchResources();
+              fetchSessions();
+            }}
+          >
             Retry
           </Button>
         </div>
@@ -234,8 +239,12 @@ export default function SessionsPage() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>{editingSessionId ? "Edit Session" : "Schedule Session"}</CardTitle>
-              <CardDescription>Plan a mentoring session with your mentees</CardDescription>
+              <CardTitle>
+                {editingSessionId ? "Edit Session" : "Schedule Session"}
+              </CardTitle>
+              <CardDescription>
+                Plan a mentoring session with your mentee
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -247,7 +256,9 @@ export default function SessionsPage() {
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className={errors.title ? "border-red-500" : ""}
                 />
-                {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
+                {errors.title && (
+                  <p className="text-red-500 text-xs">{errors.title}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -257,10 +268,13 @@ export default function SessionsPage() {
                     id="date"
                     type="date"
                     value={form.date}
+                    min={format(new Date(), "yyyy-MM-dd")}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     className={errors.date ? "border-red-500" : ""}
                   />
-                  {errors.date && <p className="text-red-500 text-xs">{errors.date}</p>}
+                  {errors.date && (
+                    <p className="text-red-500 text-xs">{errors.date}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="time">Time</Label>
@@ -271,7 +285,9 @@ export default function SessionsPage() {
                     onChange={(e) => setForm({ ...form, time: e.target.value })}
                     className={errors.time ? "border-red-500" : ""}
                   />
-                  {errors.time && <p className="text-red-500 text-xs">{errors.time}</p>}
+                  {errors.time && (
+                    <p className="text-red-500 text-xs">{errors.time}</p>
+                  )}
                 </div>
               </div>
 
@@ -279,7 +295,9 @@ export default function SessionsPage() {
                 <Label htmlFor="duration">Duration (minutes)</Label>
                 <Select
                   value={form.duration}
-                  onValueChange={(value) => setForm({ ...form, duration: value })}
+                  onValueChange={(value) =>
+                    setForm({ ...form, duration: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select duration" />
@@ -291,6 +309,9 @@ export default function SessionsPage() {
                     <SelectItem value="120">2 hours</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.duration && (
+                  <p className="text-red-500 text-xs">{errors.duration}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -303,10 +324,15 @@ export default function SessionsPage() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="virtual">Virtual (e.g., Zoom)</SelectItem>
+                    <SelectItem value="virtual">
+                      Virtual (e.g., Zoom)
+                    </SelectItem>
                     <SelectItem value="in-person">In-Person</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.type && (
+                  <p className="text-red-500 text-xs">{errors.type}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -321,46 +347,52 @@ export default function SessionsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Mentees</Label>
-                {mentees.length === 0 ? (
+                <Label htmlFor="mentee">Mentee</Label>
+                {loading ? (
+                  <p className="text-sm text-gray-500">Loading mentees...</p>
+                ) : mentees.length === 0 ? (
                   <p className="text-sm text-gray-500">No mentees available.</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {mentees.map((mentee) => (
-                      <div
-                        key={mentee.id}
-                        className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-gray-100/50 ${
-                          form.menteeIds.includes(mentee.id) ? "bg-blue-50 border-blue-200" : ""
-                        }`}
-                        onClick={() => toggleMentee(mentee.id)}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={form.menteeIds.includes(mentee.id)}
-                          onChange={() => toggleMentee(mentee.id)}
-                          className="h-4 w-4"
-                        />
-                        <span className="text-sm">{mentee.name}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <Select
+                    value={form.menteeId}
+                    onValueChange={(value) =>
+                      setForm({ ...form, menteeId: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a mentee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mentees.map((mentee) => (
+                        <SelectItem key={mentee.id} value={mentee.id}>
+                          {mentee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
-                {errors.menteeIds && (
-                  <p className="text-red-500 text-xs">{errors.menteeIds}</p>
+                {errors.menteeId && (
+                  <p className="text-red-500 text-xs">{errors.menteeId}</p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label>Resources (Optional)</Label>
-                {resources.length === 0 ? (
-                  <p className="text-sm text-gray-500">No resources available.</p>
+                {loading ? (
+                  <p className="text-sm text-gray-500">Loading resources...</p>
+                ) : resources.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No resources available.
+                  </p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {resources.map((resource) => (
                       <div
                         key={resource.id}
                         className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-gray-100/50 ${
-                          form.resourceIds.includes(resource.id) ? "bg-blue-50 border-blue-200" : ""
+                          form.resourceIds.includes(resource.id)
+                            ? "bg-blue-50 border-blue-200"
+                            : ""
                         }`}
                         onClick={() => toggleResource(resource.id)}
                       >
@@ -378,8 +410,16 @@ export default function SessionsPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSubmit} disabled={loading} className="w-full">
-                {loading ? "Saving..." : editingSessionId ? "Update Session" : "Schedule Session"}
+              <Button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading
+                  ? "Saving..."
+                  : editingSessionId
+                  ? "Update Session"
+                  : "Schedule Session"}
               </Button>
               {editingSessionId && (
                 <Button variant="outline" onClick={resetForm} className="ml-2">
@@ -394,10 +434,14 @@ export default function SessionsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Sessions</CardTitle>
-              <CardDescription>Your scheduled mentoring sessions</CardDescription>
+              <CardDescription>
+                Your scheduled mentoring sessions
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {sessions.length === 0 ? (
+              {loading ? (
+                <p className="text-sm text-gray-500">Loading sessions...</p>
+              ) : sessions.length === 0 ? (
                 <p className="text-sm text-gray-500">No sessions scheduled.</p>
               ) : (
                 <div className="space-y-4">
@@ -422,7 +466,7 @@ export default function SessionsPage() {
                         </p>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          {session.mentees.map((m) => m.name).join(", ")}
+                          {session.mentee.name} {/* Changed from mentees */}
                         </p>
                       </div>
                       <div className="flex gap-2">
