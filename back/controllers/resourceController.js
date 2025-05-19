@@ -11,7 +11,18 @@ exports.createResource = async (req, res) => {
       return res.status(400).json({ message: req.fileValidationError.message });
     }
 
-    const { createdById, title, description, type, category, tags, isDraft, isFeatured, fileUrl, sharedWithIds } = req.body;
+    const {
+      createdById,
+      title,
+      description,
+      type,
+      category,
+      tags,
+      isDraft,
+      isFeatured,
+      fileUrl,
+      sharedWithIds,
+    } = req.body;
     let finalFileUrl = fileUrl;
 
     // Handle file upload if present
@@ -21,7 +32,12 @@ exports.createResource = async (req, res) => {
 
     // Validate required fields
     if (!createdById || !title || !type) {
-      return res.status(400).json({ message: 'Missing required fields: createdById, title, and type are required' });
+      return res
+        .status(400)
+        .json({
+          message:
+            "Missing required fields: createdById, title, and type are required",
+        });
     }
 
     // Create resource
@@ -33,8 +49,8 @@ exports.createResource = async (req, res) => {
       category: category || null,
       fileUrl: finalFileUrl || null,
       tags: tags ? JSON.parse(tags) : [],
-      isDraft: isDraft === 'true' || isDraft === true,
-      isFeatured: isFeatured === 'true' || isFeatured === true,
+      isDraft: isDraft === "true" || isDraft === true,
+      isFeatured: isFeatured === "true" || isFeatured === true,
     });
 
     // Handle sharing with mentees
@@ -51,14 +67,17 @@ exports.createResource = async (req, res) => {
 
     res.status(201).json(resource);
   } catch (error) {
-    console.error('Create resource error:', error);
-    res.status(500).json({ message: error.message || 'Server error' });
+    console.error("Create resource error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
 // Get all resources
 exports.getAllResources = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
     const { type, category, tag, mentorId } = req.query;
     const where = { createdById: mentorId || req.user.id };
 

@@ -14,13 +14,13 @@ const upload = require("../utils/upload");
 const router = express.Router();
 
 // Create resource (mentors and admins only)
-router.post("/", upload.single("file"),handleMulterError, auth, mentorAuth, createResource);
+router.post("/", upload.single("file"), handleMulterError, auth, mentorAuth, createResource);
 
-// Get all resources
-router.get("/", getAllResources);
+// Get all resources (require auth)
+router.get("/", auth, getAllResources);
 
 // Get resource by ID
-router.get("/:id", getResourceById);
+router.get("/:id", auth, getResourceById);
 
 // Update resource
 router.put("/:id", auth, updateResource);
@@ -29,9 +29,9 @@ router.put("/:id", auth, updateResource);
 router.delete("/:id", auth, deleteResource);
 
 // Get featured resources
-router.get("/featured", getFeaturedResources);
+router.get("/featured", auth, getFeaturedResources);
 
 // Search resources
-router.get("/search", searchResources);
+router.get("/search", auth, searchResources);
 
 module.exports = router;
