@@ -37,6 +37,7 @@ import MenteeRequestsPage from "./pages/Mentor/Mentee/Requests";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import SettingsPage from "./pages/Setting";
 import MentorDashboard from "./pages/Mentor/dashboard";
+import SessionsPage from "./pages/Mentor/Sessions/sessionz";
 
 // Loading component
 const LoadingScreen = () => (
@@ -105,6 +106,7 @@ const mentorDashboardRoutes = [
   { path: "/mentor/mentees/requests", component: <MenteeRequestsPage /> },
   { path: "/mentor/resources", component: <MentorResources /> },
   { path: "/mentor/resources/upload", component: <UploadResourcePage /> },
+  { path: "/mentor/sessions", component: <SessionsPage /> },
   { path: "/mentor/settings", component: <SettingsPage /> },
 ];
 

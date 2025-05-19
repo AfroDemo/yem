@@ -51,7 +51,7 @@ export default function SessionsPage() {
     duration: "30",
     type: "virtual",
     agenda: "",
-    menteeId: "", // Changed from menteeIds
+    menteeId: "",
     resourceIds: [],
   });
   const [mentees, setMentees] = useState([]);
@@ -61,6 +61,8 @@ export default function SessionsPage() {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -139,7 +141,7 @@ export default function SessionsPage() {
     try {
       const sessionData = {
         mentorId: user.id,
-        menteeId: form.menteeId, // Changed from menteeIds
+        menteeId: form.menteeId,
         title: form.title,
         dateTime: new Date(`${form.date}T${form.time}`).toISOString(),
         duration: parseInt(form.duration),
@@ -149,10 +151,10 @@ export default function SessionsPage() {
       };
 
       if (editingSessionId) {
-        await updateSession(editingSessionId, sessionData);
+        await updateSession(editingSessionId, sessionData, user);
         toast.success("Session updated successfully!");
       } else {
-        await createSession(sessionData);
+        await createSession(sessionData, user);
         toast.success("Session scheduled successfully!");
       }
       resetForm();
@@ -174,14 +176,13 @@ export default function SessionsPage() {
       duration: session.duration.toString(),
       type: session.type,
       agenda: session.agenda,
-      menteeId: session.mentee.id, // Changed from mentees
+      menteeId: session.mentee.id,
       resourceIds: session.resources.map((r) => r.id),
     });
     setEditingSessionId(session.id);
   };
 
   const handleDelete = async (sessionId) => {
-    if (!confirm("Are you sure you want to cancel this session?")) return;
     try {
       await deleteSession(sessionId);
       toast.success("Session canceled successfully!");
@@ -192,6 +193,23 @@ export default function SessionsPage() {
     }
   };
 
+  const openDeleteModal = (sessionId) => {
+    setSessionToDelete(sessionId);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSessionToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (sessionToDelete) {
+      await handleDelete(sessionToDelete);
+    }
+    closeDeleteModal();
+  };
+
   const resetForm = () => {
     setForm({
       title: "",
@@ -200,7 +218,7 @@ export default function SessionsPage() {
       duration: "30",
       type: "virtual",
       agenda: "",
-      menteeId: "", // Changed from menteeIds
+      menteeId: "",
       resourceIds: [],
     });
     setErrors({});
@@ -466,7 +484,7 @@ export default function SessionsPage() {
                         </p>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          {session.mentee.name} {/* Changed from mentees */}
+                          {session.mentee.name}
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -480,7 +498,7 @@ export default function SessionsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(session.id)}
+                          onClick={() => openDeleteModal(session.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -493,6 +511,35 @@ export default function SessionsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-4">Confirm Cancellation</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to cancel this session?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={closeDeleteModal}
+                className="px-4 py-2"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer />
     </div>
   );
