@@ -23,19 +23,7 @@ const statsData = [
     title: "Total Mentees",
     description: "Current and past",
     value: "19",
-  },
-  {
-    icon: <Star className="h-5 w-5 text-primary" />,
-    title: "Success Rate",
-    description: "Goal achievement",
-    value: "87%",
-  },
-  {
-    icon: <Clock className="h-5 w-5 text-primary" />,
-    title: "Avg. Relationship",
-    description: "Duration",
-    value: "6.2 mo",
-  },
+  }
 ];
 
 // Industry breakdown data
