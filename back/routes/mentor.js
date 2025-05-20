@@ -8,6 +8,8 @@ const {
   getUpcomingReports,
   getMentees,
   getAllMentors,
+  getMenteeIndustries,
+  getRecentAchievements,
 } = require("../controllers/mentorController");
 const { auth } = require("../middleware/auth");
 const { getMentorSessions } = require("../controllers/sessionController");
@@ -22,5 +24,7 @@ router.get("/:mentorId/resources/shared", auth, getSharedResources);
 router.get("/:mentorId/reports/upcoming", auth, getUpcomingReports);
 router.get("/:mentorId/mentees", auth, getMentees);
 router.get("/:mentorId/sessions", auth, getMentorSessions);
+router.get("/:mentorId/industries", auth, getMenteeIndustries);
+router.get("/:mentorId/achievements", auth, getRecentAchievements);
 
 module.exports = router;

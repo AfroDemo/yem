@@ -33,6 +33,7 @@ import {
   getUpcomingReports,
   getNewConnections,
 } from "../../services/menteeService";
+import MenteeProgress from "../../components/MenteeProgress";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -92,6 +93,8 @@ export default function Dashboard() {
 
     fetchData();
   }, [user.id]);
+
+console.log(menteeProgress)
 
   if (loading) {
     return <div className="text-center p-6">Loading...</div>;
@@ -453,48 +456,6 @@ function MessagePreview({ name, time, message, avatar, unread }) {
         </p>
       </div>
       {unread && <div className="w-2 h-2 bg-blue-600 rounded-full"></div>}
-    </div>
-  );
-}
-
-function MenteeProgress({ name, avatar, progress, goals }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Avatar>
-            <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{name}</p>
-            <p className="text-xs text-muted-foreground">Overall Progress</p>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" className="gap-1" asChild>
-          <Link to="/mentee/profile">
-            View Profile
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </Button>
-      </div>
-      <Progress value={progress} className="h-2" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
-        {goals.map((goal, index) => (
-          <div key={index} className="flex items-center space-x-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                goal.status === "completed"
-                  ? "bg-green-500"
-                  : goal.status === "in-progress"
-                  ? "bg-amber-500"
-                  : "bg-gray-300"
-              }`}
-            ></div>
-            <span className="text-sm truncate">{goal.title}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

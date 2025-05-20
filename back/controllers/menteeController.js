@@ -76,18 +76,23 @@ exports.getMenteeDashboardMetrics = async (req, res) => {
         {
           model: User,
           as: "mentor",
-          include: [{ model: Review, as: "reviewsReceived" }],
+          attributes: ["id"],
         },
       ],
     });
-    const reviews = mentorships.flatMap((m) => m.mentor.reviewsReceived || []);
+    const mentorIds = mentorships.map((m) => m.mentor.id);
+    const reviews = await Review.findAll({
+      where: {
+        mentorId: { [Op.in]: mentorIds },
+      },
+    });
     const averageMentorRating =
       reviews.length > 0
         ? reviews.reduce((sum, review) => sum + review.rating, 0) /
           reviews.length
         : 0;
 
-    // New connections (assuming a Connection model or similar logic)
+    // New connections (placeholder)
     const newConnections = await User.count({
       where: {
         id: { [Op.ne]: menteeId },
@@ -230,12 +235,18 @@ exports.getSharedResources = async (req, res) => {
     }
 
     const resources = await Resource.findAll({
-      where: db.sequelize.literal(`JSON_CONTAINS(sharedWith, '[${menteeId}]')`),
       include: [
         {
           model: User,
-          as: "createdBy",
+          as: "creator", // Use the correct alias from Resource model
           attributes: ["id", "firstName", "lastName"],
+        },
+        {
+          model: User,
+          as: "sharedWith",
+          through: { attributes: [] }, // Exclude ResourceShares attributes
+          where: { id: menteeId }, // Filter for the specific mentee
+          attributes: [], // No need to include sharedWith user details
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -248,7 +259,7 @@ exports.getSharedResources = async (req, res) => {
         title: resource.title,
         type: resource.type,
         category: resource.category || resource.type, // Use type as fallback
-        mentor: resource.createdBy,
+        mentor: resource.creator, // Use creator instead of createdBy
         sharedAt: resource.createdAt,
       }))
     );

@@ -12,7 +12,7 @@ const Conversation = db.Conversation;
 
 exports.getAllMentors = async (req, res) => {
   try {
-    console.log(req.user.role)
+    console.log(req.user.role);
     // Check if the requesting user is an admin
     // if (req.user.role !== "admin"||req.user.role !== "mentee") {
     //   return res.status(403).json({ message: "Unauthorized" });
@@ -317,5 +317,112 @@ exports.getMentees = async (req, res) => {
   } catch (error) {
     console.error("Get mentees error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+// Fetch mentee industries
+exports.getMenteeIndustries = async (req, res) => {
+  try {
+    const mentorId = req.params.mentorId;
+    if (req.user.id != mentorId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Fetch accepted and completed mentorships
+    const mentorships = await Mentorship.findAll({
+      where: {
+        mentorId,
+        status: { [Op.in]: ["accepted", "completed"] },
+      },
+      include: [
+        {
+          model: User,
+          as: "mentee",
+          attributes: ["industries"],
+        },
+      ],
+    });
+
+    // Aggregate industries
+    const industryCounts = {};
+    const colors = [
+      "blue",
+      "green",
+      "purple",
+      "amber",
+      "red",
+      "indigo",
+      "cyan",
+      "pink",
+    ];
+    let colorIndex = 0;
+
+    mentorships.forEach((mentorship) => {
+      const industries = JSON.parse(mentorship.mentee.industries || "[]");
+      industries.forEach((industry) => {
+        if (industry) {
+          industryCounts[industry] = (industryCounts[industry] || 0) + 1;
+        }
+      });
+    });
+
+    const industriesData = Object.entries(industryCounts).map(
+      ([name, count]) => ({
+        name,
+        count,
+        color: colors[colorIndex++ % colors.length],
+      })
+    );
+
+    res.json(industriesData);
+  } catch (error) {
+    console.error("Get mentee industries error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Fetch recent achievements
+exports.getRecentAchievements = async (req, res) => {
+  try {
+    const mentorId = req.params.mentorId;
+    if (req.user.id != mentorId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Assuming achievements are stored in a Progress or Achievement model
+    // Here, we'll derive from Mentorship progress as a placeholder
+    const mentorships = await Mentorship.findAll({
+      where: {
+        mentorId,
+        status: "accepted",
+      },
+      include: [
+        {
+          model: User,
+          as: "mentee",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
+      order: [["updatedAt", "DESC"]],
+      limit: 3,
+    });
+
+    const achievements = mentorships.map((mentorship) => ({
+      name: `${mentorship.mentee.firstName} ${mentorship.mentee.lastName}`,
+      avatar:
+        mentorship.mentee.profileImage || "/placeholder.svg?height=24&width=24",
+      description: mentorship.goals
+        ? `Progressed on: ${mentorship.goals}`
+        : "Made significant progress",
+      date: new Date(mentorship.updatedAt).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+    }));
+
+    res.json(achievements);
+  } catch (error) {
+    console.error("Get recent achievements error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -29,6 +29,7 @@ import {
   getSharedResources,
   getUpcomingReports,
 } from "../../services/mentorService";
+import MenteeProgress from "../../components/MenteeProgress";
 
 export default function MentorDashboard() {
   const { user } = useAuth();
@@ -413,47 +414,7 @@ function MessagePreview({ name, time, message, avatar, unread }) {
   );
 }
 
-function MenteeProgress({ name, avatar, progress, goals }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Avatar>
-            <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{name}</p>
-            <p className="text-xs text-gray-500">Overall Progress</p>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" className="gap-1" asChild>
-          <Link to={`/mentor/mentees/${name.toLowerCase().replace(" ", "-")}`}>
-            View Profile
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </Button>
-      </div>
-      <Progress value={progress} className="h-2" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
-        {goals.map((goal, index) => (
-          <div key={index} className="flex items-center space-x-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                goal.status === "completed"
-                  ? "bg-green-500"
-                  : goal.status === "in-progress"
-                  ? "bg-amber-500"
-                  : "bg-gray-300"
-              }`}
-            ></div>
-            <span className="text-sm truncate">{goal.title}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+
 
 function ResourceItem({ title, type, sharedWith, date }) {
   return (
