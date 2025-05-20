@@ -136,8 +136,6 @@ export default function MenteeRequestsPage() {
     getRequestData();
   }, [user]);
 
-  console.log(menteeRequests)
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">

@@ -121,14 +121,14 @@ exports.getMenteeRequests = async (req, res) => {
   }
 };
 
-// Update request status (active/reject/complete)
+// Update request status (accepted/reject/complete)
 exports.updateMentorshipStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, endDate } = req.body;
     const mentorId = req.user.id;
 
-    if (!["active", "rejected", "completed"].includes(status)) {
+    if (!["accepted", "rejected", "completed"].includes(status)) {
       return res.status(400).json({ error: "Invalid status update" });
     }
 
@@ -145,7 +145,7 @@ exports.updateMentorshipStatus = async (req, res) => {
 
     if (
       request.status !== "pending" &&
-      !(request.status === "active" && status === "completed")
+      !(request.status === "accepted" && status === "completed")
     ) {
       return res
         .status(400)
@@ -154,7 +154,7 @@ exports.updateMentorshipStatus = async (req, res) => {
 
     const updateData = { status };
 
-    if (status === "active") {
+    if (status === "accepted") {
       updateData.startDate = new Date();
       updateData.meetingFrequency =
         request.packageType === "starter"

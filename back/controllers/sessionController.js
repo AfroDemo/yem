@@ -19,13 +19,13 @@ const createSession = async (req, res) => {
       });
     }
 
-    // Validate active mentorship
+    // Validate accepted mentorship
     const mentorship = await Mentorship.findOne({
-      where: { mentorId, menteeId, status: "active" },
+      where: { mentorId, menteeId, status: "accepted" },
     });
     if (!mentorship) {
       return res.status(400).json({
-        message: "No active mentorship found for this mentor-mentee pair",
+        message: "No accepted mentorship found for this mentor-mentee pair",
       });
     }
 
@@ -90,12 +90,12 @@ const getMentorSessions = async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
     if (parseInt(mentorId) !== req.user.id) {
-      return res
-        .status(403)
-        .json({
-          message: "Unauthorized: Mentor ID does not match authenticated user",
-        });
+      return res.status(403).json({
+        message: "Unauthorized: Mentor ID does not match authenticated user",
+      });
     }
+
+    // Find sessions for the mentor
     const sessions = await Session.findAll({
       where: { mentorId },
       include: [
@@ -104,32 +104,44 @@ const getMentorSessions = async (req, res) => {
           as: "mentee",
           attributes: ["id", "firstName", "lastName"],
         },
-        {
-          model: Resource,
-          as: "resources",
-          attributes: ["id", "title"],
-          through: { attributes: [] },
-          required: false, // Allow sessions without resources
-        },
       ],
       order: [["startTime", "ASC"]],
     });
-    const formattedSessions = sessions.map((session) => ({
-      id: session.id,
-      title: session.topic,
-      dateTime: session.startTime,
-      duration:
-        (new Date(session.endTime) - new Date(session.startTime)) / 60000,
-      type: session.type,
-      agenda: session.agenda || "",
-      mentee: session.mentee
-        ? {
-            id: session.mentee.id,
-            name: `${session.mentee.firstName} ${session.mentee.lastName}`,
+
+    // Fetch resources for each session manually
+    const formattedSessions = await Promise.all(
+      sessions.map(async (session) => {
+        // Fetch resources for this specific session
+        const sessionResources = await sequelize.query(
+          `SELECT r.id, r.title 
+         FROM resources r
+         JOIN session_resources sr ON sr.resourceId = r.id
+         WHERE sr.sessionId = :sessionId`,
+          {
+            replacements: { sessionId: session.id },
+            type: sequelize.QueryTypes.SELECT,
           }
-        : null,
-      resources: session.resources || [], // Default to empty array
-    }));
+        );
+
+        return {
+          id: session.id,
+          title: session.topic,
+          dateTime: session.startTime,
+          duration:
+            (new Date(session.endTime) - new Date(session.startTime)) / 60000,
+          type: session.type,
+          agenda: session.agenda || "",
+          mentee: session.mentee
+            ? {
+                id: session.mentee.id,
+                name: `${session.mentee.firstName} ${session.mentee.lastName}`,
+              }
+            : null,
+          resources: sessionResources || [], // Resources for this session
+        };
+      })
+    );
+
     res.status(200).json(formattedSessions);
   } catch (error) {
     console.error("Get sessions error:", error);
@@ -158,13 +170,13 @@ const updateSession = async (req, res) => {
       });
     }
 
-    // Validate active mentorship
+    // Validate accepted mentorship
     const mentorship = await Mentorship.findOne({
-      where: { mentorId, menteeId, status: "active" },
+      where: { mentorId, menteeId, status: "accepted" },
     });
     if (!mentorship) {
       return res.status(400).json({
-        message: "No active mentorship found for this mentor-mentee pair",
+        message: "No accepted mentorship found for this mentor-mentee pair",
       });
     }
 
@@ -264,7 +276,7 @@ const getMentees = async (req, res) => {
     }
 
     const mentorships = await Mentorship.findAll({
-      where: { mentorId, status: "active" },
+      where: { mentorId, status: "accepted" },
       include: [
         {
           model: User,
@@ -307,52 +319,25 @@ const associateResources = async (req, res) => {
         .json({ message: "Unauthorized: Not your session" });
     }
 
-    // Validate resources belong to mentor
-    const resources = await Resource.findAll({
-      where: {
-        id: resourceIds,
-        createdById: req.user.id,
-      },
-    });
-    if (resources.length !== resourceIds.length) {
-      return res.status(400).json({
-        message: "Invalid resource IDs: Some resources do not belong to you",
-      });
-    }
-
     // Clear existing associations
     await SessionResource.destroy({ where: { sessionId } });
 
-    // Create new associations
-    const associations = resourceIds.map((resourceId) => ({
-      sessionId,
-      resourceId,
-    }));
-    await SessionResource.bulkCreate(associations);
-
-    // Optionally share resources with mentee via ResourceShare
-    const existingShares = await ResourceShare.findAll({
-      where: { resourceId: resourceIds, userId: session.menteeId },
-    });
-    const existingShareIds = existingShares.map((share) => share.resourceId);
-    const newShares = resourceIds
-      .filter((resourceId) => !existingShareIds.includes(resourceId))
-      .map((resourceId) => ({
+    // Create new associations only if resourceIds exist
+    if (resourceIds && resourceIds.length > 0) {
+      const associations = resourceIds.map((resourceId) => ({
+        sessionId,
         resourceId,
-        userId: session.menteeId,
       }));
-    if (newShares.length > 0) {
-      await ResourceShare.bulkCreate(newShares);
+      await SessionResource.bulkCreate(associations);
     }
 
-    res
-      .status(200)
-      .json({ message: "Resources associated and shared successfully" });
+    res.status(200).json({ message: "Resources associated successfully" });
   } catch (error) {
     console.error("Associate resources error:", error);
-    res
-      .status(500)
-      .json({ message: error.message || "Failed to associate resources" });
+    res.status(500).json({
+      message: "Failed to associate resources",
+      error: error.message,
+    });
   }
 };
 

@@ -18,9 +18,9 @@ exports.getDashboardMetrics = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Active mentees (count of active mentorships)
+    // Active mentees (count of accepted mentorships)
     const activeMentees = await Mentorship.count({
-      where: { mentorId, status: "active" },
+      where: { mentorId, status: "accepted" },
     });
 
     // Upcoming sessions (next 7 days)
@@ -162,7 +162,7 @@ exports.getMenteeProgress = async (req, res) => {
     }
 
     const mentorships = await Mentorship.findAll({
-      where: { mentorId, status: "active" },
+      where: { mentorId, status: "accepted" },
       include: [
         {
           model: User,
@@ -269,11 +269,11 @@ exports.getMentees = async (req, res) => {
       return res.status(404).json({ message: "Mentor not found" });
     }
 
-    // Fetch active mentorships with mentee details
+    // Fetch accepted mentorships with mentee details
     const mentorships = await Mentorship.findAll({
       where: {
         mentorId,
-        status: "active",
+        status: "accepted",
       },
       include: [
         {

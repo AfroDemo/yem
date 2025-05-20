@@ -149,7 +149,7 @@ export default function SessionsPage() {
         agenda: form.agenda || "",
         resourceIds: form.resourceIds,
       };
-
+console.log(sessionData)
       if (editingSessionId) {
         await updateSession(editingSessionId, sessionData, user);
         toast.success("Session updated successfully!");
@@ -372,17 +372,25 @@ export default function SessionsPage() {
                   <p className="text-sm text-gray-500">No mentees available.</p>
                 ) : (
                   <Select
-                    value={form.menteeId}
-                    onValueChange={(value) =>
-                      setForm({ ...form, menteeId: value })
-                    }
+                    value={
+                      mentees.find((m) => m.id === form.menteeId)?.name || ""
+                    } // Pass the name instead of ID
+                    onValueChange={(value) => {
+                      // Find the mentee with this name and set the ID
+                      const selectedMentee = mentees.find(
+                        (m) => m.name === value
+                      );
+                      setForm({ ...form, menteeId: selectedMentee?.id || "" });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a mentee" />
                     </SelectTrigger>
                     <SelectContent>
                       {mentees.map((mentee) => (
-                        <SelectItem key={mentee.id} value={mentee.id}>
+                        <SelectItem key={mentee.id} value={mentee.name}>
+                          {" "}
+                          {/* Use name as value */}
                           {mentee.name}
                         </SelectItem>
                       ))}
@@ -412,15 +420,20 @@ export default function SessionsPage() {
                             ? "bg-blue-50 border-blue-200"
                             : ""
                         }`}
-                        onClick={() => toggleResource(resource.id)}
                       >
                         <input
                           type="checkbox"
                           checked={form.resourceIds.includes(resource.id)}
                           onChange={() => toggleResource(resource.id)}
-                          className="h-4 w-4"
+                          className="h-4 w-4 cursor-pointer"
+                          id={`resource-${resource.id}`}
                         />
-                        <span className="text-sm">{resource.title}</span>
+                        <label
+                          htmlFor={`resource-${resource.id}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {resource.title}
+                        </label>
                       </div>
                     ))}
                   </div>
