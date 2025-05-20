@@ -32,7 +32,7 @@ export default function MenteesPage() {
   const [achievementsData, setAchievementsData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-    const { user } = useAuth();
+  const { user } = useAuth();
 
   // Fetch mentee data (mentorship requests)
   const getRequestData = async () => {
@@ -49,11 +49,14 @@ export default function MenteesPage() {
 
       response.data.forEach((request) => {
         const mentee = request.mentee;
-        const industries = JSON.parse(mentee.industries || "[]").join(", ");
-        const interests = JSON.parse(mentee.interests || "[]").join(", ");
-        const businessStage = JSON.parse(mentee.businessStage || "[]").join(
-          ", "
-        );
+        
+        // Parse JSON strings safely
+        const industries = safeJSONParse(mentee.industries, []).join(", ");
+        const interests = safeJSONParse(mentee.interests, []).join(", ");
+        const businessStage = safeJSONParse(mentee.businessStage, []).join(", ");
+        
+        // Parse goals safely
+        const goals = safeJSONParse(request.goals, []);
 
         const baseData = {
           id: request.id,
@@ -73,8 +76,12 @@ export default function MenteesPage() {
               request.packageType.slice(1) +
               " Package"
             : "Custom Package",
-          goals: request.goals
-            ? [request.goals]
+          // Enhanced goals rendering
+          goals: goals.length > 0 
+            ? goals.map(goal => {
+                // Combine title and status for more informative display
+                return `${goal.title} (${goal.status})`;
+              })
             : ["No specific goals provided"],
           background: request.background || "No background provided",
           expectations: request.expectations || "No expectations provided",
@@ -115,6 +122,18 @@ export default function MenteesPage() {
       setIsLoading(false);
     }
   };
+
+// Utility function for safe JSON parsing
+function safeJSONParse(jsonString, defaultValue = []) {
+  if (!jsonString || jsonString.trim() === '') return defaultValue;
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('Failed to parse JSON:', jsonString, error);
+    return defaultValue;
+  }
+}
+
 
   // Fetch dashboard metrics
   const fetchDashboardMetrics = async () => {

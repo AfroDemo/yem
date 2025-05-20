@@ -384,12 +384,7 @@ exports.getMenteeIndustries = async (req, res) => {
 exports.getRecentAchievements = async (req, res) => {
   try {
     const mentorId = req.params.mentorId;
-    // if (req.user.id != mentorId && req.user.role !== "admin") {
-    //   return res.status(403).json({ message: "Unauthorized" });
-    // }
 
-    // Assuming achievements are stored in a Progress or Achievement model
-    // Here, we'll derive from Mentorship progress as a placeholder
     const mentorships = await Mentorship.findAll({
       where: {
         mentorId,
@@ -406,19 +401,36 @@ exports.getRecentAchievements = async (req, res) => {
       limit: 3,
     });
 
-    const achievements = mentorships.map((mentorship) => ({
-      name: `${mentorship.mentee.firstName} ${mentorship.mentee.lastName}`,
-      avatar:
-        mentorship.mentee.profileImage || "/placeholder.svg?height=24&width=24",
-      description: mentorship.goals
-        ? `Progressed on: ${mentorship.goals}`
-        : "Made significant progress",
-      date: new Date(mentorship.updatedAt).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }),
-    }));
+    const achievements = mentorships.map((mentorship) => {
+      // Safe JSON parsing for goals
+      let parsedGoals = [];
+      try {
+        parsedGoals = mentorship.goals ? JSON.parse(mentorship.goals) : [];
+      } catch (parseError) {
+        console.warn("Failed to parse goals:", parseError);
+      }
+
+      // Create a more descriptive goal description
+      const goalsDescription =
+        parsedGoals.length > 0
+          ? parsedGoals
+              .map((goal) => `${goal.title} (${goal.status})`)
+              .join(", ")
+          : "Made significant progress";
+
+      return {
+        name: `${mentorship.mentee.firstName} ${mentorship.mentee.lastName}`,
+        avatar:
+          mentorship.mentee.profileImage ||
+          "/placeholder.svg?height=24&width=24",
+        description: goalsDescription,
+        date: new Date(mentorship.updatedAt).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }),
+      };
+    });
 
     res.json(achievements);
   } catch (error) {
