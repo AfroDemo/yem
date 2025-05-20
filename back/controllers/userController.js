@@ -3,6 +3,7 @@ const User = db.User;
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
+const Mentorship = db.Mentorship;
 
 const getUsersBySpecificRole = async (role) => {
   try {
@@ -13,6 +14,53 @@ const getUsersBySpecificRole = async (role) => {
   } catch (error) {
     console.error(`Error fetching ${role}s:`, error);
     throw error;
+  }
+};
+
+exports.searchUsers = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const userId = req.user.id;
+
+    // Find users with active or pending mentorships with the current user
+    const mentorships = await Mentorship.findAll({
+      where: {
+        [db.Sequelize.Op.or]: [{ mentorId: userId }, { menteeId: userId }],
+        status: ["pending", "accepted"],
+      },
+      include: [
+        {
+          model: User,
+          as: "mentor",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+        {
+          model: User,
+          as: "mentee",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
+    });
+
+    const connectedUserIds = mentorships.map((m) =>
+      m.mentorId === userId ? m.menteeId : m.mentorId
+    );
+
+    const users = await User.findAll({
+      where: {
+        id: { [db.Sequelize.Op.in]: connectedUserIds },
+        [db.Sequelize.Op.or]: [
+          { firstName: { [db.Sequelize.Op.like]: `%${query}%` } }, // Changed from iLike to like
+          { lastName: { [db.Sequelize.Op.like]: `%${query}%` } }, // Changed from iLike to like
+        ],
+      },
+      attributes: ["id", "firstName", "lastName", "profileImage"],
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error("Error searching users:", error);
+    res.status(500).json({ error: "Failed to search users" });
   }
 };
 
@@ -83,38 +131,50 @@ exports.getMatches = async (req, res) => {
     const parseJsonField = (value) => {
       if (!value) return [];
       if (Array.isArray(value)) return value;
-      
+
       try {
         const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        return Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
       } catch (e) {
         // Fallback to string splitting if JSON parsing fails
         const cleaned = value.replace(/\\"/g, "").replace(/"/g, "").trim();
         return cleaned.includes(",")
           ? cleaned.split(",").map((item) => item.trim())
-          : (cleaned ? [cleaned] : []);
+          : cleaned
+            ? [cleaned]
+            : [];
       }
     };
 
     // Case-insensitive comparison
     const includes = (array, value) => {
-      return array.some((item) => 
-        item && value && item.toLowerCase() === value.toLowerCase()
+      return array.some(
+        (item) => item && value && item.toLowerCase() === value.toLowerCase()
       );
     };
 
     // --- Parse User Attributes ---
     const userIndustries = parseJsonField(user.industries);
-    const userInterests = user.role === "mentee" ? parseJsonField(user.interests) : [];
-    const userSkills = user.role === "mentor" ? parseJsonField(user.skills) : [];
-    const userBusinessStage = user.role === "mentee" ? parseJsonField(user.businessStage) : [];
-    const userPreferredBusinessStage = user.role === "mentor" ? parseJsonField(user.preferredBusinessStages) : [];
+    const userInterests =
+      user.role === "mentee" ? parseJsonField(user.interests) : [];
+    const userSkills =
+      user.role === "mentor" ? parseJsonField(user.skills) : [];
+    const userBusinessStage =
+      user.role === "mentee" ? parseJsonField(user.businessStage) : [];
+    const userPreferredBusinessStage =
+      user.role === "mentor"
+        ? parseJsonField(user.preferredBusinessStages)
+        : [];
 
     // Calculate user's maximum possible score (for normalization)
     const maxPossibleScore =
       userIndustries.length * 10 +
-      (user.role === "mentee" ? userBusinessStage.length * 10 : userPreferredBusinessStage.length * 10) +
-      (user.role === "mentee" ? userInterests.length * 10 : userSkills.length * 10) || 1; // Avoid division by zero
+        (user.role === "mentee"
+          ? userBusinessStage.length * 10
+          : userPreferredBusinessStage.length * 10) +
+        (user.role === "mentee"
+          ? userInterests.length * 10
+          : userSkills.length * 10) || 1; // Avoid division by zero
 
     // --- Score and Normalize Matches ---
     const scoredMatches = potentialMatches
@@ -124,10 +184,16 @@ exports.getMatches = async (req, res) => {
 
         // Parse match attributes
         const matchIndustries = parseJsonField(match.industries);
-        const matchSkills = match.role === "mentor" ? parseJsonField(match.skills) : [];
-        const matchInterests = match.role === "mentee" ? parseJsonField(match.interests) : [];
-        const matchBusinessStage = match.role === "mentee" ? parseJsonField(match.businessStage) : [];
-        const matchPreferredBusinessStage = match.role === "mentor" ? parseJsonField(match.preferredBusinessStages) : [];
+        const matchSkills =
+          match.role === "mentor" ? parseJsonField(match.skills) : [];
+        const matchInterests =
+          match.role === "mentee" ? parseJsonField(match.interests) : [];
+        const matchBusinessStage =
+          match.role === "mentee" ? parseJsonField(match.businessStage) : [];
+        const matchPreferredBusinessStage =
+          match.role === "mentor"
+            ? parseJsonField(match.preferredBusinessStages)
+            : [];
 
         // 1. Industry Matching (10pts per match)
         if (userIndustries.length > 0 && matchIndustries.length > 0) {
@@ -145,7 +211,10 @@ exports.getMatches = async (req, res) => {
         // 2. Business Stage Matching (10pts per match)
         if (user.role === "mentee") {
           // Mentee vs. Mentor's preferred stages
-          if (userBusinessStage.length > 0 && matchPreferredBusinessStage.length > 0) {
+          if (
+            userBusinessStage.length > 0 &&
+            matchPreferredBusinessStage.length > 0
+          ) {
             const matchedStages = userBusinessStage.filter((stage) =>
               includes(matchPreferredBusinessStage, stage)
             );
@@ -158,7 +227,10 @@ exports.getMatches = async (req, res) => {
           }
         } else {
           // Mentor vs. Mentee's stages
-          if (userPreferredBusinessStage.length > 0 && matchBusinessStage.length > 0) {
+          if (
+            userPreferredBusinessStage.length > 0 &&
+            matchBusinessStage.length > 0
+          ) {
             const matchedStages = userPreferredBusinessStage.filter((stage) =>
               includes(matchBusinessStage, stage)
             );

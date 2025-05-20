@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   ArrowRight,
@@ -8,114 +10,59 @@ import {
   Send,
   Smile,
 } from "lucide-react";
-import api from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
+import { messageService } from "../../services/messageService";
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [messageInput, setMessageInput] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const { user } = useAuth();
+  const [messageInput, setMessageInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const user = useAuth();
 
-  // Fetch conversations
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const response = await api.get("/messages/conversations");
-        const formattedConversations = response.data.map((conv) => {
-          const otherParticipant = conv.participants.find(
-            (id) => id !== user.id
-          );
-          const otherUser = conv.messages.find(
-            (msg) =>
-              msg.senderId === otherParticipant ||
-              msg.receiverId === otherParticipant
-          );
-          return {
-            id: conv.id,
-            name: otherUser
-              ? `${
-                  otherUser.sender?.firstName || otherUser.receiver?.firstName
-                } ${otherUser.sender?.lastName || otherUser.receiver?.lastName}`
-              : "Unknown",
-            avatar: otherUser
-              ? `http://localhost:5000${
-                  otherUser.sender?.profileImage ||
-                  otherUser.receiver?.profileImage
-                }`
-              : "/placeholder.svg?height=40&width=40",
-            lastMessage: conv.lastMessage?.content || "",
-            time: conv.lastMessage?.createdAt
-              ? new Date(conv.lastMessage.createdAt).toLocaleTimeString()
-              : "",
-            unread: conv.unreadCount[user.id] > 0,
-          };
-        });
-        setConversations(formattedConversations);
+        setLoading(true);
+        const data = await messageService.getConversations();
+        setConversations(data);
       } catch (error) {
-        console.error("Error fetching conversations:", error);
+        console.error("Failed to load conversations:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchConversations();
-  }, [user.id]);
+  }, []);
 
-  // Fetch messages for selected conversation
   useEffect(() => {
     if (selectedConversation) {
       const fetchMessages = async () => {
         try {
-          const response = await api.get(
-            `/messages/conversation/${selectedConversation}`
-          );
-          const formattedMessages = response.data.messages.map((msg) => ({
-            id: msg.id,
-            sender: `${msg.sender.firstName} ${msg.sender.lastName}`,
-            content: msg.content,
-            time: new Date(msg.createdAt).toLocaleTimeString(),
-            isMe: msg.senderId === user.id,
-          }));
-          setMessages(formattedMessages);
+          const data = await messageService.getMessages(selectedConversation);
+          setMessages(data);
         } catch (error) {
-          console.error("Error fetching messages:", error);
+          console.error("Failed to load messages:", error);
         }
       };
       fetchMessages();
     }
-  }, [selectedConversation, user.id]);
+  }, [selectedConversation]);
 
-  // Send message
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return;
-
     try {
-      const conversation = conversations.find(
-        (c) => c.id === selectedConversation
+      const message = await messageService.sendMessage(
+        selectedConversation,
+        messageInput
       );
-      const otherParticipantId = conversation.participants?.find(
-        (id) => id !== user.id
-      );
-      await api.post("/messages/send", {
-        receiverId: otherParticipantId,
-        content: messageInput,
-      });
+      setMessages([...messages, message]);
       setMessageInput("");
-      // Refresh messages
-      const response = await api.get(
-        `/messages/conversation/${selectedConversation}`
-      );
-      const formattedMessages = response.data.messages.map((msg) => ({
-        id: msg.id,
-        sender: `${msg.sender.firstName} ${msg.sender.lastName}`,
-        content: msg.content,
-        time: new Date(msg.createdAt).toLocaleTimeString(),
-        isMe: msg.senderId === user.id,
-      }));
-      setMessages(formattedMessages);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Failed to send message:", error);
     }
   };
 
@@ -127,7 +74,7 @@ export default function MessagesPage() {
         <a
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           href={
-            user.role === "mentee"
+            user.user.role === "mentee"
               ? "/dashboard/messages/new"
               : "/mentor/messages/new"
           }
@@ -145,6 +92,7 @@ export default function MessagesPage() {
             showMobileMenu ? "block" : "hidden"
           } md:block w-full md:w-1/3 bg-white border-r`}
         >
+          {/* Search Bar */}
           <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -156,6 +104,7 @@ export default function MessagesPage() {
             </div>
           </div>
 
+          {/* Tabs */}
           <div className="flex border-b">
             <button
               className={`flex-1 py-3 text-center font-medium ${
@@ -179,53 +128,78 @@ export default function MessagesPage() {
             </button>
           </div>
 
+          {/* Conversation Items */}
           <div className="divide-y">
-            {conversations
-              .filter((conv) => activeTab === "all" || conv.unread)
-              .map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer flex items-start gap-3 ${
-                    selectedConversation === conversation.id
-                      ? "bg-gray-100"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedConversation(conversation.id);
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <div className="flex-shrink-0">
-                    <img
-                      src={conversation.avatar}
-                      alt={conversation.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900 truncate">
-                        {conversation.name}
-                      </h4>
-                      <span className="text-xs text-gray-500">
-                        {conversation.time}
-                      </span>
-                    </div>
-                    <p
-                      className={`text-sm truncate ${
-                        conversation.unread
-                          ? "font-medium text-gray-900"
-                          : "text-gray-500"
+            {loading ? (
+              <p>Loading...</p>
+            ) : (
+              conversations
+                .filter(
+                  (conv) =>
+                    activeTab === "all" || (conv.unreadCount[user.id] || 0) > 0
+                )
+                .map((conversation) => {
+                  const otherUser = conversation.participants.find(
+                    (id) => id !== user.id
+                  );
+                  const otherUserDetails =
+                    conversation.messages?.[0]?.[
+                      user.id === conversation.messages?.[0]?.senderId
+                        ? "receiver"
+                        : "sender"
+                    ];
+                  return (
+                    <div
+                      key={conversation.id}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer flex items-start gap-3 ${
+                        selectedConversation === conversation.id
+                          ? "bg-gray-100"
+                          : ""
                       }`}
+                      onClick={() => {
+                        setSelectedConversation(conversation.id);
+                        setShowMobileMenu(false);
+                      }}
                     >
-                      {conversation.lastMessage}
-                    </p>
-                  </div>
-                  {conversation.unread && (
-                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                  )}
-                </div>
-              ))}
+                      <div className="flex-shrink-0">
+                        <img
+                          src={
+                            otherUserDetails?.profileImage ||
+                            "/placeholder.svg?height=40&width=40"
+                          }
+                          alt={otherUserDetails?.firstName}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-gray-900 truncate">
+                            {otherUserDetails?.firstName}{" "}
+                            {otherUserDetails?.lastName}
+                          </h4>
+                          <span className="text-xs text-gray-500">
+                            {new Date(
+                              conversation.lastMessage?.createdAt
+                            ).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p
+                          className={`text-sm truncate ${
+                            conversation.unreadCount[user.id] > 0
+                              ? "font-medium text-gray-900"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {conversation.lastMessage?.content}
+                        </p>
+                      </div>
+                      {conversation.unreadCount[user.id] > 0 && (
+                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                      )}
+                    </div>
+                  );
+                })
+            )}
           </div>
         </div>
 
@@ -237,28 +211,50 @@ export default function MessagesPage() {
         >
           {selectedConversation ? (
             <>
+              {/* Message Header */}
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img
                     src={
                       conversations.find((c) => c.id === selectedConversation)
-                        ?.avatar
+                        ?.messages?.[0]?.[
+                        user.id ===
+                        conversations.find((c) => c.id === selectedConversation)
+                          ?.messages?.[0]?.senderId
+                          ? "receiver"
+                          : "sender"
+                      ]?.profileImage || "/placeholder.svg?height=40&width=40"
                     }
-                    alt={
-                      conversations.find((c) => c.id === selectedConversation)
-                        ?.name
-                    }
+                    alt="User"
                     className="h-10 w-10 rounded-full object-cover"
                   />
                   <div>
                     <h4 className="font-medium text-gray-900">
                       {
                         conversations.find((c) => c.id === selectedConversation)
-                          ?.name
+                          ?.messages?.[0]?.[
+                          user.id ===
+                          conversations.find(
+                            (c) => c.id === selectedConversation
+                          )?.messages?.[0]?.senderId
+                            ? "receiver"
+                            : "sender"
+                        ]?.firstName
+                      }{" "}
+                      {
+                        conversations.find((c) => c.id === selectedConversation)
+                          ?.messages?.[0]?.[
+                          user.id ===
+                          conversations.find(
+                            (c) => c.id === selectedConversation
+                          )?.messages?.[0]?.senderId
+                            ? "receiver"
+                            : "sender"
+                        ]?.lastName
                       }
                     </h4>
                     <p className="text-xs text-gray-500">
-                      Last active 5 minutes ago
+                      Last active recently
                     </p>
                   </div>
                 </div>
@@ -269,17 +265,20 @@ export default function MessagesPage() {
                 </div>
               </div>
 
+              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${
-                      message.isMe ? "justify-end" : "justify-start"
+                      message.senderId === user.id
+                        ? "justify-end"
+                        : "justify-start"
                     }`}
                   >
                     <div
                       className={`max-w-[80%] rounded-lg p-3 ${
-                        message.isMe
+                        message.senderId === user.id
                           ? "bg-blue-600 text-white"
                           : "bg-gray-100 text-gray-800"
                       }`}
@@ -287,16 +286,19 @@ export default function MessagesPage() {
                       <p className="text-sm">{message.content}</p>
                       <div
                         className={`mt-1 text-xs ${
-                          message.isMe ? "text-blue-100" : "text-gray-500"
+                          message.senderId === user.id
+                            ? "text-blue-100"
+                            : "text-gray-500"
                         } text-right`}
                       >
-                        {message.time}
+                        {new Date(message.createdAt).toLocaleTimeString()}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
 
+              {/* Message Input */}
               <div className="p-4 border-t">
                 <div className="flex gap-2">
                   <textarea
@@ -349,7 +351,7 @@ export default function MessagesPage() {
               <a
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 href={
-                  user.role === "mentee"
+                  user.user.role === "mentee"
                     ? "/dashboard/messages/new"
                     : "/mentor/messages/new"
                 }

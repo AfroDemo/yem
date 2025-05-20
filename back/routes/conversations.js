@@ -1,36 +1,49 @@
-const express = require('express');
-const { 
-  createConversation,
-  getConversationsByUser,
-  getConversationById,
-  updateConversation,
-  addParticipant,
-  removeParticipant,
-  leaveConversation
-} = require('../controllers/conversationController');
-const { auth } = require('../middleware/auth');
-
+const express = require("express");
 const router = express.Router();
+const { auth } = require("../middleware/auth"); // Fixed: Use destructuring import
+const { body } = require("express-validator");
 
-// Create a new conversation
-router.post('/', auth, createConversation);
+// Correct way to import controller methods
+const conversationController = require("../controllers/conversationController");
 
-// Get all conversations of the authenticated user
-router.get('/', auth, getConversationsByUser);
+// Validation middleware
+const createConversationValidation = [
+  body("participantId").isInt().withMessage("Valid participant ID is required"),
+];
 
-// Get a specific conversation by ID
-router.get('/:id', auth, getConversationById);
+const sendMessageValidation = [
+  body("conversationId")
+    .isInt()
+    .withMessage("Valid conversation ID is required"),
+  body("content").trim().notEmpty().withMessage("Message content is required"),
+];
 
-// Update conversation details
-router.put('/:id', auth, updateConversation);
+router.post(
+  "/",
+  auth,
+  createConversationValidation,
+  conversationController.getOrCreateConversation
+);
 
-// Add a new participant to an existing conversation
-router.post('/:id/participants', auth, addParticipant);
+router.post(
+  "/message",
+  auth,
+  sendMessageValidation,
+  conversationController.sendMessage
+);
 
-// Remove a participant from a conversation (different from leaving the conversation)
-router.delete('/:id/participants', auth, removeParticipant);
+router.get("/", auth, conversationController.getConversations);
 
-// A user leaves a conversation (removes them from the conversation)
-router.delete('/:id/leave', auth, leaveConversation);
+router.get(
+  "/:conversationId/messages",
+  auth,
+  conversationController.getMessages
+);
+
+router.delete(
+  "/:conversationId",
+  auth,
+  conversationController.deleteConversation
+);
 
 module.exports = router;

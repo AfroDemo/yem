@@ -3,6 +3,7 @@ import { ArrowLeft, Paperclip, Send, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../utils/api";
+import { messageService } from "../../services/messageService";
 
 // Custom Button component with Tailwind
 const Button = ({
@@ -144,30 +145,27 @@ export default function NewMessagePage() {
   const [searchResults, setSearchResults] = useState([]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Search users
+  // Search for users with active mentorships
   const handleSearch = async (query) => {
     if (query.length < 2) {
       setSearchResults([]);
       return;
     }
-
     try {
-      const response = await api.get(
-        `/messages/search?query=${encodeURIComponent(query)}`
-      );
+      setLoading(true);
+      const results = await messageService.searchMentorshipConnections(query);
       setSearchResults(
-        response.data.map((u) => ({
-          id: u.id,
-          name: `${u.firstName} ${u.lastName}`,
-          avatar: u.profileImage
-            ? `http://localhost:5000${u.profileImage}`
-            : "/placeholder.svg?height=40&width=40",
-        }))
+        results.filter(
+          (user) => !selectedRecipient || user.id !== selectedRecipient.id
+        )
       );
     } catch (error) {
-      console.error("Error searching users:", error);
+      setError(error.error || "Failed to search connections");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,20 +181,20 @@ export default function NewMessagePage() {
 
   const handleSend = async () => {
     if (!selectedRecipient || !message.trim()) {
-      alert("Please select a recipient and enter a message.");
+      setError("Please select a recipient and enter a message");
       return;
     }
-
     try {
-      await api.post("/messages/send", {
-        receiverId: selectedRecipient.id,
-        content: `${subject}\n\n${message}`, // Combine subject and message
-      });
-      // Redirect to messages page
-      window.location.href = "/dashboard/messages";
+      setLoading(true);
+      const conversation = await messageService.getOrCreateConversation(
+        selectedRecipient.id
+      );
+      await messageService.sendMessage(conversation.id, message);
+      window.location.href = "/dashboard/messages"; // Redirect to messages page
     } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message.");
+      setError(error.error || "Failed to send message");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -214,9 +212,12 @@ export default function NewMessagePage() {
       <Card>
         <CardHeader>
           <CardTitle>Compose Message</CardTitle>
-          <CardDescription>Send a message to a connection</CardDescription>
+          <CardDescription>
+            Send a message to a mentor or mentee
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && <p className="text-red-500">{error}</p>}
           <div className="space-y-2">
             <label className="text-sm font-medium">To:</label>
             <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
@@ -227,14 +228,19 @@ export default function NewMessagePage() {
                 >
                   <Avatar className="h-5 w-5">
                     <AvatarImage
-                      src={selectedRecipient.avatar}
-                      alt={selectedRecipient.name}
+                      src={
+                        selectedRecipient.profileImage ||
+                        "/placeholder.svg?height=40&width=40"
+                      }
+                      alt={selectedRecipient.firstName}
                     />
                     <AvatarFallback>
-                      {selectedRecipient.name.charAt(0)}
+                      {selectedRecipient.firstName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{selectedRecipient.name}</span>
+                  <span>
+                    {selectedRecipient.firstName} {selectedRecipient.lastName}
+                  </span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -254,11 +260,12 @@ export default function NewMessagePage() {
                     setSearchQuery(e.target.value);
                     handleSearch(e.target.value);
                   }}
+                  disabled={loading}
                 />
               )}
             </div>
 
-            {searchResults.length > 0 && !selectedRecipient && (
+            {searchResults.length > 0 && (
               <div className="border rounded-md shadow-sm max-h-60 overflow-y-auto">
                 {searchResults.map((result) => (
                   <div
@@ -267,10 +274,20 @@ export default function NewMessagePage() {
                     onClick={() => selectRecipient(result)}
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={result.avatar} alt={result.name} />
-                      <AvatarFallback>{result.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage
+                        src={
+                          result.profileImage ||
+                          "/placeholder.svg?height=40&width=40"
+                        }
+                        alt={result.firstName}
+                      />
+                      <AvatarFallback>
+                        {result.firstName.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
-                    <span>{result.name}</span>
+                    <span>
+                      {result.firstName} {result.lastName}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -317,8 +334,10 @@ export default function NewMessagePage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline">Save Draft</Button>
-          <Button onClick={handleSend}>
+          <Button variant="outline" disabled={loading}>
+            Save Draft
+          </Button>
+          <Button onClick={handleSend} disabled={loading}>
             <Send className="mr-2 h-4 w-4" />
             Send Message
           </Button>
