@@ -171,6 +171,9 @@ export default function MatchPage() {
     getSameIndustryMentors(user, recommendedMentors);
   }, [user, recommendedMentors]);
 
+
+  console.log(allMentors)
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

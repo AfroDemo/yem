@@ -17,6 +17,7 @@ const conversationRoutes = require("./routes/conversations");
 const successStoryRoutes = require("./routes/successStories");
 const mentorRoutes = require("./routes/mentor");
 const sessionRoutes = require("./routes/sessions");
+const menteeRoutes = require("./routes/mentee");
 
 // Initialize express app
 const app = express();
@@ -53,6 +54,7 @@ app.use("/api/conversations", conversationRoutes);
 app.use("/api/success-stories", successStoryRoutes);
 app.use("/api/mentors", mentorRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/mentees", menteeRoutes);
 
 // Basic route
 app.get("/", (req, res) => {

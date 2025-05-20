@@ -1,57 +1,71 @@
-import api from '../utils/api';
+import { get } from "../utils/api";
 
-// Create mentee profile
-export const createMenteeProfile = async (profileData: {
-  entrepreneurshipStage: string;
-  businessIdea: string;
-  goals: string[];
-  challenges: string[];
-  preferredMentorExpertise: string[];
-  educationBackground?: string;
-  workExperience?: string;
-}) => {
+// Fetch dashboard metrics (active mentors, upcoming sessions, hours mentored, average mentor rating)
+export const getMenteeDashboardMetrics = async (menteeId) => {
   try {
-    const response = await api.post('/mentee-profiles', profileData);
+    const response = await get(`/mentees/${menteeId}/dashboard-metrics`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to create mentee profile';
+    throw new Error("Failed to fetch dashboard metrics: " + error.message);
   }
 };
 
-// Get all mentee profiles
-export const getAllMenteeProfiles = async () => {
+// Fetch today's sessions
+export const getTodaysSessions = async (menteeId) => {
   try {
-    const response = await api.get('/mentee-profiles');
+    const response = await get(`/mentees/${menteeId}/sessions/today`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get mentee profiles';
+    throw new Error("Failed to fetch today's sessions: " + error.message);
   }
 };
 
-// Get mentee profile by ID
-export const getMenteeProfileById = async (profileId: string) => {
+// Fetch recent messages
+export const getRecentMessages = async (menteeId) => {
   try {
-    const response = await api.get(`/mentee-profiles/${profileId}`);
+    const response = await get(`/mentees/${menteeId}/messages/recent`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to get mentee profile';
+    throw new Error("Failed to fetch recent messages: " + error.message);
   }
 };
 
-// Update mentee profile
-export const updateMenteeProfile = async (profileId: string, profileData: {
-  entrepreneurshipStage?: string;
-  businessIdea?: string;
-  goals?: string[];
-  challenges?: string[];
-  preferredMentorExpertise?: string[];
-  educationBackground?: string;
-  workExperience?: string;
-}) => {
+// Fetch mentee progress
+export const getMenteeProgress = async (menteeId) => {
   try {
-    const response = await api.put(`/mentee-profiles/${profileId}`, profileData);
+    const response = await get(`/mentees/${menteeId}/progress`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Failed to update mentee profile';
+    throw new Error("Failed to fetch mentee progress: " + error.message);
+  }
+};
+
+// Fetch shared resources
+export const getSharedResources = async (menteeId) => {
+  try {
+    const response = await get(`/mentees/${menteeId}/resources/shared`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch shared resources: " + error.message);
+  }
+};
+
+// Fetch upcoming reports
+export const getUpcomingReports = async (menteeId) => {
+  try {
+    const response = await get(`/mentees/${menteeId}/reports/upcoming`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch upcoming reports: " + error.message);
+  }
+};
+
+// Fetch new connections (to support ConnectionCard)
+export const getNewConnections = async (menteeId) => {
+  try {
+    const response = await get(`/mentees/${menteeId}/connections/new`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch new connections: " + error.message);
   }
 };
