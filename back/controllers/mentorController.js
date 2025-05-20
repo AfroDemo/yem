@@ -323,9 +323,9 @@ exports.getMentees = async (req, res) => {
 exports.getMenteeIndustries = async (req, res) => {
   try {
     const mentorId = req.params.mentorId;
-    if (req.user.id != mentorId && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
+    // if (req.user.id != mentorId && req.user.role !== "admin") {
+    //   return res.status(403).json({ message: "Unauthorized" });
+    // }
 
     // Fetch accepted and completed mentorships
     const mentorships = await Mentorship.findAll({
@@ -384,9 +384,9 @@ exports.getMenteeIndustries = async (req, res) => {
 exports.getRecentAchievements = async (req, res) => {
   try {
     const mentorId = req.params.mentorId;
-    if (req.user.id != mentorId && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
+    // if (req.user.id != mentorId && req.user.role !== "admin") {
+    //   return res.status(403).json({ message: "Unauthorized" });
+    // }
 
     // Assuming achievements are stored in a Progress or Achievement model
     // Here, we'll derive from Mentorship progress as a placeholder
