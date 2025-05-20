@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   Edit,
@@ -10,103 +8,116 @@ import {
   Send,
   Smile,
 } from "lucide-react";
-import { useUser } from "../../context/UserContext";
+import api from "../../utils/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const user = useUser();
-
-  const conversations = [
-    {
-      id: 1,
-      name: "Emily Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "Thanks for the advice on my pitch deck!",
-      time: "10:42 AM",
-      unread: true,
-    },
-    {
-      id: 2,
-      name: "Marcus Johnson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "Looking forward to the networking event next week.",
-      time: "Yesterday",
-      unread: false,
-    },
-    {
-      id: 3,
-      name: "Sophia Rodriguez",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "I'd love to collaborate on the new project.",
-      time: "Yesterday",
-      unread: false,
-    },
-    {
-      id: 4,
-      name: "David Thompson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "Can you share those marketing resources we discussed?",
-      time: "Monday",
-      unread: false,
-    },
-    {
-      id: 5,
-      name: "Jessica Williams",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage:
-        "The workshop was really helpful. Thanks for recommending it!",
-      time: "Sunday",
-      unread: false,
-    },
-  ];
-
-  const messages = [
-    {
-      id: 1,
-      sender: "Emily Chen",
-      content:
-        "Hi there! I wanted to ask for your feedback on my startup pitch deck. I'm presenting to investors next week.",
-      time: "10:30 AM",
-      isMe: false,
-    },
-    {
-      id: 2,
-      sender: "Me",
-      content:
-        "Hey Emily! I'd be happy to take a look. Send it over and I'll review it today.",
-      time: "10:32 AM",
-      isMe: true,
-    },
-    {
-      id: 3,
-      sender: "Emily Chen",
-      content:
-        "That would be amazing! I've attached the deck. I'm particularly concerned about the market analysis section.",
-      time: "10:35 AM",
-      isMe: false,
-      attachment: "Startup_Pitch_Deck_v2.pdf",
-    },
-    {
-      id: 4,
-      sender: "Me",
-      content:
-        "Just reviewed it. Overall it looks great! For the market analysis, I'd suggest adding more specific data points about your target demographic and perhaps a competitive analysis chart.",
-      time: "10:40 AM",
-      isMe: true,
-    },
-    {
-      id: 5,
-      sender: "Emily Chen",
-      content:
-        "Thanks for the advice on my pitch deck! That makes a lot of sense. I'll update it and send you the revised version later today.",
-      time: "10:42 AM",
-      isMe: false,
-    },
-  ];
-
+  const [conversations, setConversations] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [messageInput, setMessageInput] = useState("");
+  const { user } = useAuth();
+
+  // Fetch conversations
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const response = await api.get("/messages/conversations");
+        const formattedConversations = response.data.map((conv) => {
+          const otherParticipant = conv.participants.find(
+            (id) => id !== user.id
+          );
+          const otherUser = conv.messages.find(
+            (msg) =>
+              msg.senderId === otherParticipant ||
+              msg.receiverId === otherParticipant
+          );
+          return {
+            id: conv.id,
+            name: otherUser
+              ? `${
+                  otherUser.sender?.firstName || otherUser.receiver?.firstName
+                } ${otherUser.sender?.lastName || otherUser.receiver?.lastName}`
+              : "Unknown",
+            avatar: otherUser
+              ? `http://localhost:5000${
+                  otherUser.sender?.profileImage ||
+                  otherUser.receiver?.profileImage
+                }`
+              : "/placeholder.svg?height=40&width=40",
+            lastMessage: conv.lastMessage?.content || "",
+            time: conv.lastMessage?.createdAt
+              ? new Date(conv.lastMessage.createdAt).toLocaleTimeString()
+              : "",
+            unread: conv.unreadCount[user.id] > 0,
+          };
+        });
+        setConversations(formattedConversations);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      }
+    };
+    fetchConversations();
+  }, [user.id]);
+
+  // Fetch messages for selected conversation
+  useEffect(() => {
+    if (selectedConversation) {
+      const fetchMessages = async () => {
+        try {
+          const response = await api.get(
+            `/messages/conversation/${selectedConversation}`
+          );
+          const formattedMessages = response.data.messages.map((msg) => ({
+            id: msg.id,
+            sender: `${msg.sender.firstName} ${msg.sender.lastName}`,
+            content: msg.content,
+            time: new Date(msg.createdAt).toLocaleTimeString(),
+            isMe: msg.senderId === user.id,
+          }));
+          setMessages(formattedMessages);
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      };
+      fetchMessages();
+    }
+  }, [selectedConversation, user.id]);
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversation) return;
+
+    try {
+      const conversation = conversations.find(
+        (c) => c.id === selectedConversation
+      );
+      const otherParticipantId = conversation.participants?.find(
+        (id) => id !== user.id
+      );
+      await api.post("/messages/send", {
+        receiverId: otherParticipantId,
+        content: messageInput,
+      });
+      setMessageInput("");
+      // Refresh messages
+      const response = await api.get(
+        `/messages/conversation/${selectedConversation}`
+      );
+      const formattedMessages = response.data.messages.map((msg) => ({
+        id: msg.id,
+        sender: `${msg.sender.firstName} ${msg.sender.lastName}`,
+        content: msg.content,
+        time: new Date(msg.createdAt).toLocaleTimeString(),
+        isMe: msg.senderId === user.id,
+      }));
+      setMessages(formattedMessages);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col bg-gray-50">
@@ -134,7 +145,6 @@ export default function MessagesPage() {
             showMobileMenu ? "block" : "hidden"
           } md:block w-full md:w-1/3 bg-white border-r`}
         >
-          {/* Search Bar */}
           <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -146,7 +156,6 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b">
             <button
               className={`flex-1 py-3 text-center font-medium ${
@@ -170,7 +179,6 @@ export default function MessagesPage() {
             </button>
           </div>
 
-          {/* Conversation Items */}
           <div className="divide-y">
             {conversations
               .filter((conv) => activeTab === "all" || conv.unread)
@@ -229,7 +237,6 @@ export default function MessagesPage() {
         >
           {selectedConversation ? (
             <>
-              {/* Message Header */}
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img
@@ -259,11 +266,9 @@ export default function MessagesPage() {
                   <button className="p-2 rounded-full hover:bg-gray-100">
                     <MoreHorizontal className="h-5 w-5 text-gray-500" />
                   </button>
-                  {/* Dropdown would go here */}
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
                   <div
@@ -280,15 +285,6 @@ export default function MessagesPage() {
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
-                      {message.attachment && (
-                        <div className="mt-2 p-2 bg-white/20 rounded flex items-center gap-2">
-                          <Paperclip className="h-4 w-4" />
-                          <span className="text-xs">{message.attachment}</span>
-                          <button className="ml-auto p-1 rounded hover:bg-white/10">
-                            <ArrowRight className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
                       <div
                         className={`mt-1 text-xs ${
                           message.isMe ? "text-blue-100" : "text-gray-500"
@@ -301,7 +297,6 @@ export default function MessagesPage() {
                 ))}
               </div>
 
-              {/* Message Input */}
               <div className="p-4 border-t">
                 <div className="flex gap-2">
                   <textarea
@@ -319,10 +314,7 @@ export default function MessagesPage() {
                     </button>
                     <button
                       className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700"
-                      onClick={() => {
-                        // Send message logic
-                        setMessageInput("");
-                      }}
+                      onClick={handleSendMessage}
                     >
                       <Send className="h-4 w-4" />
                     </button>

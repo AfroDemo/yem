@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ArrowLeft, Paperclip, Send, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../utils/api";
 
 // Custom Button component with Tailwind
 const Button = ({
@@ -137,71 +139,74 @@ const Badge = ({ children, variant = "default", className = "" }) => {
 };
 
 export default function NewMessagePage() {
-  const [selectedRecipients, setSelectedRecipients] = useState([
-    {
-      id: 1,
-      name: "Emily Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  ]);
+  const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const { user } = useAuth();
 
-  // Mock search function
-  const handleSearch = (query) => {
+  // Search users
+  const handleSearch = async (query) => {
     if (query.length < 2) {
       setSearchResults([]);
       return;
     }
 
-    // Mock search results
-    const results = [
-      {
-        id: 2,
-        name: "Marcus Johnson",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      {
-        id: 3,
-        name: "Sophia Rodriguez",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      {
-        id: 4,
-        name: "David Thompson",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      {
-        id: 5,
-        name: "Jessica Williams",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-    ].filter(
-      (user) =>
-        user.name.toLowerCase().includes(query.toLowerCase()) &&
-        !selectedRecipients.some((r) => r.id === user.id)
-    );
-
-    setSearchResults(results);
+    try {
+      const response = await api.get(
+        `/messages/search?query=${encodeURIComponent(query)}`
+      );
+      setSearchResults(
+        response.data.map((u) => ({
+          id: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          avatar: u.profileImage
+            ? `http://localhost:5000${u.profileImage}`
+            : "/placeholder.svg?height=40&width=40",
+        }))
+      );
+    } catch (error) {
+      console.error("Error searching users:", error);
+    }
   };
 
-  const addRecipient = (recipient) => {
-    setSelectedRecipients([...selectedRecipients, recipient]);
+  const selectRecipient = (recipient) => {
+    setSelectedRecipient(recipient);
     setSearchQuery("");
     setSearchResults([]);
   };
 
-  const removeRecipient = (id) => {
-    setSelectedRecipients(selectedRecipients.filter((r) => r.id !== id));
+  const removeRecipient = () => {
+    setSelectedRecipient(null);
+  };
+
+  const handleSend = async () => {
+    if (!selectedRecipient || !message.trim()) {
+      alert("Please select a recipient and enter a message.");
+      return;
+    }
+
+    try {
+      await api.post("/messages/send", {
+        receiverId: selectedRecipient.id,
+        content: `${subject}\n\n${message}`, // Combine subject and message
+      });
+      // Redirect to messages page
+      window.location.href = "/dashboard/messages";
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send message.");
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <a href="/dashboard/messages">
+          <Link to="/dashboard/messages">
             <ArrowLeft className="h-5 w-5" />
-          </a>
+          </Link>
         </Button>
         <h1 className="text-3xl font-bold">New Message</h1>
       </div>
@@ -209,54 +214,57 @@ export default function NewMessagePage() {
       <Card>
         <CardHeader>
           <CardTitle>Compose Message</CardTitle>
-          <CardDescription>
-            Send a message to one or more connections
-          </CardDescription>
+          <CardDescription>Send a message to a connection</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">To:</label>
             <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
-              {selectedRecipients.map((recipient) => (
+              {selectedRecipient ? (
                 <Badge
-                  key={recipient.id}
                   variant="secondary"
                   className="flex items-center gap-1 pl-1"
                 >
                   <Avatar className="h-5 w-5">
-                    <AvatarImage src={recipient.avatar} alt={recipient.name} />
-                    <AvatarFallback>{recipient.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage
+                      src={selectedRecipient.avatar}
+                      alt={selectedRecipient.name}
+                    />
+                    <AvatarFallback>
+                      {selectedRecipient.name.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
-                  <span>{recipient.name}</span>
+                  <span>{selectedRecipient.name}</span>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-4 w-4 rounded-full"
-                    onClick={() => removeRecipient(recipient.id)}
+                    onClick={removeRecipient}
                   >
                     <X className="h-3 w-3" />
                   </Button>
                 </Badge>
-              ))}
-              <Input
-                type="text"
-                placeholder="Search connections..."
-                className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[200px]"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  handleSearch(e.target.value);
-                }}
-              />
+              ) : (
+                <Input
+                  type="text"
+                  placeholder="Search connections..."
+                  className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[200px]"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    handleSearch(e.target.value);
+                  }}
+                />
+              )}
             </div>
 
-            {searchResults.length > 0 && (
+            {searchResults.length > 0 && !selectedRecipient && (
               <div className="border rounded-md shadow-sm max-h-60 overflow-y-auto">
                 {searchResults.map((result) => (
                   <div
                     key={result.id}
                     className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => addRecipient(result)}
+                    onClick={() => selectRecipient(result)}
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={result.avatar} alt={result.name} />
@@ -273,7 +281,12 @@ export default function NewMessagePage() {
             <label htmlFor="subject" className="text-sm font-medium">
               Subject:
             </label>
-            <Input id="subject" placeholder="Enter message subject..." />
+            <Input
+              id="subject"
+              placeholder="Enter message subject..."
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
@@ -284,6 +297,8 @@ export default function NewMessagePage() {
               id="message"
               placeholder="Type your message here..."
               className="min-h-[200px]"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
             />
           </div>
 
@@ -303,7 +318,7 @@ export default function NewMessagePage() {
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline">Save Draft</Button>
-          <Button>
+          <Button onClick={handleSend}>
             <Send className="mr-2 h-4 w-4" />
             Send Message
           </Button>
