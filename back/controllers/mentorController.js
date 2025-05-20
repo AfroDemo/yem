@@ -10,6 +10,27 @@ const Report = db.Report;
 const Review = db.Review;
 const Conversation = db.Conversation;
 
+exports.getAllMentors = async (req, res) => {
+  try {
+    console.log(req.user.role)
+    // Check if the requesting user is an admin
+    // if (req.user.role !== "admin"||req.user.role !== "mentee") {
+    //   return res.status(403).json({ message: "Unauthorized" });
+    // }
+
+    // Fetch all users with role 'mentor'
+    const mentors = await User.findAll({
+      where: { role: "mentor" },
+      attributes: ["id", "firstName", "lastName", "profileImage"],
+    });
+
+    res.status(200).json(mentors);
+  } catch (error) {
+    console.error("Get all mentors error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get dashboard metrics
 exports.getDashboardMetrics = async (req, res) => {
   try {

@@ -7,12 +7,13 @@ const {
   getSharedResources,
   getUpcomingReports,
   getMentees,
+  getAllMentors,
 } = require("../controllers/mentorController");
 const { auth } = require("../middleware/auth");
 const { getMentorSessions } = require("../controllers/sessionController");
 
 const router = express.Router();
-
+router.get("/", auth, getAllMentors);
 router.get("/:mentorId/dashboard-metrics", auth, getDashboardMetrics);
 router.get("/:mentorId/sessions/today", auth, getTodaysSessions);
 router.get("/:mentorId/messages/recent", auth, getRecentMessages);
