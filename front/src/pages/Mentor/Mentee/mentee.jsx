@@ -12,40 +12,14 @@ import AvatarFallback from "../../../components/avatar/AvatarFallback";
 import CardFooter from "../../../components/card/cardFooter";
 import { Bell, CheckCircle, Clock, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import api from "../../../utils/api";
-import { useUser } from "../../../context/UserContext";
+import {
+  getMentorDashboardMetrics,
+  getIndustries,
+  getRecentAchievements,
+} from "../../../services/mentorService";
 import { toast } from "react-toastify";
-
-// Statistics data
-const statsData = [
-  {
-    icon: <Users className="h-5 w-5 text-primary" />,
-    title: "Total Mentees",
-    description: "Current and past",
-    value: "19",
-  }
-];
-
-// Industry breakdown data
-const industriesData = [
-  { name: "Technology", count: 5, color: "blue" },
-  { name: "Retail", count: 3, color: "green" },
-  { name: "Healthcare", count: 2, color: "purple" },
-  { name: "Education", count: 2, color: "amber" },
-  { name: "Food & Beverage", count: 1, color: "red" },
-  { name: "Renewable Energy", count: 1, color: "indigo" },
-];
-
-// Recent achievements data
-const achievementsData = [
-  {
-    name: "David Park",
-    avatar: "/placeholder.svg?height=24&width=24",
-    description: "Completed brand identity development",
-    date: "April 2, 2025",
-  },
-  // Add more achievements...
-];
+import api from "../../../utils/api";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function MenteesPage() {
   const [activeTab, setActiveTab] = useState("accepted");
@@ -53,10 +27,14 @@ export default function MenteesPage() {
     accepted: [],
     completed: [],
   });
+  const [statsData, setStatsData] = useState([]);
+  const [industriesData, setIndustriesData] = useState([]);
+  const [achievementsData, setAchievementsData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const user = useUser();
+    const { user } = useAuth();
 
+  // Fetch mentee data (mentorship requests)
   const getRequestData = async () => {
     setIsLoading(true);
     try {
@@ -64,7 +42,6 @@ export default function MenteesPage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
-      // Transform the API data into our desired format
       const transformedData = {
         accepted: [],
         completed: [],
@@ -109,9 +86,7 @@ export default function MenteesPage() {
           menteeData: mentee,
         };
 
-        if (request.status === "pending") {
-          // Handle pending requests if needed
-        } else if (request.status === "accepted") {
+        if (request.status === "accepted") {
           transformedData.accepted.push({
             ...baseData,
             nextSession: request.nextMeetingDate
@@ -141,8 +116,67 @@ export default function MenteesPage() {
     }
   };
 
+  // Fetch dashboard metrics
+  const fetchDashboardMetrics = async () => {
+    try {
+      const response = await getMentorDashboardMetrics(user.id);
+      setStatsData([
+        {
+          icon: <Users className="h-5 w-5 text-primary" />,
+          title: "Total Mentees",
+          description: "Current and past",
+          value: response.activeMentees + (response.completedMentees || 0), // Adjust based on backend response
+        },
+        {
+          icon: <Clock className="h-5 w-5 text-primary" />,
+          title: "Hours Mentored",
+          description: "This month",
+          value: response.hoursMentored.toFixed(1),
+        },
+        {
+          icon: <Star className="h-5 w-5 text-primary" />,
+          title: "Average Rating",
+          description: "Based on reviews",
+          value: response.averageRating.toFixed(1),
+        },
+      ]);
+    } catch (error) {
+      console.error("Error fetching dashboard metrics:", error);
+      toast.error("Failed to load dashboard metrics");
+    }
+  };
+
+  // Fetch industries
+  const fetchIndustries = async () => {
+    try {
+      const response = await getIndustries(user.id);
+      setIndustriesData(response); // Backend already returns in correct format
+    } catch (error) {
+      console.error("Error fetching industries:", error);
+      toast.error("Failed to load industry data");
+    }
+  };
+
+  // Fetch recent achievements
+  const fetchAchievements = async () => {
+    try {
+      const response = await getRecentAchievements(user.id);
+      setAchievementsData(response);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      toast.error("Failed to load achievements");
+    }
+  };
+
   useEffect(() => {
-    getRequestData();
+    if (user?.id) {
+      Promise.all([
+        getRequestData(),
+        fetchDashboardMetrics(),
+        fetchIndustries(),
+        fetchAchievements(),
+      ]).finally(() => setIsLoading(false));
+    }
   }, [user]);
 
   const handleCompleteMentorship = async (mentorshipId) => {
@@ -152,10 +186,10 @@ export default function MenteesPage() {
         `/mentorships/${mentorshipId}/status`,
         {
           status: "completed",
-          completedAt: new Date().toISOString(),
+          endDate: new Date().toISOString(), // Use endDate as per backend
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
 
@@ -168,7 +202,6 @@ export default function MenteesPage() {
 
       await getRequestData();
 
-      // Switch to completed tab if no active mentees left
       if (mentees.accepted.length <= 1) {
         setActiveTab("completed");
       }
@@ -246,6 +279,7 @@ export default function MenteesPage() {
                     key={mentee.id}
                     {...mentee}
                     onComplete={handleCompleteMentorship}
+                    isUpdating={isUpdating}
                   />
                 ))}
 
