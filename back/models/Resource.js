@@ -76,6 +76,11 @@ module.exports = (sequelize) => {
       otherKey: "userId",
       as: "sharedWith",
     });
+    Resource.belongsToMany(models.Session, {
+      through: "session_resources",
+      foreignKey: "resourceId",
+      otherKey: "sessionId",
+    });
   };
 
   return Resource;

@@ -37,6 +37,11 @@ module.exports = (sequelize) => {
   Session.associate = function (models) {
     Session.belongsTo(models.User, { foreignKey: "mentorId", as: "mentor" });
     Session.belongsTo(models.User, { foreignKey: "menteeId", as: "mentee" });
+    Session.belongsToMany(models.Resource, {
+      through: "session_resources",
+      foreignKey: "sessionId",
+      otherKey: "resourceId",
+    });
   };
 
   return Session;

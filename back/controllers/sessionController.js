@@ -5,6 +5,7 @@ const {
   Resource,
   SessionResource,
   Mentorship,
+  sequelize,
 } = require("../models");
 
 const createSession = async (req, res) => {
@@ -302,6 +303,8 @@ const getMentees = async (req, res) => {
 };
 
 const associateResources = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
   try {
     const { sessionId } = req.params;
     const { resourceIds } = req.body;
@@ -319,20 +322,50 @@ const associateResources = async (req, res) => {
         .json({ message: "Unauthorized: Not your session" });
     }
 
-    // Clear existing associations
-    await SessionResource.destroy({ where: { sessionId } });
+    // If SessionResource model is not imported, use raw query instead
+    if (!SessionResource) {
+      // Delete existing associations
+      await sequelize.query(
+        "DELETE FROM session_resources WHERE sessionId = :sessionId",
+        {
+          replacements: { sessionId },
+          transaction,
+        }
+      );
 
-    // Create new associations only if resourceIds exist
-    if (resourceIds && resourceIds.length > 0) {
-      const associations = resourceIds.map((resourceId) => ({
-        sessionId,
-        resourceId,
-      }));
-      await SessionResource.bulkCreate(associations);
+      // Create new associations
+      if (resourceIds && resourceIds.length > 0) {
+        const insertQueries = resourceIds.map((resourceId) =>
+          sequelize.query(
+            "INSERT INTO session_resources (sessionId, resourceId) VALUES (:sessionId, :resourceId)",
+            {
+              replacements: { sessionId, resourceId },
+              transaction,
+            }
+          )
+        );
+        await Promise.all(insertQueries);
+      }
+    } else {
+      // If SessionResource model exists, use Sequelize methods
+      await SessionResource.destroy({
+        where: { sessionId },
+        transaction,
+      });
+
+      if (resourceIds && resourceIds.length > 0) {
+        const associations = resourceIds.map((resourceId) => ({
+          sessionId,
+          resourceId,
+        }));
+        await SessionResource.bulkCreate(associations, { transaction });
+      }
     }
 
+    await transaction.commit();
     res.status(200).json({ message: "Resources associated successfully" });
   } catch (error) {
+    await transaction.rollback();
     console.error("Associate resources error:", error);
     res.status(500).json({
       message: "Failed to associate resources",
