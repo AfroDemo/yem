@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import api from "../../utils/api";
 import {
   BadgeCheck,
   BookOpen,
@@ -17,6 +19,7 @@ import Button from "../button";
 import CardFooter from "./cardFooter";
 import Progress from "../progress";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext"; 
 
 const parseArray = (val) => {
   if (!val) return [];
@@ -37,151 +40,6 @@ const parseArray = (val) => {
   }
 };
 
-export function MentorCardAll({ mentor }) {
-  const {
-    id,
-    firstName,
-    lastName,
-    profileImage,
-    role,
-    industries,
-    experienceYears,
-    availability,
-    isVerified,
-    bio,
-    skills,
-  } = mentor;
-
-  const fullName = `${firstName} ${lastName}`;
-  const parsedIndustries = parseArray(industries);
-  const parsedSkills = parseArray(skills);
-  const navigate = useNavigate();
-
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex flex-col items-center text-center md:text-left md:items-start">
-            <div className="relative">
-              <Avatar className="h-20 w-20 mb-2">
-                <AvatarImage
-                  src={
-                    profileImage
-                      ? `http://localhost:5000${profileImage}`
-                      : "/placeholder.svg?height=96&width=96"
-                  }
-                  alt={fullName}
-                />
-                <AvatarFallback>{firstName.charAt(0)}</AvatarFallback>
-              </Avatar>
-              {isVerified && (
-                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5">
-                  <BadgeCheck className="h-4 w-4" />
-                </div>
-              )}
-            </div>
-            <h3 className="font-semibold text-lg">{fullName}</h3>
-            <p className="text-sm text-gray-500 capitalize">{role}</p>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {parsedIndustries.map((industry, idx) => (
-                <Badge
-                  key={idx}
-                  className={`${
-                    industry.toLowerCase().includes("technology")
-                      ? "bg-blue-100 text-blue-800"
-                      : industry.toLowerCase().includes("finance")
-                      ? "bg-green-100 text-green-800"
-                      : industry.toLowerCase().includes("e-commerce")
-                      ? "bg-purple-100 text-purple-800"
-                      : industry.toLowerCase().includes("saas")
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {industry}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between">
-              <div>
-                <p className="text-sm text-gray-500">
-                  Experience: {experienceYears || "Not specified"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Availability: {availability || "Unknown"}
-                </p>
-              </div>
-              <div className="flex mt-4 md:mt-0 md:flex-col gap-2 md:items-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 md:w-auto"
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Message
-                </Button>
-                <Button size="sm" className="flex-1 md:w-auto" asChild>
-                  <Link to={`/dashboard/mentors/${id}`}>View Profile</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">About</p>
-              <p className="text-sm">{bio || "No bio available."}</p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Skills</p>
-              <div className="flex flex-wrap gap-2">
-                {parsedSkills.length > 0 ? (
-                  parsedSkills.map((skill, i) => (
-                    <Badge key={i} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400">No skills listed</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 pt-2">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-xs">1-on-1 Sessions</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageSquare className="h-4 w-4 text-gray-400" />
-                <span className="text-xs">Chat Support</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <BookOpen className="h-4 w-4 text-gray-400" />
-                <span className="text-xs">Resource Sharing</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="bg-gray-100 px-6 py-3">
-        <Button
-          className="w-full flex items-center justify-center gap-2"
-          asChild
-          onClick={() => {
-            navigate(`/dashboard/mentors/${id}/request`);
-          }}
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Request Mentorship</span>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
 export function MentorCard({
   id,
   name,
@@ -197,6 +55,26 @@ export function MentorCard({
   verified,
 }) {
   const navigate = useNavigate();
+  const { user } = useAuth(); // Get current user from context
+  const [hasMentorship, setHasMentorship] = useState(false);
+
+  // Fetch mentorship status
+  useEffect(() => {
+    const checkMentorship = async () => {
+      try {
+        const response = await api.get(`/mentorships/check/${id}/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setHasMentorship(response.data.hasMentorship);
+      } catch (error) {
+        console.error("Error checking mentorship status:", error);
+      }
+    };
+    checkMentorship();
+  }, [id, user.id]);
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -330,18 +208,186 @@ export function MentorCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="bg-blue-100 px-6 py-3">
-        <Button
-          className="w-full flex items-center justify-center gap-2"
-          asChild
-          onClick={() => {
-            navigate(`/dashboard/mentors/${id}/request`);
-          }}
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Request Mentorship</span>
-        </Button>
-      </CardFooter>
+      {!hasMentorship && (
+        <CardFooter className="bg-blue-100 px-6 py-3">
+          <Button
+            className="w-full flex items-center justify-center gap-2"
+            asChild
+            onClick={() => {
+              navigate(`/dashboard/mentors/${id}/request`);
+            }}
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Request Mentorship</span>
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  );
+}
+
+export function MentorCardAll({ mentor }) {
+  const {
+    id,
+    firstName,
+    lastName,
+    profileImage,
+    role,
+    industries,
+    experienceYears,
+    availability,
+    isVerified,
+    bio,
+    skills,
+  } = mentor;
+
+  const fullName = `${firstName} ${lastName}`;
+  const parsedIndustries = parseArray(industries);
+  const parsedSkills = parseArray(skills);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [hasMentorship, setHasMentorship] = useState(false);
+
+  // Fetch mentorship status
+  useEffect(() => {
+    const checkMentorship = async () => {
+      try {
+        const response = await api.get(`/mentorship/check/${id}/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setHasMentorship(response.data.hasMentorship);
+      } catch (error) {
+        console.error("Error checking mentorship status:", error);
+      }
+    };
+    checkMentorship();
+  }, [id, user.id]);
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex flex-col items-center text-center md:text-left md:items-start">
+            <div className="relative">
+              <Avatar className="h-20 w-20 mb-2">
+                <AvatarImage
+                  src={
+                    profileImage
+                      ? `http://localhost:5000${profileImage}`
+                      : "/placeholder.svg?height=96&width=96"
+                  }
+                  alt={fullName}
+                />
+                <AvatarFallback>{firstName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              {isVerified && (
+                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5">
+                  <BadgeCheck className="h-4 w-4" />
+                </div>
+              )}
+            </div>
+            <h3 className="font-semibold text-lg">{fullName}</h3>
+            <p className="text-sm text-gray-500 capitalize">{role}</p>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {parsedIndustries.map((industry, idx) => (
+                <Badge
+                  key={idx}
+                  className={`${
+                    industry.toLowerCase().includes("technology")
+                      ? "bg-blue-100 text-blue-800"
+                      : industry.toLowerCase().includes("finance")
+                      ? "bg-green-100 text-green-800"
+                      : industry.toLowerCase().includes("e-commerce")
+                      ? "bg-purple-100 text-purple-800"
+                      : industry.toLowerCase().includes("saas")
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {industry}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-4">
+            <div className="flex flex-col md:flex-row justify-between">
+              <div>
+                <p className="text-sm text-gray-500">
+                  Experience: {experienceYears || "Not specified"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Availability: {availability || "Unknown"}
+                </p>
+              </div>
+              <div className="flex mt-4 md:mt-0 md:flex-col gap-2 md:items-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 md:w-auto"
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Message
+                </Button>
+                <Button size="sm" className="flex-1 md:w-auto" asChild>
+                  <Link to={`/dashboard/mentors/${id}`}>View Profile</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">About</p>
+              <p className="text-sm">{bio || "No bio available."}</p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Skills</p>
+              <div className="flex flex-wrap gap-2">
+                {parsedSkills.length > 0 ? (
+                  parsedSkills.map((skill, i) => (
+                    <Badge key={i} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">No skills listed</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-xs">1-on-1 Sessions</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MessageSquare className="h-4 w-4 text-gray-400" />
+                <span className="text-xs">Chat Support</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <BookOpen className="h-4 w-4 text-gray-400" />
+                <span className="text-xs">Resource Sharing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      {!hasMentorship && (
+        <CardFooter className="bg-gray-100 px-6 py-3">
+          <Button
+            className="w-full flex items-center justify-center gap-2"
+            asChild
+            onClick={() => {
+              navigate(`/dashboard/mentors/${id}/request`);
+            }}
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Request Mentorship</span>
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

@@ -4,7 +4,8 @@ const {
   getMenteeRequests,
   updateMentorshipStatus,
   getRequestDetails,
-  getMentorRequests
+  getMentorRequests,
+  checkMentorship,
 } = require("../controllers/mentorshipController");
 const { auth } = require("../middleware/auth");
 
@@ -18,6 +19,8 @@ router.get("/", auth, getMentorRequests);
 
 // Get mentorship by ID
 router.get("/:id", auth, getRequestDetails);
+
+router.get("/check/:mentorId/:menteeId", auth, checkMentorship);
 
 // Update mentorship
 // router.put("/:id", auth, updateMentorship);

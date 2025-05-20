@@ -121,7 +121,7 @@ exports.getMenteeRequests = async (req, res) => {
   }
 };
 
-// Update request status (accepted/reject/complete)
+// Update request status
 exports.updateMentorshipStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -206,5 +206,25 @@ exports.getRequestDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching request details:", error);
     res.status(500).json({ error: "Failed to fetch request details" });
+  }
+};
+
+// Check if mentorship exists
+exports.checkMentorship = async (req, res) => {
+  try {
+    const { mentorId, menteeId } = req.params;
+
+    const mentorship = await Mentorship.findOne({
+      where: {
+        mentorId,
+        menteeId,
+        status: ["pending", "accepted"], // Only consider active or pending mentorships
+      },
+    });
+
+    res.json({ hasMentorship: !!mentorship });
+  } catch (error) {
+    console.error("Error checking mentorship:", error);
+    res.status(500).json({ error: "Failed to check mentorship status" });
   }
 };

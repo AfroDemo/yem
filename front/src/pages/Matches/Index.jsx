@@ -171,9 +171,6 @@ export default function MatchPage() {
     getSameIndustryMentors(user, recommendedMentors);
   }, [user, recommendedMentors]);
 
-
-  console.log(allMentors)
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -305,29 +302,6 @@ export default function MatchPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Mentor Expertise</CardTitle>
-              <CardDescription>Browse by specialty</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {expertiseData.map((expertise, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Badge
-                    className={`mr-2 bg-${expertise.color}-100 text-${expertise.color}-800 hover:bg-${expertise.color}-100`}
-                  >
-                    {expertise.count}
-                  </Badge>
-                  {expertise.name}
-                </Button>
-              ))}
-            </CardContent>
-          </Card> */}
 
           <Card className="mt-6">
             <CardHeader>
