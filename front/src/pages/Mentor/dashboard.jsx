@@ -414,8 +414,6 @@ function MessagePreview({ name, time, message, avatar, unread }) {
   );
 }
 
-
-
 function ResourceItem({ title, type, sharedWith, date }) {
   return (
     <div className="flex items-start space-x-3 p-3 rounded-lg border">

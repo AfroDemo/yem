@@ -59,3 +59,23 @@ export const getUpcomingReports = async (mentorId) => {
     throw new Error("Failed to fetch upcoming reports: " + error.message);
   }
 };
+
+// Fetch mentee industries
+export const getIndustries = async (mentorId) => {
+  try {
+    const response = await get(`/mentors/${mentorId}/industries`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch industries: " + error.message);
+  }
+};
+
+// Fetch recent achievements
+export const getRecentAchievements = async (mentorId) => {
+  try {
+    const response = await get(`/mentors/${mentorId}/achievements`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch achievements: " + error.message);
+  }
+};
