@@ -47,7 +47,7 @@ const getOrCreateConversation = async (req, res) => {
 
     if (!conversation) {
       conversation = await Conversation.create({
-        participants: [currentUserId, participantId], // Store as JSON array
+        participants: [currentUserId, participantId], // Store as array (Sequelize handles JSON serialization)
         lastMessage: {},
         unreadCount: { [currentUserId]: 0, [participantId]: 0 },
       });
@@ -57,8 +57,13 @@ const getOrCreateConversation = async (req, res) => {
       });
     }
 
+    // Ensure participants is an array
+    let participantIds = conversation.participants;
+    if (typeof participantIds === "string") {
+      participantIds = JSON.parse(participantIds);
+    }
+
     // Fetch participant details manually
-    const participantIds = conversation.participants; // JSON array of IDs
     const participants = await User.findAll({
       where: {
         id: { [Op.in]: participantIds },
