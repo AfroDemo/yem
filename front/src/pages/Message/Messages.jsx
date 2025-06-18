@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import {
   ArrowRight,
@@ -21,14 +19,31 @@ export default function MessagesPage() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [messageInput, setMessageInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const user = useAuth();
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const { user } = useAuth(); // Assuming useAuth returns { user: { id, role, ... } }
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
         setLoading(true);
         const data = await messageService.getConversations();
-        setConversations(data);
+        // Parse JSON fields for each conversation
+        const parsedConversations = (data.conversations || []).map((conv) => ({
+          ...conv,
+          participants:
+            typeof conv.participants === "string"
+              ? JSON.parse(conv.participants)
+              : conv.participants,
+          lastMessage:
+            typeof conv.lastMessage === "string"
+              ? JSON.parse(conv.lastMessage)
+              : conv.lastMessage,
+          unreadCount:
+            typeof conv.unreadCount === "string"
+              ? JSON.parse(conv.unreadCount)
+              : conv.unreadCount,
+        }));
+        setConversations(parsedConversations);
       } catch (error) {
         console.error("Failed to load conversations:", error);
       } finally {
@@ -42,13 +57,18 @@ export default function MessagesPage() {
     if (selectedConversation) {
       const fetchMessages = async () => {
         try {
+          setMessagesLoading(true);
           const data = await messageService.getMessages(selectedConversation);
-          setMessages(data);
+          setMessages(data.messages || []);
         } catch (error) {
           console.error("Failed to load messages:", error);
+        } finally {
+          setMessagesLoading(false);
         }
       };
       fetchMessages();
+    } else {
+      setMessages([]);
     }
   }, [selectedConversation]);
 
@@ -61,6 +81,25 @@ export default function MessagesPage() {
       );
       setMessages([...messages, message]);
       setMessageInput("");
+      // Update conversation's lastMessage and unreadCount
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === selectedConversation
+            ? {
+                ...conv,
+                lastMessage: {
+                  senderId: user.id,
+                  content: messageInput,
+                  createdAt: message.createdAt,
+                },
+                unreadCount: {
+                  ...conv.unreadCount,
+                  [user.id]: 0,
+                },
+              }
+            : conv
+        )
+      );
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -74,7 +113,7 @@ export default function MessagesPage() {
         <a
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           href={
-            user.user.role === "mentee"
+            user.role === "mentee"
               ? "/dashboard/messages/new"
               : "/mentor/messages/new"
           }
@@ -131,7 +170,11 @@ export default function MessagesPage() {
           {/* Conversation Items */}
           <div className="divide-y">
             {loading ? (
-              <p>Loading...</p>
+              <p className="p-4 text-gray-500">Loading...</p>
+            ) : conversations.length === 0 ? (
+              <p className="p-4 text-gray-500">
+                No conversations found. Start a new one!
+              </p>
             ) : (
               conversations
                 .filter(
@@ -143,11 +186,13 @@ export default function MessagesPage() {
                     (id) => id !== user.id
                   );
                   const otherUserDetails =
-                    conversation.messages?.[0]?.[
-                      user.id === conversation.messages?.[0]?.senderId
-                        ? "receiver"
-                        : "sender"
-                    ];
+                    conversation.participantDetails?.find(
+                      (p) => p.id === otherUser
+                    ) || {
+                      firstName: "Unknown",
+                      lastName: "",
+                      profileImage: "/placeholder.svg?height=40&width=40",
+                    };
                   return (
                     <div
                       key={conversation.id}
@@ -163,24 +208,23 @@ export default function MessagesPage() {
                     >
                       <div className="flex-shrink-0">
                         <img
-                          src={
-                            otherUserDetails?.profileImage ||
-                            "/placeholder.svg?height=40&width=40"
-                          }
-                          alt={otherUserDetails?.firstName}
+                          src={otherUserDetails.profileImage}
+                          alt={otherUserDetails.firstName}
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-gray-900 truncate">
-                            {otherUserDetails?.firstName}{" "}
-                            {otherUserDetails?.lastName}
+                            {otherUserDetails.firstName}{" "}
+                            {otherUserDetails.lastName}
                           </h4>
                           <span className="text-xs text-gray-500">
-                            {new Date(
-                              conversation.lastMessage?.createdAt
-                            ).toLocaleTimeString()}
+                            {conversation.lastMessage?.createdAt
+                              ? new Date(
+                                  conversation.lastMessage.createdAt
+                                ).toLocaleTimeString()
+                              : ""}
                           </span>
                         </div>
                         <p
@@ -190,7 +234,8 @@ export default function MessagesPage() {
                               : "text-gray-500"
                           }`}
                         >
-                          {conversation.lastMessage?.content}
+                          {conversation.lastMessage?.content ||
+                            "No messages yet"}
                         </p>
                       </div>
                       {conversation.unreadCount[user.id] > 0 && (
@@ -214,49 +259,40 @@ export default function MessagesPage() {
               {/* Message Header */}
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={
-                      conversations.find((c) => c.id === selectedConversation)
-                        ?.messages?.[0]?.[
-                        user.id ===
-                        conversations.find((c) => c.id === selectedConversation)
-                          ?.messages?.[0]?.senderId
-                          ? "receiver"
-                          : "sender"
-                      ]?.profileImage || "/placeholder.svg?height=40&width=40"
-                    }
-                    alt="User"
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <h4 className="font-medium text-gray-900">
-                      {
-                        conversations.find((c) => c.id === selectedConversation)
-                          ?.messages?.[0]?.[
-                          user.id ===
-                          conversations.find(
-                            (c) => c.id === selectedConversation
-                          )?.messages?.[0]?.senderId
-                            ? "receiver"
-                            : "sender"
-                        ]?.firstName
-                      }{" "}
-                      {
-                        conversations.find((c) => c.id === selectedConversation)
-                          ?.messages?.[0]?.[
-                          user.id ===
-                          conversations.find(
-                            (c) => c.id === selectedConversation
-                          )?.messages?.[0]?.senderId
-                            ? "receiver"
-                            : "sender"
-                        ]?.lastName
-                      }
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      Last active recently
-                    </p>
-                  </div>
+                  {(() => {
+                    const selectedConv = conversations.find(
+                      (c) => c.id === selectedConversation
+                    );
+                    const otherUser = selectedConv?.participants.find(
+                      (id) => id !== user.id
+                    );
+                    const otherUserDetails =
+                      selectedConv?.participantDetails?.find(
+                        (p) => p.id === otherUser
+                      ) || {
+                        firstName: "Unknown",
+                        lastName: "",
+                        profileImage: "/placeholder.svg?height=40&width=40",
+                      };
+                    return (
+                      <>
+                        <img
+                          src={otherUserDetails.profileImage}
+                          alt={otherUserDetails.firstName}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                        <div>
+                          <h4 className="font-medium text-gray-900">
+                            {otherUserDetails.firstName}{" "}
+                            {otherUserDetails.lastName}
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            Last active recently
+                          </p>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="relative">
                   <button className="p-2 rounded-full hover:bg-gray-100">
@@ -267,35 +303,43 @@ export default function MessagesPage() {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.senderId === user.id
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
+                {messagesLoading ? (
+                  <p className="p-4 text-gray-500">Loading messages...</p>
+                ) : messages.length === 0 ? (
+                  <p className="p-4 text-gray-500">
+                    No messages in this conversation.
+                  </p>
+                ) : (
+                  messages.map((message) => (
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
+                      key={message.id}
+                      className={`flex ${
                         message.senderId === user.id
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-800"
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
                       <div
-                        className={`mt-1 text-xs ${
+                        className={`max-w-[80%] rounded-lg p-3 ${
                           message.senderId === user.id
-                            ? "text-blue-100"
-                            : "text-gray-500"
-                        } text-right`}
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
                       >
-                        {new Date(message.createdAt).toLocaleTimeString()}
+                        <p className="text-sm">{message.content}</p>
+                        <div
+                          className={`mt-1 text-xs ${
+                            message.senderId === user.id
+                              ? "text-blue-100"
+                              : "text-gray-500"
+                          } text-right`}
+                        >
+                          {new Date(message.createdAt).toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {/* Message Input */}
@@ -306,6 +350,7 @@ export default function MessagesPage() {
                     className="flex-1 min-h-[40px] max-h-[150px] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
+                    disabled={messagesLoading}
                   />
                   <div className="flex flex-col gap-2">
                     <button className="p-2 rounded-full hover:bg-gray-100">
@@ -315,8 +360,9 @@ export default function MessagesPage() {
                       <Smile className="h-4 w-4 text-gray-500" />
                     </button>
                     <button
-                      className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                      className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                       onClick={handleSendMessage}
+                      disabled={messagesLoading || !messageInput.trim()}
                     >
                       <Send className="h-4 w-4" />
                     </button>
@@ -351,7 +397,7 @@ export default function MessagesPage() {
               <a
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 href={
-                  user.user.role === "mentee"
+                  user.role === "mentee"
                     ? "/dashboard/messages/new"
                     : "/mentor/messages/new"
                 }

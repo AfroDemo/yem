@@ -1,6 +1,5 @@
-// controllers/conversationController.js
 const db = require("../models");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const { validationResult } = require("express-validator");
 
 // Models
@@ -38,16 +37,16 @@ const getOrCreateConversation = async (req, res) => {
 
     // Use Sequelize.fn and Sequelize.literal for JSON querying
     let conversation = await Conversation.findOne({
-      where: db.Sequelize.literal(`
+      where: Sequelize.literal(`
         JSON_CONTAINS(participants, '${currentUserId}') AND 
         JSON_CONTAINS(participants, '${participantId}')
       `),
-      raw: true, // Improve performance by returning plain object
+      raw: true,
     });
 
     if (!conversation) {
       conversation = await Conversation.create({
-        participants: [currentUserId, participantId], // Store as array (Sequelize handles JSON serialization)
+        participants: [currentUserId, participantId],
         lastMessage: {},
         unreadCount: { [currentUserId]: 0, [participantId]: 0 },
       });
@@ -57,10 +56,18 @@ const getOrCreateConversation = async (req, res) => {
       });
     }
 
-    // Ensure participants is an array
+    // Parse JSON fields
     let participantIds = conversation.participants;
     if (typeof participantIds === "string") {
       participantIds = JSON.parse(participantIds);
+    }
+    let lastMessage = conversation.lastMessage;
+    if (typeof lastMessage === "string") {
+      lastMessage = JSON.parse(lastMessage);
+    }
+    let unreadCount = conversation.unreadCount;
+    if (typeof unreadCount === "string") {
+      unreadCount = JSON.parse(unreadCount);
     }
 
     // Fetch participant details manually
@@ -75,6 +82,9 @@ const getOrCreateConversation = async (req, res) => {
     // Combine conversation with participant details
     const fullConversation = {
       ...conversation,
+      participants: participantIds,
+      lastMessage,
+      unreadCount,
       participantDetails: participants,
     };
 
@@ -102,8 +112,6 @@ const sendMessage = async (req, res) => {
 
     const { conversationId, content } = req.body;
     const senderId = req.user.id;
-
-    console.log("convo data:", content, conversationId, senderId);
 
     const conversation = await Conversation.findByPk(conversationId);
     if (!conversation) {
@@ -150,6 +158,12 @@ const sendMessage = async (req, res) => {
       read: false,
     });
 
+    // Parse unreadCount if it's a string
+    let unreadCount = conversation.unreadCount;
+    if (typeof unreadCount === "string") {
+      unreadCount = JSON.parse(unreadCount);
+    }
+
     // Update conversation's lastMessage and unreadCount
     await conversation.update({
       lastMessage: {
@@ -158,8 +172,8 @@ const sendMessage = async (req, res) => {
         createdAt: message.createdAt,
       },
       unreadCount: {
-        ...conversation.unreadCount,
-        [receiverId]: (conversation.unreadCount[receiverId] || 0) + 1,
+        ...unreadCount,
+        [receiverId]: (unreadCount[receiverId] || 0) + 1,
       },
     });
 
@@ -232,6 +246,24 @@ const getConversations = async (req, res) => {
             return null; // Skip invalid conversations
           }
         }
+        let lastMessage = conv.lastMessage;
+        if (typeof lastMessage === "string") {
+          try {
+            lastMessage = JSON.parse(lastMessage);
+          } catch (parseError) {
+            console.error("Failed to parse lastMessage:", parseError);
+            return null;
+          }
+        }
+        let unreadCount = conv.unreadCount;
+        if (typeof unreadCount === "string") {
+          try {
+            unreadCount = JSON.parse(unreadCount);
+          } catch (parseError) {
+            console.error("Failed to parse unreadCount:", parseError);
+            return null;
+          }
+        }
         const participants = await User.findAll({
           where: {
             id: { [Op.in]: participantIds },
@@ -241,13 +273,18 @@ const getConversations = async (req, res) => {
         });
         return {
           ...conv.toJSON(),
+          participants: participantIds,
+          lastMessage,
+          unreadCount,
           participantDetails: participants,
         };
       })
     );
 
     // Filter out null entries (from failed JSON parsing)
-    const validConversations = conversationsWithParticipants.filter(conv => conv !== null);
+    const validConversations = conversationsWithParticipants.filter(
+      (conv) => conv !== null
+    );
 
     res.json({
       conversations: validConversations,
@@ -255,7 +292,12 @@ const getConversations = async (req, res) => {
       currentPage: parseInt(page),
     });
   } catch (error) {
-    console.error("Fetch conversations error:", error);
+    console.error("Fetch conversations error:", {
+      message: error.message,
+      stack: error.stack,
+      userId,
+      sql: error.sql,
+    });
     res.status(500).json({ error: "Server error fetching conversations" });
   }
 };
@@ -273,8 +315,25 @@ const getMessages = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
-
-    if (!conversation.participants.includes(userId)) {
+    let participantIds = conversation.participants;
+    if (typeof participantIds === "string") {
+      try {
+        participantIds = JSON.parse(participantIds);
+      } catch (parseError) {
+        console.error("Failed to parse participants:", parseError);
+        return res.status(500).json({ error: "Invalid conversation data" });
+      }
+    }
+    let unreadCount = conversation.unreadCount;
+    if (typeof unreadCount === "string") {
+      try {
+        unreadCount = JSON.parse(unreadCount);
+      } catch (parseError) {
+        console.error("Failed to parse unreadCount:", parseError);
+        return res.status(500).json({ error: "Invalid conversation data" });
+      }
+    }
+    if (!participantIds.includes(userId)) {
       return res.status(403).json({ error: "Not authorized to view messages" });
     }
 
@@ -298,6 +357,14 @@ const getMessages = async (req, res) => {
       offset: parseInt(offset),
     });
 
+    if (count === 0) {
+      return res.json({
+        messages: [],
+        totalPages: 0,
+        currentPage: parseInt(page),
+      });
+    }
+
     // Mark messages as read for the current user
     await Message.update(
       { read: true },
@@ -307,7 +374,7 @@ const getMessages = async (req, res) => {
     // Reset unread count for the user
     await conversation.update({
       unreadCount: {
-        ...conversation.unreadCount,
+        ...unreadCount,
         [userId]: 0,
       },
     });
@@ -318,7 +385,12 @@ const getMessages = async (req, res) => {
       currentPage: parseInt(page),
     });
   } catch (error) {
-    console.error("Fetch messages error:", error);
+    console.error("Fetch messages error:", {
+      message: error.message,
+      stack: error.stack,
+      userId,
+      sql: error.sql,
+    });
     res.status(500).json({ error: "Server error fetching messages" });
   }
 };
@@ -334,8 +406,13 @@ const deleteConversation = async (req, res) => {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
+    let participantIds = conversation.participants;
+    if (typeof participantIds === "string") {
+      participantIds = JSON.parse(participantIds);
+    }
+
     // Check if user is a participant
-    if (!conversation.participants.includes(userId)) {
+    if (!participantIds.includes(userId)) {
       return res
         .status(403)
         .json({ error: "Not authorized to delete conversation" });

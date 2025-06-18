@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from "react";
 import { ArrowLeft, Paperclip, Send, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { messageService } from "../../services/messageService";
 
 // Custom Button component with Tailwind
@@ -145,6 +147,7 @@ export default function NewMessagePage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   // Search for users with active mentorships
   const handleSearch = async (query) => {
@@ -187,11 +190,19 @@ export default function NewMessagePage() {
       const conversation = await messageService.getOrCreateConversation(
         selectedRecipient.id
       );
-      console.log(message)
+      if (!conversation?.id) {
+        throw new Error("Failed to create or retrieve conversation");
+      }
       await messageService.sendMessage(conversation.id, message);
-      window.location.href = "/dashboard/messages"; // Redirect to messages page
+      navigate("/dashboard/messages");
     } catch (error) {
-      setError(error.error || "Failed to send message");
+      setError(
+        error.error === "Not authorized"
+          ? "You are not authorized to send messages to this user."
+          : error.error === "Conversation not found"
+          ? "The conversation could not be found."
+          : error.error || "Failed to send message"
+      );
     } finally {
       setLoading(false);
     }
@@ -302,6 +313,7 @@ export default function NewMessagePage() {
               placeholder="Enter message subject..."
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -315,6 +327,7 @@ export default function NewMessagePage() {
               className="min-h-[200px]"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -336,9 +349,12 @@ export default function NewMessagePage() {
           <Button variant="outline" disabled={loading}>
             Save Draft
           </Button>
-          <Button onClick={handleSend} disabled={loading}>
+          <Button
+            onClick={handleSend}
+            disabled={loading || !selectedRecipient || !message.trim()}
+          >
             <Send className="mr-2 h-4 w-4" />
-            Send Message
+            {loading ? "Sending..." : "Send Message"}
           </Button>
         </CardFooter>
       </Card>
