@@ -66,6 +66,36 @@ export default function MessagesPage() {
     }
   };
 
+  const fetchMessages = async () => {
+    try {
+      setMessagesLoading(true);
+      const data = await messageService.getMessages(selectedConversation, {
+        markAsRead: true,
+      });
+
+      setMessages(data.messages || []);
+
+      // Update conversation unread count
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === selectedConversation
+            ? {
+                ...conv,
+                unreadCount: {
+                  ...conv.unreadCount,
+                  [user.id]: 0, // Explicitly set to 0
+                },
+              }
+            : conv
+        )
+      );
+    } catch (error) {
+      console.error("Failed to load messages:", error);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadConversations = async () => {
       setLoading(true);
@@ -114,6 +144,30 @@ export default function MessagesPage() {
       setMessages([]);
     }
   }, [selectedConversation, user.id]);
+
+  // Add to your useEffect for selected conversation
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const eventSource = new EventSource(
+      `/api/messages/updates?conversationId=${selectedConversation}`
+    );
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.unreadCount !== undefined) {
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === selectedConversation
+              ? { ...conv, unreadCount: data.unreadCount }
+              : conv
+          )
+        );
+      }
+    };
+
+    return () => eventSource.close();
+  }, [selectedConversation]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return;

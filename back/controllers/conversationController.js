@@ -307,36 +307,61 @@ const getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user.id;
-    const { page = 1, limit = 50, markAsRead } = req.query;
+    const { page = 1, limit = 50, markAsRead = "true" } = req.query; // Default to true
 
     const offset = (page - 1) * limit;
 
     const conversation = await Conversation.findByPk(conversationId, {
       transaction,
+      lock: transaction.LOCK.UPDATE, // Add lock to prevent race conditions
     });
+
     if (!conversation) {
       await transaction.rollback();
       return res.status(404).json({ error: "Conversation not found" });
     }
 
+    // Parse participants and unreadCount
     let participantIds = conversation.participants;
     if (typeof participantIds === "string") {
-      try {
-        participantIds = JSON.parse(participantIds);
-      } catch (parseError) {
-        console.error("Failed to parse participants:", parseError);
-        await transaction.rollback();
-        return res.status(500).json({ error: "Invalid conversation data" });
-      }
+      participantIds = JSON.parse(participantIds);
     }
 
     let unreadCount = fixUnreadCount(conversation.unreadCount, participantIds);
 
     if (!participantIds.includes(userId)) {
       await transaction.rollback();
-      return res.status(403).json({ error: "Not authorized to view messages" });
+      return res.status(403).json({ error: "Not authorized" });
     }
 
+    // Mark messages as read if requested
+    if (markAsRead === "true") {
+      // Update all unread messages for this user in this conversation
+      await Message.update(
+        { read: true },
+        {
+          where: {
+            conversationId,
+            receiverId: userId,
+            read: false,
+          },
+          transaction,
+        }
+      );
+
+      // Update the conversation's unreadCount
+      const newUnreadCount = {
+        ...unreadCount,
+        [userId]: 0, // Reset count for current user
+      };
+
+      await conversation.update(
+        { unreadCount: newUnreadCount },
+        { transaction }
+      );
+    }
+
+    // Get messages
     const { count, rows: messages } = await Message.findAndCountAll({
       where: { conversationId },
       include: [
@@ -357,54 +382,19 @@ const getMessages = async (req, res) => {
       transaction,
     });
 
-    if (count === 0) {
-      await transaction.commit();
-      return res.json({
-        messages: [],
-        totalPages: 0,
-        currentPage: parseInt(page),
-      });
-    }
-
-    if (markAsRead === "true") {
-      const updatedCount = await Message.update(
-        { read: true },
-        { where: { conversationId, receiverId: userId, read: false } }
-      );
-      if (updatedCount[0] > 0) {
-        const newUnreadCount = {};
-        for (const id of participantIds) {
-          const count = await Message.count({
-            where: { conversationId, receiverId: id, read: false },
-          });
-          newUnreadCount[id] = count;
-        }
-        await conversation.update({ unreadCount: newUnreadCount });
-        console.log("Marked messages as read:", {
-          conversationId,
-          userId,
-          updatedMessages: updatedCount[0],
-          unreadCountBefore: unreadCount,
-          unreadCountAfter: newUnreadCount,
-        });
-      } else {
-        console.log("No messages to mark as read:", { conversationId, userId });
-      }
-    }
+    // Commit the transaction
+    await transaction.commit();
 
     res.json({
       messages: messages.reverse(),
       totalPages: Math.ceil(count / limit),
       currentPage: parseInt(page),
+      unreadCount: markAsRead === "true" ? 0 : unreadCount[userId], // Send updated count
     });
   } catch (error) {
-    console.error("Fetch messages error:", {
-      message: error.message,
-      stack: error.stack,
-      userId,
-      sql: error.sql,
-    });
-    res.status(500).json({ error: "Server error fetching messages" });
+    await transaction.rollback();
+    console.error("Error in getMessages:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
