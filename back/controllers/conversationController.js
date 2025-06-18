@@ -203,8 +203,8 @@ const sendMessage = async (req, res) => {
     console.error("Send message error:", {
       message: error.message,
       stack: error.stack,
-      conversationId,
-      senderId,
+      conversationId: req.body?.conversationId,
+      senderId: req.user?.id,
     });
     res.status(500).json({ error: "Server error" });
   }
@@ -294,7 +294,7 @@ const getConversations = async (req, res) => {
     console.error("Fetch conversations error:", {
       message: error.message,
       stack: error.stack,
-      userId,
+      userId: req.user?.id,
       sql: error.sql,
     });
     res.status(500).json({ error: "Server error fetching conversations" });
@@ -302,6 +302,8 @@ const getConversations = async (req, res) => {
 };
 
 const getMessages = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+
   try {
     const { conversationId } = req.params;
     const userId = req.user.id;
@@ -309,21 +311,29 @@ const getMessages = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    const conversation = await Conversation.findByPk(conversationId);
+    const conversation = await Conversation.findByPk(conversationId, {
+      transaction,
+    });
     if (!conversation) {
+      await transaction.rollback();
       return res.status(404).json({ error: "Conversation not found" });
     }
+
     let participantIds = conversation.participants;
     if (typeof participantIds === "string") {
       try {
         participantIds = JSON.parse(participantIds);
       } catch (parseError) {
         console.error("Failed to parse participants:", parseError);
+        await transaction.rollback();
         return res.status(500).json({ error: "Invalid conversation data" });
       }
     }
+
     let unreadCount = fixUnreadCount(conversation.unreadCount, participantIds);
+
     if (!participantIds.includes(userId)) {
+      await transaction.rollback();
       return res.status(403).json({ error: "Not authorized to view messages" });
     }
 
@@ -344,9 +354,11 @@ const getMessages = async (req, res) => {
       order: [["createdAt", "DESC"]],
       limit: parseInt(limit),
       offset: parseInt(offset),
+      transaction,
     });
 
     if (count === 0) {
+      await transaction.commit();
       return res.json({
         messages: [],
         totalPages: 0,

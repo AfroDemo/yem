@@ -88,8 +88,21 @@ export default function MessagesPage() {
             markAsRead: true,
           });
           setMessages(data.messages || []);
-          // Refresh conversations to update unreadCount
-          await fetchConversations();
+
+          // Update the local conversations state to mark messages as read
+          setConversations((prevConversations) =>
+            prevConversations.map((conv) =>
+              conv.id === selectedConversation
+                ? {
+                    ...conv,
+                    unreadCount: {
+                      ...conv.unreadCount,
+                      [user.id]: 0, // Reset unread count for current user
+                    },
+                  }
+                : conv
+            )
+          );
         } catch (error) {
           console.error("Failed to load messages:", error);
         } finally {
@@ -100,7 +113,7 @@ export default function MessagesPage() {
     } else {
       setMessages([]);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation, user.id]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return;
@@ -138,6 +151,26 @@ export default function MessagesPage() {
     } catch (error) {
       console.error("Failed to send message:", error);
     }
+  };
+
+  const handleConversationSelect = (conversationId) => {
+    setSelectedConversation(conversationId);
+    setShowMobileMenu(false);
+
+    // Immediately update the unread count for better UX
+    setConversations((prevConversations) =>
+      prevConversations.map((conv) =>
+        conv.id === conversationId
+          ? {
+              ...conv,
+              unreadCount: {
+                ...conv.unreadCount,
+                [user.id]: 0,
+              },
+            }
+          : conv
+      )
+    );
   };
 
   return (
@@ -228,6 +261,9 @@ export default function MessagesPage() {
                       lastName: "",
                       profileImage: "/placeholder.svg?height=40&width=40",
                     };
+                  const currentUserUnreadCount =
+                    conversation.unreadCount[user.id] || 0;
+
                   return (
                     <div
                       key={conversation.id}
@@ -236,11 +272,7 @@ export default function MessagesPage() {
                           ? "bg-gray-100"
                           : ""
                       }`}
-                      onClick={() => {
-                        setSelectedConversation(conversation.id);
-                        setShowMobileMenu(false);
-                        // Local reset is now handled by backend update and fetchConversations
-                      }}
+                      onClick={() => handleConversationSelect(conversation.id)}
                     >
                       <div className="flex-shrink-0">
                         <img
@@ -265,7 +297,7 @@ export default function MessagesPage() {
                         </div>
                         <p
                           className={`text-sm truncate ${
-                            conversation.unreadCount[user.id] > 0
+                            currentUserUnreadCount > 0
                               ? "font-medium text-gray-900"
                               : "text-gray-500"
                           }`}
@@ -274,8 +306,10 @@ export default function MessagesPage() {
                             "No messages yet"}
                         </p>
                       </div>
-                      {conversation.unreadCount[user.id] > 0 && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                      {currentUserUnreadCount > 0 && (
+                        <div className="flex items-center justify-center w-5 h-5 bg-blue-600 text-white text-xs rounded-full">
+                          {currentUserUnreadCount}
+                        </div>
                       )}
                     </div>
                   );
@@ -359,9 +393,7 @@ export default function MessagesPage() {
                         className={`max-w-[80%] rounded-lg p-3 ${
                           message.senderId === user.id
                             ? "bg-blue-600 text-white"
-                            : message.read
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-blue-100 text-gray-800 font-medium"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         <p className="text-sm">{message.content}</p>
@@ -389,6 +421,12 @@ export default function MessagesPage() {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     disabled={messagesLoading}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                   />
                   <div className="flex flex-col gap-2">
                     <button className="p-2 rounded-full hover:bg-gray-100">
