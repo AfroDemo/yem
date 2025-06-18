@@ -113,6 +113,8 @@ const sendMessage = async (req, res) => {
     const { conversationId, content } = req.body;
     const senderId = req.user.id;
 
+    console.log("Sending message:", { content, conversationId, senderId });
+
     const conversation = await Conversation.findByPk(conversationId);
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
@@ -161,20 +163,37 @@ const sendMessage = async (req, res) => {
     // Parse unreadCount if it's a string
     let unreadCount = conversation.unreadCount;
     if (typeof unreadCount === "string") {
-      unreadCount = JSON.parse(unreadCount);
+      try {
+        unreadCount = JSON.parse(unreadCount);
+      } catch (parseError) {
+        console.error("Failed to parse unreadCount:", parseError);
+        unreadCount = participantIds.reduce(
+          (acc, id) => ({ ...acc, [id]: 0 }),
+          {}
+        );
+      }
     }
 
     // Update conversation's lastMessage and unreadCount
+    const updatedUnreadCount = {
+      ...unreadCount,
+      [receiverId]: (unreadCount[receiverId] || 0) + 1,
+      [senderId]: 0, // Reset sender's unread count
+    };
+
     await conversation.update({
       lastMessage: {
         senderId,
         content,
         createdAt: message.createdAt,
       },
-      unreadCount: {
-        ...unreadCount,
-        [receiverId]: (unreadCount[receiverId] || 0) + 1,
-      },
+      unreadCount: updatedUnreadCount,
+    });
+
+    console.log("Updated conversation:", {
+      conversationId,
+      lastMessage: { senderId, content, createdAt: message.createdAt },
+      unreadCount: updatedUnreadCount,
     });
 
     const fullMessage = await Message.findByPk(message.id, {
@@ -194,7 +213,12 @@ const sendMessage = async (req, res) => {
 
     res.status(201).json(fullMessage);
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Send message error:", {
+      message: error.message,
+      stack: error.stack,
+      conversationId,
+      senderId,
+    });
     res.status(500).json({ error: "Server error" });
   }
 };

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   ArrowRight,
@@ -22,35 +24,43 @@ export default function MessagesPage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const { user } = useAuth(); // Assuming useAuth returns { user: { id, role, ... } }
 
+  const fetchConversations = async () => {
+    try {
+      const data = await messageService.getConversations();
+      console.log(data)
+      // Parse JSON fields for each conversation
+      const parsedConversations = (data.conversations || []).map((conv) => ({
+        ...conv,
+        participants:
+          typeof conv.participants === "string"
+            ? JSON.parse(conv.participants)
+            : conv.participants,
+        lastMessage:
+          typeof conv.lastMessage === "string"
+            ? JSON.parse(conv.lastMessage)
+            : conv.lastMessage,
+        unreadCount:
+          typeof conv.unreadCount === "string"
+            ? JSON.parse(conv.unreadCount)
+            : conv.unreadCount,
+      }));
+      setConversations(parsedConversations);
+    } catch (error) {
+      console.error("Failed to load conversations:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        setLoading(true);
-        const data = await messageService.getConversations();
-        // Parse JSON fields for each conversation
-        const parsedConversations = (data.conversations || []).map((conv) => ({
-          ...conv,
-          participants:
-            typeof conv.participants === "string"
-              ? JSON.parse(conv.participants)
-              : conv.participants,
-          lastMessage:
-            typeof conv.lastMessage === "string"
-              ? JSON.parse(conv.lastMessage)
-              : conv.lastMessage,
-          unreadCount:
-            typeof conv.unreadCount === "string"
-              ? JSON.parse(conv.unreadCount)
-              : conv.unreadCount,
-        }));
-        setConversations(parsedConversations);
-      } catch (error) {
-        console.error("Failed to load conversations:", error);
-      } finally {
-        setLoading(false);
-      }
+    const loadConversations = async () => {
+      setLoading(true);
+      await fetchConversations();
+      setLoading(false);
     };
-    fetchConversations();
+    loadConversations();
+
+    // Poll for new conversations every 30 seconds
+    const intervalId = setInterval(fetchConversations, 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -81,6 +91,7 @@ export default function MessagesPage() {
       );
       setMessages([...messages, message]);
       setMessageInput("");
+
       // Update conversation's lastMessage and unreadCount
       setConversations((prev) =>
         prev.map((conv) =>
@@ -95,6 +106,11 @@ export default function MessagesPage() {
                 unreadCount: {
                   ...conv.unreadCount,
                   [user.id]: 0,
+                  // Optimistically increment receiver's unreadCount
+                  [conv.participants.find((id) => id !== user.id)]:
+                    (conv.unreadCount[
+                      conv.participants.find((id) => id !== user.id)
+                    ] || 0) + 1,
                 },
               }
             : conv
@@ -204,6 +220,20 @@ export default function MessagesPage() {
                       onClick={() => {
                         setSelectedConversation(conversation.id);
                         setShowMobileMenu(false);
+                        // Reset unreadCount when selecting conversation
+                        setConversations((prev) =>
+                          prev.map((conv) =>
+                            conv.id === conversation.id
+                              ? {
+                                  ...conv,
+                                  unreadCount: {
+                                    ...conv.unreadCount,
+                                    [user.id]: 0,
+                                  },
+                                }
+                              : conv
+                          )
+                        );
                       }}
                     >
                       <div className="flex-shrink-0">
@@ -323,7 +353,9 @@ export default function MessagesPage() {
                         className={`max-w-[80%] rounded-lg p-3 ${
                           message.senderId === user.id
                             ? "bg-blue-600 text-white"
-                            : "bg-gray-100 text-gray-800"
+                            : message.read
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-blue-100 text-gray-800 font-medium"
                         }`}
                       >
                         <p className="text-sm">{message.content}</p>
