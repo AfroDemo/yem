@@ -19,7 +19,7 @@ import Button from "../button";
 import CardFooter from "./cardFooter";
 import Progress from "../progress";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; 
+import { useAuth } from "../../context/AuthContext";
 
 const parseArray = (val) => {
   if (!val) return [];
@@ -81,17 +81,39 @@ export function MentorCard({
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center text-center md:text-left md:items-start">
             <div className="relative">
-              <Avatar className="h-20 w-20 mb-2">
-                <AvatarImage
+              <Avatar className="h-20 w-20 mb-2 relative">
+                {/* Image that will hide itself when error occurs */}
+                <img
                   src={
                     avatar
                       ? `http://localhost:5000${avatar}`
-                      : "/placeholder.svg?height=96&width=96"
+                      : "/placeholder.svg"
                   }
                   alt={name}
+                  className={`absolute h-full w-full object-cover rounded-full ${
+                    avatar ? "" : "hidden"
+                  }`}
+                  onError={(e) => {
+                    e.currentTarget.classList.add("hidden");
+                    e.currentTarget.nextElementSibling?.classList.remove(
+                      "hidden"
+                    );
+                  }}
                 />
-                <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+
+                {/* Fallback that shows when image fails or doesn't exist */}
+                <div
+                  className={`
+      h-full w-full rounded-full bg-gray-200 flex items-center justify-center
+      ${avatar ? "hidden" : ""}
+    `}
+                >
+                  <span className="text-2xl font-medium text-gray-700">
+                    {name ? name.charAt(0).toUpperCase() : "?"}
+                  </span>
+                </div>
               </Avatar>
+
               {verified && (
                 <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5">
                   <BadgeCheck className="h-4 w-4" />
@@ -160,7 +182,7 @@ export function MentorCard({
                   variant="outline"
                   size="sm"
                   className="flex-1 md:w-auto"
-                  onClick={()=>window.location.href="/dashboard/messages"}
+                  onClick={() => (window.location.href = "/dashboard/messages")}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Message
@@ -328,7 +350,7 @@ export function MentorCardAll({ mentor }) {
                   variant="outline"
                   size="sm"
                   className="flex-1 md:w-auto"
-                  onClick={()=>window.location.href="/dashboard/messages"}
+                  onClick={() => (window.location.href = "/dashboard/messages")}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Message
