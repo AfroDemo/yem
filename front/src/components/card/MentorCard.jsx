@@ -81,42 +81,34 @@ export function MentorCard({
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center text-center md:text-left md:items-start">
             <div className="relative">
-              <Avatar className="h-20 w-20 mb-2 relative">
-                {/* Image that will hide itself when error occurs */}
+              <div className="h-20 w-20 mb-2 rounded-full bg-gray-100 overflow-hidden relative">
+                {/* Image element - hides completely on error */}
                 <img
-                  src={
-                    avatar
-                      ? `http://localhost:5000${avatar}`
-                      : "/placeholder.svg"
-                  }
-                  alt={name}
-                  className={`absolute h-full w-full object-cover rounded-full ${
-                    avatar ? "" : "hidden"
-                  }`}
+                  src={avatar ? `http://localhost:5000${avatar}` : ""}
+                  alt={name || "User avatar"}
+                  className="absolute h-full w-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.classList.add("hidden");
-                    e.currentTarget.nextElementSibling?.classList.remove(
-                      "hidden"
-                    );
+                    e.target.style.display = "none";
                   }}
+                  style={{ display: avatar ? "block" : "none" }}
                 />
 
-                {/* Fallback that shows when image fails or doesn't exist */}
+                {/* Fallback - shows when no image or image fails */}
                 <div
-                  className={`
-      h-full w-full rounded-full bg-gray-200 flex items-center justify-center
-      ${avatar ? "hidden" : ""}
-    `}
+                  className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300"
+                  style={{ display: !avatar ? "flex" : undefined }}
                 >
-                  <span className="text-2xl font-medium text-gray-700">
+                  <span className="text-2xl font-semibold text-gray-600">
                     {name ? name.charAt(0).toUpperCase() : "?"}
                   </span>
                 </div>
-              </Avatar>
+              </div>
 
+              {/* Verified badge */}
               {verified && (
-                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5">
+                <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-1 flex items-center justify-center">
                   <BadgeCheck className="h-4 w-4" />
+                  <span className="sr-only">Verified</span>
                 </div>
               )}
             </div>
