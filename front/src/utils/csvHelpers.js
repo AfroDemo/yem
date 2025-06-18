@@ -18,34 +18,17 @@ export const stringifyArray = (array) => {
 export const parseArray = (val) => {
   if (!val) return [];
 
-  // Handle already parsed arrays
   if (Array.isArray(val)) return val;
 
-  // Handle string representation of array
-  if (typeof val === "string" && val.startsWith("[") && val.endsWith("]")) {
-    try {
-      // Remove brackets and split by comma
-      const items = val
-        .slice(1, -1)
-        .split(",")
-        .map((item) => item.trim().replace(/['"]/g, ""))
-        .filter(Boolean);
-
-      return items;
-    } catch {
-      // Fallback if parsing fails
-      return val
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-    }
+  if (typeof val === "string") {
+    return val
+      .replace(/^\[|\]$/g, "") // Remove leading "[" and trailing "]"
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
-  // Handle comma-separated string
-  return val
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  return [String(val).trim()].filter(Boolean);
 };
 
 export const addToJsonArray = (jsonString, newItem) => {

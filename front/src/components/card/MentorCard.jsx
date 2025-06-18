@@ -79,8 +79,6 @@ export function MentorCard({
     checkMentorship();
   }, [id, user.id]);
 
-  console.log(industry);
-
   return (
     <Card>
       <CardContent className="p-6">
