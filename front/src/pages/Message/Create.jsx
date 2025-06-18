@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Paperclip, Send, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../utils/api";
 import { messageService } from "../../services/messageService";
 
 // Custom Button component with Tailwind
@@ -189,6 +187,7 @@ export default function NewMessagePage() {
       const conversation = await messageService.getOrCreateConversation(
         selectedRecipient.id
       );
+      console.log(message)
       await messageService.sendMessage(conversation.id, message);
       window.location.href = "/dashboard/messages"; // Redirect to messages page
     } catch (error) {

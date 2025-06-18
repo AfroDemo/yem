@@ -103,18 +103,31 @@ const sendMessage = async (req, res) => {
     const { conversationId, content } = req.body;
     const senderId = req.user.id;
 
+    console.log("convo data:", content, conversationId, senderId);
+
     const conversation = await Conversation.findByPk(conversationId);
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
+    // Ensure participants is an array
+    let participantIds = conversation.participants;
+    if (typeof participantIds === "string") {
+      participantIds = JSON.parse(participantIds);
+    }
+
     // Verify sender is a participant
-    if (!conversation.participants.includes(senderId)) {
+    if (!participantIds.includes(senderId)) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
+    // Find receiver ID
+    const receiverId = participantIds.find((id) => id !== senderId);
+    if (!receiverId) {
+      return res.status(400).json({ error: "No valid receiver found" });
+    }
+
     // Verify mentorship still exists
-    const receiverId = conversation.participants.find((id) => id !== senderId);
     const mentorship = await Mentorship.findOne({
       where: {
         [Op.or]: [
@@ -179,11 +192,9 @@ const getConversations = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    // Find conversations where user is a participant
+    // Find conversations where user is a participant using JSON_CONTAINS
     const { count, rows: conversations } = await Conversation.findAndCountAll({
-      where: {
-        participants: { [Op.contains]: [userId] },
-      },
+      where: Sequelize.literal(`JSON_CONTAINS(participants, '${userId}')`),
       include: [
         {
           model: Message,
@@ -209,12 +220,21 @@ const getConversations = async (req, res) => {
       offset: parseInt(offset),
     });
 
-    // Fetch participant details for each conversation
+    // Parse JSON fields and fetch participant details
     const conversationsWithParticipants = await Promise.all(
       conversations.map(async (conv) => {
+        let participantIds = conv.participants;
+        if (typeof participantIds === "string") {
+          try {
+            participantIds = JSON.parse(participantIds);
+          } catch (parseError) {
+            console.error("Failed to parse participants:", parseError);
+            return null; // Skip invalid conversations
+          }
+        }
         const participants = await User.findAll({
           where: {
-            id: { [Op.in]: conv.participants },
+            id: { [Op.in]: participantIds },
           },
           attributes: ["id", "firstName", "lastName", "profileImage"],
           raw: true,
@@ -226,8 +246,11 @@ const getConversations = async (req, res) => {
       })
     );
 
+    // Filter out null entries (from failed JSON parsing)
+    const validConversations = conversationsWithParticipants.filter(conv => conv !== null);
+
     res.json({
-      conversations: conversationsWithParticipants,
+      conversations: validConversations,
       totalPages: Math.ceil(count / limit),
       currentPage: parseInt(page),
     });
