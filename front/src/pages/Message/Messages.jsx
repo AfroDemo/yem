@@ -84,8 +84,12 @@ export default function MessagesPage() {
       const fetchMessages = async () => {
         try {
           setMessagesLoading(true);
-          const data = await messageService.getMessages(selectedConversation);
+          const data = await messageService.getMessages(selectedConversation, {
+            markAsRead: true,
+          });
           setMessages(data.messages || []);
+          // Refresh conversations to update unreadCount
+          await fetchConversations();
         } catch (error) {
           console.error("Failed to load messages:", error);
         } finally {
@@ -235,20 +239,7 @@ export default function MessagesPage() {
                       onClick={() => {
                         setSelectedConversation(conversation.id);
                         setShowMobileMenu(false);
-                        // Reset unreadCount when selecting conversation
-                        setConversations((prev) =>
-                          prev.map((conv) =>
-                            conv.id === conversation.id
-                              ? {
-                                  ...conv,
-                                  unreadCount: {
-                                    ...conv.unreadCount,
-                                    [user.id]: 0,
-                                  },
-                                }
-                              : conv
-                          )
-                        );
+                        // Local reset is now handled by backend update and fetchConversations
                       }}
                     >
                       <div className="flex-shrink-0">
