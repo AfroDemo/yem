@@ -15,6 +15,39 @@ export const stringifyArray = (array) => {
   return JSON.stringify(array);
 };
 
+export const parseArray = (val) => {
+  if (!val) return [];
+
+  // Handle already parsed arrays
+  if (Array.isArray(val)) return val;
+
+  // Handle string representation of array
+  if (typeof val === "string" && val.startsWith("[") && val.endsWith("]")) {
+    try {
+      // Remove brackets and split by comma
+      const items = val
+        .slice(1, -1)
+        .split(",")
+        .map((item) => item.trim().replace(/['"]/g, ""))
+        .filter(Boolean);
+
+      return items;
+    } catch {
+      // Fallback if parsing fails
+      return val
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  // Handle comma-separated string
+  return val
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 export const addToJsonArray = (jsonString, newItem) => {
   if (!newItem || typeof newItem !== "string") return jsonString || "[]";
 

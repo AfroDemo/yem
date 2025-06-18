@@ -20,6 +20,10 @@ import CardFooter from "./cardFooter";
 import Progress from "../progress";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import {
+  getIndustryColorClasses,
+  getIndustryName,
+} from "../../utils/industryUtils";
 
 const parseArray = (val) => {
   if (!val) return [];
@@ -75,6 +79,8 @@ export function MentorCard({
     checkMentorship();
   }, [id, user.id]);
 
+  console.log(industry);
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -114,23 +120,21 @@ export function MentorCard({
             </div>
             <h3 className="font-semibold text-lg">{name}</h3>
             <p className="text-sm text-gray-500">{role}</p>
-            <div className="flex items-center mt-2">
-              <Badge
-                className={`${
-                  industry === "Technology"
-                    ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                    : industry === "Finance"
-                    ? "bg-green-100 text-green-800 hover:bg-green-100"
-                    : industry === "E-commerce"
-                    ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
-                    : industry === "SaaS"
-                    ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                }`}
-              >
-                {industry}
-              </Badge>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {parseArray(industry).map((ind, idx) => (
+                <Badge
+                  key={idx}
+                  className={`
+        ${getIndustryColorClasses(ind).bg}
+        ${getIndustryColorClasses(ind).text}
+        ${getIndustryColorClasses(ind).hover}
+      `}
+                >
+                  {getIndustryName(ind)}
+                </Badge>
+              ))}
             </div>
+
             <div className="flex items-center mt-2">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
