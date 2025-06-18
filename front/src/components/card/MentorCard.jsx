@@ -160,6 +160,7 @@ export function MentorCard({
                   variant="outline"
                   size="sm"
                   className="flex-1 md:w-auto"
+                  onClick={()=>window.location.href="/dashboard/messages"}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Message
@@ -327,6 +328,7 @@ export function MentorCardAll({ mentor }) {
                   variant="outline"
                   size="sm"
                   className="flex-1 md:w-auto"
+                  onClick={()=>window.location.href="/dashboard/messages"}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Message
