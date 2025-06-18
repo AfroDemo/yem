@@ -8,6 +8,31 @@ const Message = db.Message;
 const User = db.User;
 const Mentorship = db.Mentorship;
 
+// Utility to validate and fix unreadCount
+const fixUnreadCount = (unreadCount, participantIds) => {
+  if (typeof unreadCount === "string") {
+    try {
+      unreadCount = JSON.parse(unreadCount);
+    } catch (e) {
+      console.error("Failed to parse unreadCount:", e);
+      return participantIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+    }
+  }
+  // Ensure unreadCount is a valid object with participant IDs
+  if (!unreadCount || typeof unreadCount !== "object") {
+    return participantIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+  }
+  // Remove invalid keys and ensure participant IDs are present
+  const validUnreadCount = participantIds.reduce(
+    (acc, id) => ({
+      ...acc,
+      [id]: Number.isInteger(unreadCount[id]) ? unreadCount[id] : 0,
+    }),
+    {}
+  );
+  return validUnreadCount;
+};
+
 const getOrCreateConversation = async (req, res) => {
   try {
     const { participantId } = req.body;
@@ -65,10 +90,7 @@ const getOrCreateConversation = async (req, res) => {
     if (typeof lastMessage === "string") {
       lastMessage = JSON.parse(lastMessage);
     }
-    let unreadCount = conversation.unreadCount;
-    if (typeof unreadCount === "string") {
-      unreadCount = JSON.parse(unreadCount);
-    }
+    let unreadCount = fixUnreadCount(conversation.unreadCount, participantIds);
 
     // Fetch participant details manually
     const participants = await User.findAll({
@@ -160,25 +182,12 @@ const sendMessage = async (req, res) => {
       read: false,
     });
 
-    // Parse unreadCount if it's a string
-    let unreadCount = conversation.unreadCount;
-    if (typeof unreadCount === "string") {
-      try {
-        unreadCount = JSON.parse(unreadCount);
-      } catch (parseError) {
-        console.error("Failed to parse unreadCount:", parseError);
-        unreadCount = participantIds.reduce(
-          (acc, id) => ({ ...acc, [id]: 0 }),
-          {}
-        );
-      }
-    }
-
-    // Update conversation's lastMessage and unreadCount
+    // Fix and update unreadCount
+    let unreadCount = fixUnreadCount(conversation.unreadCount, participantIds);
     const updatedUnreadCount = {
       ...unreadCount,
       [receiverId]: (unreadCount[receiverId] || 0) + 1,
-      [senderId]: 0, // Reset sender's unread count
+      [senderId]: 0,
     };
 
     await conversation.update({
@@ -267,7 +276,7 @@ const getConversations = async (req, res) => {
             participantIds = JSON.parse(participantIds);
           } catch (parseError) {
             console.error("Failed to parse participants:", parseError);
-            return null; // Skip invalid conversations
+            return null;
           }
         }
         let lastMessage = conv.lastMessage;
@@ -279,15 +288,8 @@ const getConversations = async (req, res) => {
             return null;
           }
         }
-        let unreadCount = conv.unreadCount;
-        if (typeof unreadCount === "string") {
-          try {
-            unreadCount = JSON.parse(unreadCount);
-          } catch (parseError) {
-            console.error("Failed to parse unreadCount:", parseError);
-            return null;
-          }
-        }
+        let unreadCount = fixUnreadCount(conv.unreadCount, participantIds);
+
         const participants = await User.findAll({
           where: {
             id: { [Op.in]: participantIds },
@@ -309,6 +311,8 @@ const getConversations = async (req, res) => {
     const validConversations = conversationsWithParticipants.filter(
       (conv) => conv !== null
     );
+
+    console.log("Convo data:", JSON.stringify(validConversations, null, 2));
 
     res.json({
       conversations: validConversations,
@@ -348,15 +352,7 @@ const getMessages = async (req, res) => {
         return res.status(500).json({ error: "Invalid conversation data" });
       }
     }
-    let unreadCount = conversation.unreadCount;
-    if (typeof unreadCount === "string") {
-      try {
-        unreadCount = JSON.parse(unreadCount);
-      } catch (parseError) {
-        console.error("Failed to parse unreadCount:", parseError);
-        return res.status(500).json({ error: "Invalid conversation data" });
-      }
-    }
+    let unreadCount = fixUnreadCount(conversation.unreadCount, participantIds);
     if (!participantIds.includes(userId)) {
       return res.status(403).json({ error: "Not authorized to view messages" });
     }

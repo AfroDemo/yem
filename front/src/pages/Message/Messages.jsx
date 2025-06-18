@@ -13,6 +13,27 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { messageService } from "../../services/messageService";
 
+// Utility to validate unreadCount
+const fixUnreadCount = (unreadCount, participantIds) => {
+  if (typeof unreadCount === "string") {
+    try {
+      unreadCount = JSON.parse(unreadCount);
+    } catch (e) {
+      return participantIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+    }
+  }
+  if (!unreadCount || typeof unreadCount !== "object") {
+    return participantIds.reduce((acc, id) => ({ ...acc, [id]: 0 }), {});
+  }
+  return participantIds.reduce(
+    (acc, id) => ({
+      ...acc,
+      [id]: Number.isInteger(unreadCount[id]) ? unreadCount[id] : 0,
+    }),
+    {}
+  );
+};
+
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [conversations, setConversations] = useState([]);
@@ -22,13 +43,11 @@ export default function MessagesPage() {
   const [messageInput, setMessageInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
-  const { user } = useAuth(); // Assuming useAuth returns { user: { id, role, ... } }
+  const { user } = useAuth();
 
   const fetchConversations = async () => {
     try {
       const data = await messageService.getConversations();
-      console.log(data)
-      // Parse JSON fields for each conversation
       const parsedConversations = (data.conversations || []).map((conv) => ({
         ...conv,
         participants:
@@ -39,10 +58,7 @@ export default function MessagesPage() {
           typeof conv.lastMessage === "string"
             ? JSON.parse(conv.lastMessage)
             : conv.lastMessage,
-        unreadCount:
-          typeof conv.unreadCount === "string"
-            ? JSON.parse(conv.unreadCount)
-            : conv.unreadCount,
+        unreadCount: fixUnreadCount(conv.unreadCount, conv.participants),
       }));
       setConversations(parsedConversations);
     } catch (error) {
@@ -106,7 +122,6 @@ export default function MessagesPage() {
                 unreadCount: {
                   ...conv.unreadCount,
                   [user.id]: 0,
-                  // Optimistically increment receiver's unreadCount
                   [conv.participants.find((id) => id !== user.id)]:
                     (conv.unreadCount[
                       conv.participants.find((id) => id !== user.id)
