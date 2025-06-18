@@ -81,11 +81,11 @@ export default function MentorLayout() {
               icon={<MessageSquare className="h-5 w-5" />}
               label="Messages"
             />
-            <NavItem
+            {/* <NavItem
               href="/mentor/reports"
               icon={<FileText className="h-5 w-5" />}
-              label="Reports"
-            />
+              label="Reports" 
+            />*/}
             <NavItem
               href="/mentor/settings"
               icon={<Settings className="h-5 w-5" />}
