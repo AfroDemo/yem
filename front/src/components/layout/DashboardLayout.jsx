@@ -58,9 +58,9 @@ export default function DashboardLayout() {
               label="Dashboard"
             />
             <NavItem
-              to="/dashboard/events"
+              to="/dashboard/sessions"
               icon={<Calendar className="h-5 w-5" />}
-              label="Events"
+              label="Session"
             />
             <NavItem
               to="/dashboard/resources"

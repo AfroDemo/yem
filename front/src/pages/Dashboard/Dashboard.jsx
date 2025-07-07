@@ -94,8 +94,6 @@ export default function Dashboard() {
     fetchData();
   }, [user.id]);
 
-console.log(menteeProgress)
-
   if (loading) {
     return <div className="text-center p-6">Loading...</div>;
   }
@@ -190,7 +188,7 @@ console.log(menteeProgress)
       </div>
 
       {/* Sessions, Messages, and Connections */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
         {/* Today's Sessions */}
         <Card>
           <CardHeader>
@@ -266,34 +264,6 @@ console.log(menteeProgress)
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
               <Link to="/mentee/messages">View All Messages</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* New Connections */}
-        <Card>
-          <CardHeader>
-            <CardTitle>New Connections</CardTitle>
-            <CardDescription>Connect with mentors and peers</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {connections.length > 0 ? (
-              connections.map((connection) => (
-                <ConnectionCard
-                  key={connection.id}
-                  name={`${connection.firstName} ${connection.lastName}`}
-                  role={connection.role || "Mentor"}
-                  image={connection.profileImage}
-                  mutualConnections={connection.mutualConnections || 0}
-                />
-              ))
-            ) : (
-              <p className="text-muted-foreground">No new connections.</p>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/mentee/connections">View All Connections</Link>
             </Button>
           </CardFooter>
         </Card>
