@@ -1,8 +1,17 @@
-import api from "../utils/api";
+import api, { put } from "../utils/api";
 import { logout } from "./authService";
 
 // Cache for storing user data
 const userCache = new Map();
+
+export const toggleUserVerification = async (userId) => {
+  try {
+    const response = await put(`/users/${userId}/verification`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to toggle user verification: " + error.message);
+  }
+};
 
 // Get user by ID with caching
 export const getUserById = async (userId, forceRefresh = false) => {
