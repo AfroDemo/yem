@@ -59,7 +59,7 @@ export const getMentorSessions = async (mentorId) => {
       throw new Error("Mentor ID is required");
     }
     console.log("Calling getMentorSessions with mentorId:", mentorId);
-    const { data } = await get(`/mentors/${mentorId}/sessions`);
+    const { data } = await get(`/sessions/mentors/${mentorId}/sessions`);
     return data;
   } catch (err) {
     const message = err.response?.data?.message || "Failed to fetch sessions";
