@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  ArrowUpRight,
   Calendar,
   Clock,
   FileText,
@@ -9,7 +8,6 @@ import {
 } from "lucide-react";
 import Badge from "../../components/badge";
 import Button from "../../components/button";
-import Progress from "../../components/progress";
 import { Link } from "react-router-dom";
 import Avatar from "../../components/avatar/Avatar";
 import AvatarImage from "../../components/avatar/AvatarImage";

@@ -18,6 +18,7 @@ const successStoryRoutes = require("./routes/successStories");
 const mentorRoutes = require("./routes/mentor");
 const sessionRoutes = require("./routes/sessions");
 const menteeRoutes = require("./routes/mentee");
+const homeRoutes = require("./routes/home");
 
 // Initialize express app
 const app = express();
@@ -43,6 +44,7 @@ sequelize
   .catch((err) => console.error("Database sync error:", err));
 
 // Routes
+app.use("/api/home", homeRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/mentorships", mentorshipRoutes);

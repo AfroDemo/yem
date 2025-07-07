@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     <footer className="bg-white py-12 mt-auto border-t border-gray-200">
       <div className="container mx-auto px-4 mt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {/* Column 1 */}
           <div className="col-span-1">
             <h6 className="text-lg font-semibold text-gray-900 mb-4">
@@ -26,30 +26,6 @@ const Footer = () => {
               {[
                 { name: "Home", path: "/" },
                 { name: "About", path: "/about" },
-              ].map((item) => (
-                <div key={item.name}>
-                  <RouterLink
-                    to={item.path}
-                    className="text-sm text-gray-600 hover:text-blue-600 hover:underline transition-colors"
-                  >
-                    {item.name}
-                  </RouterLink>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Column 3 - Resources */}
-          <div className="col-span-1">
-            <h6 className="text-lg font-semibold text-gray-900 mb-4">
-              Resources
-            </h6>
-            <div className="space-y-2">
-              {[
-                { name: "Articles", path: "/resources/articles" },
-                { name: "Events", path: "/events" },
-                { name: "Success Stories", path: "/success-stories" },
-                { name: "FAQ", path: "/faq" },
               ].map((item) => (
                 <div key={item.name}>
                   <RouterLink

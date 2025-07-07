@@ -32,194 +32,90 @@ const Contact = () => {
       </div>
 
       {/* Contact Form Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-2xl font-bold mb-4">Send Us a Message</h2>
-              <p className="text-gray-600 mb-6">
-                Fill out the form below and we'll get back to you as soon as
-                possible.
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-8 sm:p-10">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Contact Information
+              </h2>
+              <p className="text-lg text-gray-600">
+                Reach out to us through any of these channels
               </p>
-
-              <form onSubmit={handleSubmit} className="mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="firstName"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      First Name*
-                    </label>
-                    <input
-                      required
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="lastName"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Last Name*
-                    </label>
-                    <input
-                      required
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email Address*
-                  </label>
-                  <input
-                    required
-                    id="email"
-                    name="email"
-                    type="email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Phone Number (Optional)
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <label
-                    htmlFor="inquiryType"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Inquiry Type*
-                  </label>
-                  <select
-                    id="inquiryType"
-                    name="inquiryType"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    defaultValue=""
-                    required
-                  >
-                    <option value="" disabled>
-                      Select an option
-                    </option>
-                    <option value="general">General Question</option>
-                    <option value="mentee">Becoming a Mentee</option>
-                    <option value="mentor">Becoming a Mentor</option>
-                    <option value="partnership">Partnership Opportunity</option>
-                    <option value="event">Event Suggestion</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div className="mt-4">
-                  <label
-                    htmlFor="message"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Your Message*
-                  </label>
-                  <textarea
-                    required
-                    id="message"
-                    name="message"
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  ></textarea>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Send Message
-                </button>
-              </form>
             </div>
-          </div>
 
-          <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-md h-full">
-              <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
-              <p className="text-gray-600 mb-6">
-                You can also reach us through the following channels:
-              </p>
-
-              <div className="space-y-6">
-                <div className="flex">
-                  <EnvelopeIcon className="h-6 w-6 text-blue-600 mr-4" />
-                  <div>
-                    <h3 className="text-lg font-medium">Email</h3>
-                    <p className="text-gray-600">info@youthmentorship.org</p>
-                  </div>
+            <div className="space-y-8">
+              {/* Contact Items */}
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-blue-50 p-3 rounded-lg">
+                  <EnvelopeIcon className="h-6 w-6 text-blue-600" />
                 </div>
-
-                <div className="flex">
-                  <PhoneIcon className="h-6 w-6 text-blue-600 mr-4" />
-                  <div>
-                    <h3 className="text-lg font-medium">Phone</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
-                  </div>
-                </div>
-
-                <div className="flex">
-                  <MapPinIcon className="h-6 w-6 text-blue-600 mr-4" />
-                  <div>
-                    <h3 className="text-lg font-medium">Office</h3>
-                    <p className="text-gray-600">
-                      123 Entrepreneur Avenue
-                      <br />
-                      Innovation District
-                      <br />
-                      San Francisco, CA 94103
-                    </p>
-                  </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Email</h3>
+                  <p className="mt-1 text-gray-600 hover:text-blue-600 transition-colors">
+                    <a href="mailto:info@youthmentorship.org">
+                      info@youthmentorship.org
+                    </a>
+                  </p>
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 my-6"></div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-blue-50 p-3 rounded-lg">
+                  <PhoneIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Phone</h3>
+                  <p className="mt-1 text-gray-600 hover:text-blue-600 transition-colors">
+                    <a href="tel:+255766768846">+255 766-768-846</a>
+                  </p>
+                </div>
+              </div>
 
-              <h3 className="text-xl font-medium mb-4">Office Hours</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600">Monday - Friday:</p>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-blue-50 p-3 rounded-lg">
+                  <MapPinIcon className="h-6 w-6 text-blue-600" />
                 </div>
-                <div>
-                  <p>9:00 AM - 5:00 PM</p>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Office
+                  </h3>
+                  <address className="mt-1 not-italic text-gray-600">
+                    123 CCM Iyunga
+                    <br />
+                    Mageuzi
+                    <br />
+                    Mbeya, Tanzania
+                  </address>
                 </div>
-                <div>
-                  <p className="text-gray-600">Saturday:</p>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 my-8"></div>
+
+            {/* Office Hours */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Office Hours
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="font-medium text-gray-900">Weekdays</p>
+                  <p className="text-gray-600">Monday - Friday</p>
+                  <p className="text-blue-600 font-medium mt-1">
+                    9:00 AM - 5:00 PM
+                  </p>
                 </div>
-                <div>
-                  <p>10:00 AM - 2:00 PM</p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="font-medium text-gray-900">Saturday</p>
+                  <p className="text-gray-600">Weekend</p>
+                  <p className="text-blue-600 font-medium mt-1">
+                    10:00 AM - 2:00 PM
+                  </p>
                 </div>
-                <div>
-                  <p className="text-gray-600">Sunday:</p>
-                </div>
-                <div>
-                  <p>Closed</p>
+                <div className="bg-gray-50 p-4 rounded-lg sm:col-span-2">
+                  <p className="font-medium text-gray-900">Sunday</p>
+                  <p className="text-gray-600">Closed</p>
                 </div>
               </div>
             </div>
