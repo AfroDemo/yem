@@ -28,44 +28,44 @@ const Home = () => {
   ];
 
   // Mock data for success stories
-  const successStories = [
-    {
-      id: 1,
-      title: 'From Idea to Funded Startup',
-      mentee: 'Jason Rodriguez',
-      excerpt: 'With my mentor\'s guidance, I transformed my idea into a funded startup within 6 months.',
-      image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-    },
-    {
-      id: 2,
-      title: 'Scaling My E-commerce Business',
-      mentee: 'Emma Wilson',
-      excerpt: 'My mentor helped me scale my e-commerce business from $5k to $50k monthly revenue.',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-    }
-  ];
+  // const successStories = [
+  //   {
+  //     id: 1,
+  //     title: 'From Idea to Funded Startup',
+  //     mentee: 'Jason Rodriguez',
+  //     excerpt: 'With my mentor\'s guidance, I transformed my idea into a funded startup within 6 months.',
+  //     image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
+  //   },
+  //   {
+  //     id: 2,
+  //     title: 'Scaling My E-commerce Business',
+  //     mentee: 'Emma Wilson',
+  //     excerpt: 'My mentor helped me scale my e-commerce business from $5k to $50k monthly revenue.',
+  //     image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
+  //   }
+  // ];
 
-  // Mock data for upcoming events
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: 'Startup Funding Workshop',
-      date: 'April 15, 2025',
-      type: 'Workshop'
-    },
-    {
-      id: 2,
-      title: 'Networking Mixer',
-      date: 'April 22, 2025',
-      type: 'Networking'
-    },
-    {
-      id: 3,
-      title: 'Marketing Strategies Webinar',
-      date: 'May 5, 2025',
-      type: 'Webinar'
-    }
-  ];
+  // // Mock data for upcoming events
+  // const upcomingEvents = [
+  //   {
+  //     id: 1,
+  //     title: 'Startup Funding Workshop',
+  //     date: 'April 15, 2025',
+  //     type: 'Workshop'
+  //   },
+  //   {
+  //     id: 2,
+  //     title: 'Networking Mixer',
+  //     date: 'April 22, 2025',
+  //     type: 'Networking'
+  //   },
+  //   {
+  //     id: 3,
+  //     title: 'Marketing Strategies Webinar',
+  //     date: 'May 5, 2025',
+  //     type: 'Webinar'
+  //   }
+  // ];
 
   return (
     <div>
@@ -167,7 +167,7 @@ const Home = () => {
       </div>
 
       {/* Success Stories Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h2 className="text-3xl font-bold text-center mb-4">Success Stories</h2>
         <p className="text-xl text-center text-gray-600 mb-8">
           See how mentorship has helped young entrepreneurs achieve their goals.
@@ -204,10 +204,10 @@ const Home = () => {
             View All Success Stories
           </RouterLink>
         </div>
-      </div>
+      </div> */}
 
       {/* Upcoming Events Section */}
-      <div className="bg-gray-50 py-12">
+      {/* <div className="bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-4">Upcoming Events</h2>
           <p className="text-xl text-center text-gray-600 mb-8">
@@ -240,7 +240,7 @@ const Home = () => {
             </RouterLink>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Newsletter Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
