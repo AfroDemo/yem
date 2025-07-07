@@ -330,7 +330,7 @@ export default function MessagesPage() {
                     >
                       <div className="flex-shrink-0">
                         <img
-                          src={otherUserDetails.profileImage}
+                          src={"http://localhost:5000"+otherUserDetails.profileImage}
                           alt={otherUserDetails.firstName}
                           className="h-10 w-10 rounded-full object-cover"
                         />

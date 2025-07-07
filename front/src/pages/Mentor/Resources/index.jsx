@@ -141,10 +141,6 @@ export default function MentorResources() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <FolderPlus className="mr-2 h-4 w-4" />
-            New Folder
-          </Button>
           <Button asChild>
             <a href="/mentor/resources/upload">
               <Upload className="mr-2 h-4 w-4" />
@@ -156,34 +152,6 @@ export default function MentorResources() {
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-2/3 space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Search resources..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={handleSearch}
-              />
-            </div>
-            <Button variant="outline" className="flex gap-2">
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Recently Added</SelectItem>
-                <SelectItem value="name">Name (A-Z)</SelectItem>
-                <SelectItem value="type">Resource Type</SelectItem>
-                <SelectItem value="shared">Most Shared</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="all">All</TabsTrigger>
@@ -253,18 +221,7 @@ export default function MentorResources() {
                 </div>
                 <span className="text-2xl font-bold">{stats.total}</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-100 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-2 rounded-md">
-                    <Share className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Shared Resources</p>
-                    <p className="text-sm text-gray-500">With mentees</p>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold">{stats.shared}</span>
-              </div>
+              
             </CardContent>
           </Card>
 
@@ -303,49 +260,6 @@ export default function MentorResources() {
                 </Button>
               ))}
             </CardContent>
-          </Card>
-
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Recently Shared</CardTitle>
-              <CardDescription>Resources shared with mentees</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {resources
-                .filter((r) => r.sharedWith.length > 0)
-                .slice(0, 3)
-                .map((resource) => (
-                  <div key={resource.id} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium text-sm">{resource.title}</p>
-                      {new Date(resource.publishDate) >
-                        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                          New
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Shared with{" "}
-                      {resource.sharedWith
-                        .map((u) => `${u.firstName} ${u.lastName}`)
-                        .join(", ")}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(resource.publishDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
-              {resources.filter((r) => r.sharedWith.length > 0).length ===
-                0 && (
-                <p className="text-gray-500">No recently shared resources.</p>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full" asChild>
-                <a href="/mentor/resources">View All Shared Resources</a>
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </div>
