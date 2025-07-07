@@ -15,21 +15,21 @@ const About = () => {
   const teamMembers = [
     {
       id: 1,
-      name: "Alex Johnson",
+      name: "Sixberth Mganwa",
       role: "Founder & CEO",
       bio: "Serial entrepreneur with 10+ years experience in startup mentoring",
       image: p1,
     },
     {
       id: 2,
-      name: "Maria Garcia",
+      name: "Maria Myete",
       role: "Head of Mentorship",
       bio: "Former business consultant passionate about youth development",
       image: p2,
     },
     {
       id: 3,
-      name: "James Wilson",
+      name: "Wilson Panga",
       role: "Community Manager",
       bio: "Connector who loves bringing people together for mutual growth",
       image: p3,
@@ -148,26 +148,6 @@ const About = () => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="bg-blue-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <p className="text-5xl font-bold mb-2">5,000+</p>
-              <p className="text-xl">Mentorship Connections</p>
-            </div>
-            <div>
-              <p className="text-5xl font-bold mb-2">200+</p>
-              <p className="text-xl">Cities Worldwide</p>
-            </div>
-            <div>
-              <p className="text-5xl font-bold mb-2">92%</p>
-              <p className="text-xl">Success Rate</p>
-            </div>
-          </div>
         </div>
       </div>
 

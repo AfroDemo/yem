@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Calendar,
-  Clock,
-  FileText,
-  Star,
-  Users,
-} from "lucide-react";
+import { Calendar, Clock, FileText, Star, Users } from "lucide-react";
 import Badge from "../../components/badge";
 import Button from "../../components/button";
 import { Link } from "react-router-dom";
@@ -234,7 +228,7 @@ export default function MentorDashboard() {
                   })}
                   message={message.content}
                   avatar={
-                    message.sender.profileImage ||
+                    "http://localhost:5000" + message.sender.profileImage ||
                     "/placeholder.svg?height=40&width=40"
                   }
                   unread={!message.isRead}
@@ -252,6 +246,8 @@ export default function MentorDashboard() {
         </Card>
       </div>
 
+      <div className="grid gap-6 md:grid-cols-2">
+
       <Card>
         <CardHeader>
           <CardTitle>Mentee Progress</CardTitle>
@@ -267,7 +263,8 @@ export default function MentorDashboard() {
                   key={mentee.id}
                   name={`${mentee.firstName} ${mentee.lastName}`}
                   avatar={
-                    mentee.profileImage || "/placeholder.svg?height=40&width=40"
+                    "http://localhost:5000" + mentee.profileImage ||
+                    "/placeholder.svg?height=40&width=40"
                   }
                   progress={mentee.progress}
                   goals={mentee.goals}
@@ -286,8 +283,6 @@ export default function MentorDashboard() {
           </Button>
         </CardFooter>
       </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Resources Shared</CardTitle>
@@ -315,41 +310,6 @@ export default function MentorDashboard() {
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
               <Link to="/mentor/resources">Manage Resources</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Reports</CardTitle>
-            <CardDescription>Mentee progress reports due soon</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {reports.length > 0 ? (
-              reports.map((report) => (
-                <ReportItem
-                  key={report.id}
-                  mentee={
-                    report.mentee
-                      ? `${report.mentee.firstName} ${report.mentee.lastName}`
-                      : "Unknown Mentee"
-                  }
-                  dueDate={
-                    report.dueDate
-                      ? new Date(report.dueDate).toLocaleDateString()
-                      : "N/A"
-                  }
-                  type={report.type || "Unknown"}
-                  status={report.status || "pending"}
-                />
-              ))
-            ) : (
-              <p className="text-gray-500">No upcoming reports.</p>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/mentor/reports">View All Reports</Link>
             </Button>
           </CardFooter>
         </Card>
