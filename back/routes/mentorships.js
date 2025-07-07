@@ -6,6 +6,7 @@ const {
   getRequestDetails,
   getMentorRequests,
   checkMentorship,
+  getMenteeProfile,
 } = require("../controllers/mentorshipController");
 const { auth } = require("../middleware/auth");
 
@@ -13,6 +14,7 @@ const router = express.Router();
 
 // Create mentorship request
 router.post("/", auth, createMentorship);
+router.get("/mentees/:menteeId/profile", auth, getMenteeProfile);
 
 // Get all mentorships (admin only)
 router.get("/", auth, getMentorRequests);

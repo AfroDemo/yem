@@ -1,25 +1,25 @@
+import { useEffect, useState, useCallback } from "react";
+import { Bell, CheckCircle, Clock, Star, Users } from "lucide-react";
 import Button from "../../../components/button";
 import Card from "../../../components/card/card";
 import CardHeader from "../../../components/card/cardHeader";
 import CardTitle from "../../../components/card/cardTitle";
 import CardDescription from "../../../components/card/cardDescription";
 import CardContent from "../../../components/card/cardContent";
+import CardFooter from "../../../components/card/cardFooter";
 import Badge from "../../../components/badge";
 import { MenteeCard } from "../../../components/card/MenteeCard";
-import Avatar from "../../../components/avatar/Avatar";
-import AvatarImage from "../../../components/avatar/AvatarImage";
-import AvatarFallback from "../../../components/avatar/AvatarFallback";
-import CardFooter from "../../../components/card/cardFooter";
-import { Bell, CheckCircle, Clock, Star, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { toast } from "react-toastify";
+import api from "../../../utils/api";
 import {
   getMentorDashboardMetrics,
   getIndustries,
   getRecentAchievements,
 } from "../../../services/mentorService";
-import { toast } from "react-toastify";
-import api from "../../../utils/api";
-import { useAuth } from "../../../context/AuthContext";
+import { safeJSONParse } from "../../../utils/helpers";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function MenteesPage() {
   const [activeTab, setActiveTab] = useState("accepted");
@@ -34,8 +34,7 @@ export default function MenteesPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const { user } = useAuth();
 
-  // Fetch mentee data (mentorship requests)
-  const getRequestData = async () => {
+  const getRequestData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await api.get("/mentorships/", {
@@ -49,13 +48,11 @@ export default function MenteesPage() {
 
       response.data.forEach((request) => {
         const mentee = request.mentee;
-        
-        // Parse JSON strings safely
         const industries = safeJSONParse(mentee.industries, []).join(", ");
         const interests = safeJSONParse(mentee.interests, []).join(", ");
-        const businessStage = safeJSONParse(mentee.businessStage, []).join(", ");
-        
-        // Parse goals safely
+        const businessStage = safeJSONParse(mentee.businessStage, []).join(
+          ", "
+        );
         const goals = safeJSONParse(request.goals, []);
 
         const baseData = {
@@ -66,6 +63,7 @@ export default function MenteesPage() {
           industry: industries || "Not specified",
           interest: interests || "Not specified",
           badgeColor: "blue",
+          type: request.packageType || "custom",
           requestDate: new Date(request.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
@@ -76,13 +74,10 @@ export default function MenteesPage() {
               request.packageType.slice(1) +
               " Package"
             : "Custom Package",
-          // Enhanced goals rendering
-          goals: goals.length > 0 
-            ? goals.map(goal => {
-                // Combine title and status for more informative display
-                return `${goal.title} (${goal.status})`;
-              })
-            : ["No specific goals provided"],
+          goals:
+            goals.length > 0
+              ? goals.map((goal) => `${goal.title} (${goal.status})`)
+              : ["No specific goals provided"],
           background: request.background || "No background provided",
           expectations: request.expectations || "No expectations provided",
           availability: request.availability
@@ -121,22 +116,9 @@ export default function MenteesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-// Utility function for safe JSON parsing
-function safeJSONParse(jsonString, defaultValue = []) {
-  if (!jsonString || jsonString.trim() === '') return defaultValue;
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.warn('Failed to parse JSON:', jsonString, error);
-    return defaultValue;
-  }
-}
-
-
-  // Fetch dashboard metrics
-  const fetchDashboardMetrics = async () => {
+  const fetchDashboardMetrics = useCallback(async () => {
     try {
       const response = await getMentorDashboardMetrics(user.id);
       setStatsData([
@@ -144,7 +126,7 @@ function safeJSONParse(jsonString, defaultValue = []) {
           icon: <Users className="h-5 w-5 text-primary" />,
           title: "Total Mentees",
           description: "Current and past",
-          value: response.activeMentees + (response.completedMentees || 0), // Adjust based on backend response
+          value: response.activeMentees + (response.completedMentees || 0),
         },
         {
           icon: <Clock className="h-5 w-5 text-primary" />,
@@ -163,21 +145,19 @@ function safeJSONParse(jsonString, defaultValue = []) {
       console.error("Error fetching dashboard metrics:", error);
       toast.error("Failed to load dashboard metrics");
     }
-  };
+  }, [user?.id]);
 
-  // Fetch industries
-  const fetchIndustries = async () => {
+  const fetchIndustries = useCallback(async () => {
     try {
       const response = await getIndustries(user.id);
-      setIndustriesData(response); // Backend already returns in correct format
+      setIndustriesData(response);
     } catch (error) {
       console.error("Error fetching industries:", error);
       toast.error("Failed to load industry data");
     }
-  };
+  }, [user?.id]);
 
-  // Fetch recent achievements
-  const fetchAchievements = async () => {
+  const fetchAchievements = useCallback(async () => {
     try {
       const response = await getRecentAchievements(user.id);
       setAchievementsData(response);
@@ -185,18 +165,28 @@ function safeJSONParse(jsonString, defaultValue = []) {
       console.error("Error fetching achievements:", error);
       toast.error("Failed to load achievements");
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
-    if (user?.id) {
+    if (!user?.id) return;
+
+    const debounceFetch = setTimeout(() => {
       Promise.all([
         getRequestData(),
         fetchDashboardMetrics(),
         fetchIndustries(),
         fetchAchievements(),
       ]).finally(() => setIsLoading(false));
-    }
-  }, [user]);
+    }, 300);
+
+    return () => clearTimeout(debounceFetch);
+  }, [
+    user,
+    getRequestData,
+    fetchDashboardMetrics,
+    fetchIndustries,
+    fetchAchievements,
+  ]);
 
   const handleCompleteMentorship = async (mentorshipId) => {
     try {
@@ -205,7 +195,7 @@ function safeJSONParse(jsonString, defaultValue = []) {
         `/mentorships/${mentorshipId}/status`,
         {
           status: "completed",
-          endDate: new Date().toISOString(), // Use endDate as per backend
+          endDate: new Date().toISOString(),
         },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -311,35 +301,6 @@ function safeJSONParse(jsonString, defaultValue = []) {
         </div>
 
         <div className="w-full md:w-1/3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Mentee Statistics</CardTitle>
-              <CardDescription>
-                Overview of your mentoring impact
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {statsData.map((stat, index) => (
-                <div
-                  key={index}
-                  className="flex justify-between items-center p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-md">
-                      {stat.icon}
-                    </div>
-                    <div>
-                      <p className="font-medium">{stat.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {stat.description}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold">{stat.value}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
 
           <Card className="mt-6">
             <CardHeader>
@@ -373,15 +334,13 @@ function safeJSONParse(jsonString, defaultValue = []) {
               {achievementsData.map((achievement, index) => (
                 <div key={index} className="border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage
-                        src={achievement.avatar}
+                    <div className="relative h-6 w-6 rounded-full overflow-hidden">
+                      <img
+                        src={`${API_URL}${achievement.avatar}`}
                         alt={achievement.name}
+                        className="object-cover w-full h-full"
                       />
-                      <AvatarFallback>
-                        {achievement.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+                    </div>
                     <span className="font-medium text-sm">
                       {achievement.name}
                     </span>

@@ -2,6 +2,51 @@ const db = require("../models");
 const User = db.User;
 const Mentorship = db.Mentorship;
 
+exports.getMenteeProfile = async (req, res) => {
+  try {
+    const { menteeId } = req.params;
+    const userId = req.user.id;
+
+    const mentee = await User.findOne({
+      where: { id: menteeId },
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "profileImage",
+        "bio",
+        "industries",
+        "interests",
+        "businessStage",
+        "skills",
+        "location",
+      ],
+    });
+
+    if (!mentee) {
+      return res.status(404).json({ error: "Mentee not found" });
+    }
+
+    // Optionally, verify the requesting user is a mentor with an active mentorship
+    const mentorship = await Mentorship.findOne({
+      where: {
+        menteeId,
+        mentorId: userId,
+        status: ["accepted", "completed"],
+      },
+    });
+
+    if (!mentorship && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized to view this profile" });
+    }
+
+    res.json(mentee);
+  } catch (error) {
+    console.error("Error fetching mentee profile:", error);
+    res.status(500).json({ error: "Failed to fetch mentee profile" });
+  }
+};
+
 // Create mentorship request
 exports.createMentorship = async (req, res) => {
   try {
