@@ -7,6 +7,7 @@ const {
   getMentorSessions,
   deleteSession,
   associateResources,
+  getMenteeSessions,
 } = require("../controllers/sessionController");
 const { getMentees } = require("../controllers/mentorController");
 
@@ -14,6 +15,7 @@ const { getMentees } = require("../controllers/mentorController");
 router.post("/", auth, createSession);
 
 // Get sessions for a mentor
+router.get("/mentees/:menteeId/sessions", auth, getMenteeSessions);
 router.get("/mentors/:mentorId/sessions", auth, getMentorSessions);
 
 // Update a session

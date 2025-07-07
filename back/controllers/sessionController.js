@@ -13,14 +13,12 @@ const createSession = async (req, res) => {
     const { mentorId, menteeId, topic, startTime, endTime, type, agenda } =
       req.body;
 
-    // Validate mentorId matches authenticated user
-    if (mentorId !== req.user.id) {
+    if (!req.user || mentorId !== req.user.id) {
       return res.status(403).json({
         message: "Unauthorized: Mentor ID does not match authenticated user",
       });
     }
 
-    // Validate accepted mentorship
     const mentorship = await Mentorship.findOne({
       where: { mentorId, menteeId, status: "accepted" },
     });
@@ -30,7 +28,6 @@ const createSession = async (req, res) => {
       });
     }
 
-    // Validate session times
     const now = new Date();
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -41,7 +38,6 @@ const createSession = async (req, res) => {
       });
     }
 
-    // Check for time conflicts
     const conflict = await Session.findOne({
       where: {
         mentorId,
@@ -63,7 +59,6 @@ const createSession = async (req, res) => {
         .json({ message: "Time conflict with another session" });
     }
 
-    // Create session
     const session = await Session.create({
       mentorId,
       menteeId,
@@ -86,19 +81,16 @@ const createSession = async (req, res) => {
 
 const getMentorSessions = async (req, res) => {
   try {
+    console.log("Executing getMentorSessions");
     const { mentorId } = req.params;
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: "User not authenticated" });
-    }
-    if (parseInt(mentorId) !== req.user.id) {
-      return res.status(403).json({
-        message: "Unauthorized: Mentor ID does not match authenticated user",
-      });
+    console.log("getMentorSessions called with mentorId:", mentorId);
+
+    if (!mentorId) {
+      return res.status(400).json({ message: "Mentor ID is required" });
     }
 
-    // Find sessions for the mentor
     const sessions = await Session.findAll({
-      where: { mentorId },
+      where: { mentorId: parseInt(mentorId) },
       include: [
         {
           model: User,
@@ -109,15 +101,13 @@ const getMentorSessions = async (req, res) => {
       order: [["startTime", "ASC"]],
     });
 
-    // Fetch resources for each session manually
     const formattedSessions = await Promise.all(
       sessions.map(async (session) => {
-        // Fetch resources for this specific session
         const sessionResources = await sequelize.query(
           `SELECT r.id, r.title 
-         FROM resources r
-         JOIN session_resources sr ON sr.resourceId = r.id
-         WHERE sr.sessionId = :sessionId`,
+           FROM resources r
+           JOIN session_resources sr ON sr.resourceId = r.id
+           WHERE sr.sessionId = :sessionId`,
           {
             replacements: { sessionId: session.id },
             type: sequelize.QueryTypes.SELECT,
@@ -138,14 +128,90 @@ const getMentorSessions = async (req, res) => {
                 name: `${session.mentee.firstName} ${session.mentee.lastName}`,
               }
             : null,
-          resources: sessionResources || [], // Resources for this session
+          resources: sessionResources || [],
         };
       })
     );
 
     res.status(200).json(formattedSessions);
   } catch (error) {
-    console.error("Get sessions error:", error);
+    console.error("Get mentor sessions error:", error);
+    res
+      .status(500)
+      .json({ message: error.message || "Failed to fetch sessions" });
+  }
+};
+
+const getMenteeSessions = async (req, res) => {
+  console.log("Hapooooooooooooooooooooooooooooooo")
+  try {
+    console.log("Executing getMenteeSessions");
+    const { menteeId } = req.params;
+    console.log(
+      "getMenteeSessions called with menteeId:",
+      menteeId,
+      "user:",
+      req.user
+    );
+
+    if (!menteeId) {
+      return res.status(400).json({ message: "Mentee ID is required" });
+    }
+
+    const sessions = await Session.findAll({
+      where: { menteeId: parseInt(menteeId), status: { [Op.ne]: "cancelled" } },
+      include: [
+        {
+          model: User,
+          as: "mentor",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
+      order: [["startTime", "ASC"]],
+    });
+
+    console.log(
+      "Found sessions for menteeId:",
+      menteeId,
+      "count:",
+      sessions.length
+    );
+
+    const formattedSessions = await Promise.all(
+      sessions.map(async (session) => {
+        const sessionResources = await sequelize.query(
+          `SELECT r.id, r.title 
+           FROM resources r
+           JOIN session_resources sr ON sr.resourceId = r.id
+           WHERE sr.sessionId = :sessionId`,
+          {
+            replacements: { sessionId: session.id },
+            type: sequelize.QueryTypes.SELECT,
+          }
+        );
+
+        return {
+          id: session.id,
+          title: session.topic,
+          dateTime: session.startTime,
+          duration:
+            (new Date(session.endTime) - new Date(session.startTime)) / 60000,
+          type: session.type,
+          agenda: session.agenda || "",
+          mentor: session.mentor
+            ? {
+                id: session.mentor.id,
+                name: `${session.mentor.firstName} ${session.mentor.lastName}`,
+              }
+            : null,
+          resources: sessionResources || [],
+        };
+      })
+    );
+
+    res.status(200).json(formattedSessions);
+  } catch (error) {
+    console.error("Get mentee sessions error:", error);
     res
       .status(500)
       .json({ message: error.message || "Failed to fetch sessions" });
@@ -158,20 +224,17 @@ const updateSession = async (req, res) => {
     const { mentorId, menteeId, topic, startTime, endTime, type, agenda } =
       req.body;
 
-    // Find the session
     const session = await Session.findByPk(sessionId);
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    // Validate mentorId matches authenticated user
-    if (mentorId !== req.user.id) {
+    if (!req.user || mentorId !== req.user.id) {
       return res.status(403).json({
         message: "Unauthorized: Mentor ID does not match authenticated user",
       });
     }
 
-    // Validate accepted mentorship
     const mentorship = await Mentorship.findOne({
       where: { mentorId, menteeId, status: "accepted" },
     });
@@ -181,7 +244,6 @@ const updateSession = async (req, res) => {
       });
     }
 
-    // Validate session times
     const now = new Date();
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -192,7 +254,6 @@ const updateSession = async (req, res) => {
       });
     }
 
-    // Check for time conflicts (excluding current session)
     const conflict = await Session.findOne({
       where: {
         mentorId,
@@ -215,7 +276,6 @@ const updateSession = async (req, res) => {
         .json({ message: "Time conflict with another session" });
     }
 
-    // Update session
     await session.update({
       mentorId,
       menteeId,
@@ -224,7 +284,7 @@ const updateSession = async (req, res) => {
       endTime,
       type,
       agenda,
-      status: session.status, // Preserve existing status
+      status: session.status,
     });
 
     res.status(200).json(session);
@@ -240,23 +300,23 @@ const deleteSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
 
-    // Find the session
     const session = await Session.findByPk(sessionId);
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    // Validate mentorId matches authenticated user
-    if (session.mentorId !== req.user.id) {
+    if (
+      !req.user ||
+      (session.mentorId !== req.user.id && session.menteeId !== req.user.id)
+    ) {
       return res
         .status(403)
         .json({ message: "Unauthorized: Not your session" });
     }
 
-    // Delete session
-    await session.destroy();
+    await session.update({ status: "cancelled" });
 
-    res.status(204).json();
+    res.status(200).json({ message: "Session cancelled successfully" });
   } catch (error) {
     console.error("Delete session error:", error);
     res
@@ -269,8 +329,7 @@ const getMentees = async (req, res) => {
   try {
     const { mentorId } = req.params;
 
-    // Validate mentorId matches authenticated user
-    if (parseInt(mentorId) !== req.user.id) {
+    if (!req.user || parseInt(mentorId) !== req.user.id) {
       return res.status(403).json({
         message: "Unauthorized: Mentor ID does not match authenticated user",
       });
@@ -309,57 +368,36 @@ const associateResources = async (req, res) => {
     const { sessionId } = req.params;
     const { resourceIds } = req.body;
 
-    // Find the session
     const session = await Session.findByPk(sessionId);
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    // Validate mentorId matches authenticated user
-    if (session.mentorId !== req.user.id) {
+    if (!req.user || session.mentorId !== req.user.id) {
       return res
         .status(403)
         .json({ message: "Unauthorized: Not your session" });
     }
 
-    // If SessionResource model is not imported, use raw query instead
-    if (!SessionResource) {
-      // Delete existing associations
-      await sequelize.query(
-        "DELETE FROM session_resources WHERE sessionId = :sessionId",
-        {
-          replacements: { sessionId },
-          transaction,
-        }
-      );
-
-      // Create new associations
-      if (resourceIds && resourceIds.length > 0) {
-        const insertQueries = resourceIds.map((resourceId) =>
-          sequelize.query(
-            "INSERT INTO session_resources (sessionId, resourceId) VALUES (:sessionId, :resourceId)",
-            {
-              replacements: { sessionId, resourceId },
-              transaction,
-            }
-          )
-        );
-        await Promise.all(insertQueries);
-      }
-    } else {
-      // If SessionResource model exists, use Sequelize methods
-      await SessionResource.destroy({
-        where: { sessionId },
+    await sequelize.query(
+      "DELETE FROM session_resources WHERE sessionId = :sessionId",
+      {
+        replacements: { sessionId },
         transaction,
-      });
-
-      if (resourceIds && resourceIds.length > 0) {
-        const associations = resourceIds.map((resourceId) => ({
-          sessionId,
-          resourceId,
-        }));
-        await SessionResource.bulkCreate(associations, { transaction });
       }
+    );
+
+    if (resourceIds && resourceIds.length > 0) {
+      const insertQueries = resourceIds.map((resourceId) =>
+        sequelize.query(
+          "INSERT INTO session_resources (sessionId, resourceId) VALUES (:sessionId, :resourceId)",
+          {
+            replacements: { sessionId, resourceId },
+            transaction,
+          }
+        )
+      );
+      await Promise.all(insertQueries);
     }
 
     await transaction.commit();
@@ -377,6 +415,7 @@ const associateResources = async (req, res) => {
 module.exports = {
   createSession,
   getMentorSessions,
+  getMenteeSessions,
   updateSession,
   deleteSession,
   getMentees,

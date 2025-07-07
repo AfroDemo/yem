@@ -12,14 +12,12 @@ export const createSession = async (sessionData, user) => {
       ...rest
     } = sessionData;
 
-    // Validate mentorId matches authenticated user
-    if (mentorId !== user.id) {
+    if (!user || mentorId !== user.id) {
       throw new Error(
         "Unauthorized: Mentor ID does not match authenticated user"
       );
     }
 
-    // Validate session times
     const startTime = new Date(dateTime);
     const endTime = new Date(startTime.getTime() + duration * 60000);
     const now = new Date();
@@ -38,7 +36,6 @@ export const createSession = async (sessionData, user) => {
       endTime: endTime.toISOString(),
     });
 
-    // Associate resources if provided
     if (resourceIds?.length > 0) {
       await post(`/sessions/${data.id}/resources`, { resourceIds });
     }
@@ -51,17 +48,41 @@ export const createSession = async (sessionData, user) => {
       throw new Error(
         "Unauthorized: You are not allowed to create this session"
       );
-    if (status === 400) throw new Error(message); // e.g., "No active mentorship found"
+    if (status === 400) throw new Error(message);
     throw new Error(message);
   }
 };
 
 export const getMentorSessions = async (mentorId) => {
   try {
+    if (!mentorId) {
+      throw new Error("Mentor ID is required");
+    }
+    console.log("Calling getMentorSessions with mentorId:", mentorId);
     const { data } = await get(`/mentors/${mentorId}/sessions`);
     return data;
   } catch (err) {
     const message = err.response?.data?.message || "Failed to fetch sessions";
+    console.error("getMentorSessions error:", message);
+    if (err.response?.status === 403)
+      throw new Error(
+        "Unauthorized: You are not allowed to view these sessions"
+      );
+    throw new Error(message);
+  }
+};
+
+export const getMenteeSessions = async (menteeId) => {
+  try {
+    if (!menteeId) {
+      throw new Error("Mentee ID is required");
+    }
+    console.log("Calling getMenteeSessions with menteeId:", menteeId);
+    const { data } = await get(`/sessions/mentees/${menteeId}/sessions`); // Fixed typo
+    return data;
+  } catch (err) {
+    const message = err.response?.data?.message || "Failed to fetch sessions";
+    console.error("getMenteeSessions error:", message);
     if (err.response?.status === 403)
       throw new Error(
         "Unauthorized: You are not allowed to view these sessions"
@@ -82,14 +103,12 @@ export const updateSession = async (sessionId, sessionData, user) => {
       ...rest
     } = sessionData;
 
-    // Validate mentorId matches authenticated user
-    if (mentorId !== user.id) {
+    if (!user || mentorId !== user.id) {
       throw new Error(
         "Unauthorized: Mentor ID does not match authenticated user"
       );
     }
 
-    // Validate session times
     const startTime = new Date(dateTime);
     const endTime = new Date(startTime.getTime() + duration * 60000);
     const now = new Date();
@@ -108,7 +127,6 @@ export const updateSession = async (sessionId, sessionData, user) => {
       endTime: endTime.toISOString(),
     });
 
-    // Update resources
     await post(`/sessions/${sessionId}/resources`, {
       resourceIds: resourceIds || [],
     });
@@ -122,7 +140,7 @@ export const updateSession = async (sessionId, sessionData, user) => {
         "Unauthorized: You are not allowed to update this session"
       );
     if (status === 404) throw new Error("Session not found");
-    if (status === 400) throw new Error(message); // e.g., "Time conflict"
+    if (status === 400) throw new Error(message);
     throw new Error(message);
   }
 };
@@ -144,6 +162,9 @@ export const deleteSession = async (sessionId) => {
 
 export const getMentees = async (mentorId) => {
   try {
+    if (!mentorId) {
+      throw new Error("Mentor ID is required");
+    }
     const { data } = await get(`/mentors/${mentorId}/mentees`);
     return data;
   } catch (err) {
@@ -156,6 +177,9 @@ export const getMentees = async (mentorId) => {
 
 export const getResources = async (mentorId) => {
   try {
+    if (!mentorId) {
+      throw new Error("Mentor ID is required");
+    }
     const { data } = await get(`/resources?createdById=${mentorId}`);
     return data;
   } catch (err) {

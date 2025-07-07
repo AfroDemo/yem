@@ -12,11 +12,9 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForMentees from "./pages/ForMentees";
-import Events from "./pages/Events";
 import Contact from "./pages/Contact";
 import SuccessStories from "./pages/SuccessStories";
 import About from "./pages/About";
-import EventsPage from "./pages/Event/Events";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -38,6 +36,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import SettingsPage from "./pages/Setting";
 import MentorDashboard from "./pages/Mentor/dashboard";
 import SessionsPage from "./pages/Mentor/Sessions/sessionz";
+import MenteeSessionsPage from "./pages/Dashboard/Session";
 
 // Loading component
 const LoadingScreen = () => (
@@ -83,7 +82,7 @@ const MainLayout = () => (
 // Dashboard Routes
 const dashboardRoutes = [
   { path: "/dashboard", component: <Dashboard /> },
-  { path: "/dashboard/events", component: <EventsPage /> },
+  { path: "/dashboard/sessions", component: <MenteeSessionsPage /> },
   { path: "/dashboard/messages", component: <MessagesPage /> },
   { path: "/dashboard/messages/new", component: <NewMessagePage /> },
   { path: "/dashboard/mentors", component: <MatchPage /> },
@@ -99,7 +98,6 @@ const dashboardRoutes = [
 
 const mentorDashboardRoutes = [
   { path: "/mentor", component: <MentorDashboard /> },
-  { path: "/mentor/events", component: <EventsPage /> },
   { path: "/mentor/messages", component: <MessagesPage /> },
   { path: "/mentor/messages/new", component: <NewMessagePage /> },
   { path: "/mentor/mentees", component: <MenteesPage /> },
@@ -120,7 +118,6 @@ function App() {
             <Route element={<MainLayout />}>
               <Route index element={<Home />} />
               <Route path="/about" element={<About />} />
-              <Route path="/events" element={<Events />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/success-stories" element={<SuccessStories />} />
 
