@@ -7,6 +7,9 @@ import {
   GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import home from "../images/home.jpg";
+import p1 from '../images/1.png'
+import p2 from '../images/2.jpg'
+import p3 from '../images/3.jpg'
 
 const About = () => {
   const teamMembers = [
@@ -15,21 +18,21 @@ const About = () => {
       name: "Alex Johnson",
       role: "Founder & CEO",
       bio: "Serial entrepreneur with 10+ years experience in startup mentoring",
-      image: "https://randomuser.me/api/portraits/men/42.jpg",
+      image: p1,
     },
     {
       id: 2,
       name: "Maria Garcia",
       role: "Head of Mentorship",
       bio: "Former business consultant passionate about youth development",
-      image: "https://randomuser.me/api/portraits/women/63.jpg",
+      image: p2,
     },
     {
       id: 3,
       name: "James Wilson",
       role: "Community Manager",
       bio: "Connector who loves bringing people together for mutual growth",
-      image: "https://randomuser.me/api/portraits/men/25.jpg",
+      image: p3,
     },
   ];
 
