@@ -10,7 +10,6 @@ import CardTitle from "../../../components/card/cardTitle";
 import CardDescription from "../../../components/card/cardDescription";
 import CardContent from "../../../components/card/cardContent";
 import { useAuth } from "../../../context/AuthContext";
-import { format } from "date-fns";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -68,6 +67,8 @@ export default function MenteeResourcesPage() {
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
+
+  console.log(resources);
 
   return (
     <div className="space-y-6">
@@ -182,7 +183,7 @@ export default function MenteeResourcesPage() {
                     {resource.fileUrl && (
                       <p className="text-sm text-gray-500 mt-2">
                         <a
-                          href={resource.fileUrl}
+                          href={"http://localhost:5000" + resource.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
