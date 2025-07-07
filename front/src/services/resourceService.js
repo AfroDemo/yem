@@ -42,6 +42,24 @@ export const getMentees = async (mentorId) => {
   }
 };
 
+export const getMenteeResources = async (menteeId, params = {}) => {
+  try {
+    if (!menteeId) {
+      throw new Error("Mentee ID is required");
+    }
+    const queryString = new URLSearchParams(params).toString();
+    const response = await get(
+      `/resources/mentees/${menteeId}${queryString ? `?${queryString}` : ""}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Get mentee resources error:", error.response || error);
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch resources"
+    );
+  }
+};
+
 export const getResources = async (params = {}) => {
   try {
     const queryString = new URLSearchParams(params).toString();

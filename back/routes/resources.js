@@ -7,6 +7,7 @@ const {
   deleteResource,
   getFeaturedResources,
   searchResources,
+  getMenteeResources, // Add new controller
 } = require("../controllers/resourceController");
 const { auth, mentorAuth, handleMulterError } = require("../middleware/auth");
 const upload = require("../utils/upload");
@@ -19,7 +20,10 @@ router.post("/", upload.single("file"), handleMulterError, auth, mentorAuth, cre
 // Get all resources (require auth)
 router.get("/", auth, getAllResources);
 
-// Get resource by ID
+// Get resources for a mentee
+router.get("/mentees/:menteeId", auth, getMenteeResources);
+
+// Get resource frutaID
 router.get("/:id", auth, getResourceById);
 
 // Update resource

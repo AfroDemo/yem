@@ -1,7 +1,6 @@
 const { Op } = require("sequelize");
 const { uploadFile } = require("../utils/fileUpload");
-const Resource = require("../models").Resource;
-const User = require("../models").User;
+const { Resource, User, Session, ResourceShares } = require("../models"); // Add Session to imports
 
 // Create resource
 exports.createResource = async (req, res) => {
@@ -32,12 +31,10 @@ exports.createResource = async (req, res) => {
 
     // Validate required fields
     if (!createdById || !title || !type) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Missing required fields: createdById, title, and type are required",
-        });
+      return res.status(400).json({
+        message:
+          "Missing required fields: createdById, title, and type are required",
+      });
     }
 
     // Create resource
@@ -61,7 +58,7 @@ exports.createResource = async (req, res) => {
           resourceId: resource.id,
           userId,
         }));
-        await ResourceShare.bulkCreate(shares);
+        await ResourceShares.bulkCreate(shares); // Use ResourceShares instead of ResourceShare
       }
     }
 
@@ -293,6 +290,84 @@ exports.searchResources = async (req, res) => {
     res.json(resources);
   } catch (error) {
     console.error("Search resources error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Get resources accessible to a mentee
+exports.getMenteeResources = async (req, res) => {
+  try {
+    const { menteeId } = req.params;
+    const { type, category, tag } = req.query;
+
+    if (!req.user || parseInt(menteeId) !== req.user.id) {
+      return res.status(403).json({
+        message: "Unauthorized: You can only view your own resources",
+      });
+    }
+
+    const where = {};
+    if (type) where.type = type;
+    if (category) where.category = category;
+    if (tag) where.tags = { [Op.contains]: [tag] };
+
+    // Fetch resources shared directly with the mentee
+    const directResources = await Resource.findAll({
+      include: [
+        {
+          model: User,
+          as: "sharedWith",
+          where: { id: menteeId },
+          attributes: [],
+        },
+        {
+          model: User,
+          as: "creator",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
+      where: {
+        ...where,
+        isDraft: false, // Exclude drafts
+      },
+      order: [["publishDate", "DESC"]],
+    });
+
+    // Fetch resources associated with sessions the mentee is part of
+    const sessionResources = await Resource.findAll({
+      include: [
+        {
+          model: Session,
+          through: { attributes: [] },
+          where: { menteeId },
+        },
+        {
+          model: User,
+          as: "creator",
+          attributes: ["id", "firstName", "lastName", "profileImage"],
+        },
+      ],
+      where: {
+        ...where,
+        isDraft: false, // Exclude drafts
+      },
+      order: [["publishDate", "DESC"]],
+    });
+
+    // Combine and deduplicate resources
+    const allResources = [...directResources, ...sessionResources].reduce(
+      (unique, resource) => {
+        if (!unique.find((r) => r.id === resource.id)) {
+          unique.push(resource);
+        }
+        return unique;
+      },
+      []
+    );
+
+    res.json(allResources);
+  } catch (error) {
+    console.error("Get mentee resources error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
