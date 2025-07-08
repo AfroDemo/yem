@@ -14,11 +14,13 @@ import Avatar from "../avatar/Avatar";
 import AvatarImage from "../avatar/AvatarImage";
 import AvatarFallback from "../avatar/AvatarFallback";
 import { ToastContainer } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+    const { logout } = useAuth();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -83,27 +85,32 @@ export default function DashboardLayout() {
               label="Settings"
             />
           </nav>
+          <Link
+            onClick={logout}
+            className="block px-4 py-2 text-sm hover:bg-gray-100"
+          >
+            Sign Out
+          </Link>
           <div className="p-4 border-t absolute bottom-0">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-9 w-9">
-              <AvatarImage
-                src={
-                  user.profileImage
-                    ? `http://localhost:5000${user.profileImage}`
-                    : "/placeholder.svg?height=96&width=96"
-                }
-                alt={user.name}
-              />
-              <AvatarFallback>MJ</AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <p className="font-medium text-sm">
-                {user.firstName} {user.lastName}
-              </p>
-              <p className="text-xs text-gray-500">Senior Mentor</p>
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage
+                  src={
+                    user.profileImage
+                      ? `http://localhost:5000${user.profileImage}`
+                      : "/placeholder.svg?height=96&width=96"
+                  }
+                  alt={user.name}
+                />
+                <AvatarFallback>MJ</AvatarFallback>
+              </Avatar>
+              <div className="text-left">
+                <p className="font-medium text-sm">
+                  {user.firstName} {user.lastName}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
         </aside>
 
         {/* Mobile header */}
@@ -139,7 +146,7 @@ export default function DashboardLayout() {
           </main>
         </div>
       </div>
-    <ToastContainer />
+      <ToastContainer />
     </UserContext.Provider>
   );
 }

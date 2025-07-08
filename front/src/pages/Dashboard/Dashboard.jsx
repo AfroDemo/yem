@@ -118,7 +118,7 @@ export default function Dashboard() {
       </div>
 
       {/* Dashboard Metrics */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
@@ -157,7 +157,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
-        <Card>
+        {/* <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
               Average Mentor Rating
@@ -184,7 +184,7 @@ export default function Dashboard() {
               </span>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Sessions, Messages, and Connections */}
@@ -226,7 +226,7 @@ export default function Dashboard() {
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link to="/mentee/sessions">View All Sessions</Link>
+              <Link to="/dashboard/sessions">View All Sessions</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -251,7 +251,7 @@ export default function Dashboard() {
                   })}
                   message={message.content}
                   avatar={
-                    message.sender.profileImage ||
+                    "http://localhost:5000" + message.sender.profileImage ||
                     "/placeholder.svg?height=40&width=40"
                   }
                   unread={!message.isRead}
@@ -263,16 +263,16 @@ export default function Dashboard() {
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link to="/mentee/messages">View All Messages</Link>
+              <Link to="/dashboard/messages">View All Messages</Link>
             </Button>
           </CardFooter>
         </Card>
       </div>
 
       {/* Progress and Resources */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* <div className="grid gap-6 md:grid-cols-2"> */}
         {/* Mentee Progress */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Your Progress</CardTitle>
             <CardDescription>Track your development and goals</CardDescription>
@@ -303,7 +303,7 @@ export default function Dashboard() {
               <Link to="/mentee/progress">View Detailed Progress</Link>
             </Button>
           </CardFooter>
-        </Card>
+        </Card> */}
 
         {/* Recommended Resources */}
         <Card>
@@ -329,14 +329,14 @@ export default function Dashboard() {
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
-              <Link to="/mentee/resources">View All Resources</Link>
+              <Link to="/dashboard/resources">View All Resources</Link>
             </Button>
           </CardFooter>
         </Card>
-      </div>
+      {/* </div> */}
 
       {/* Upcoming Reports */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Upcoming Reports</CardTitle>
           <CardDescription>Reports or assignments due soon</CardDescription>
@@ -369,7 +369,7 @@ export default function Dashboard() {
             <Link to="/mentee/reports">View All Reports</Link>
           </Button>
         </CardFooter>
-      </Card>
+      </Card> */}
     </div>
   );
 }
