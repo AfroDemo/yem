@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost
--- Generation Time: May 17, 2025 at 08:04 PM
+-- Host: 127.0.0.1
+-- Generation Time: Jul 08, 2025 at 08:21 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -28,10 +28,20 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `conversations` (
+  `id` int(11) NOT NULL,
   `participants` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`participants`)),
   `lastMessage` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`lastMessage`)),
-  `unreadCount` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`unreadCount`))
+  `unreadCount` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`unreadCount`)),
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `conversations`
+--
+
+INSERT INTO `conversations` (`id`, `participants`, `lastMessage`, `unreadCount`, `createdAt`, `updatedAt`) VALUES
+(6, '[2,1]', '{\"senderId\":2,\"content\":\"hi\",\"createdAt\":\"2025-07-07T11:36:57.184Z\"}', '{\"1\":0,\"2\":0}', '2025-06-18 01:49:52', '2025-07-07 11:37:08');
 
 -- --------------------------------------------------------
 
@@ -91,7 +101,7 @@ CREATE TABLE `mentorships` (
   `packageType` varchar(255) NOT NULL,
   `status` enum('pending','accepted','rejected','completed') NOT NULL DEFAULT 'pending',
   `goals` text NOT NULL,
-  `progress` int(11) NOT NULL DEFAULT 0,
+  `progress` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`progress`)),
   `background` text NOT NULL,
   `expectations` text NOT NULL,
   `availability` varchar(255) NOT NULL,
@@ -111,7 +121,7 @@ CREATE TABLE `mentorships` (
 --
 
 INSERT INTO `mentorships` (`id`, `mentorId`, `menteeId`, `packageType`, `status`, `goals`, `progress`, `background`, `expectations`, `availability`, `timezone`, `startDate`, `endDate`, `meetingFrequency`, `nextMeetingDate`, `feedback`, `notes`, `createdAt`, `updatedAt`) VALUES
-(1, 1, 2, 'starter', 'accepted', '-Getting funds', 0, 'i have tech company', 'getting funds', 'flexible', 'eat', '2025-04-07 19:01:52', NULL, '2 sessions/month', NULL, NULL, NULL, '2025-04-07 17:47:04', '2025-04-15 10:14:01');
+(1, 1, 2, 'starter', 'completed', '[{\"title\":\"funds\",\"status\":\"in-progress\"}]', '0', 'I am software   developer', 'get funds', 'flexible', '', '2025-05-20 00:11:40', '2025-07-07 15:14:56', '2 sessions/month', NULL, NULL, NULL, '2025-05-20 00:05:59', '2025-07-07 15:14:56');
 
 -- --------------------------------------------------------
 
@@ -120,10 +130,40 @@ INSERT INTO `mentorships` (`id`, `mentorId`, `menteeId`, `packageType`, `status`
 --
 
 CREATE TABLE `messages` (
+  `id` int(11) NOT NULL,
   `senderId` int(11) NOT NULL,
   `receiverId` int(11) NOT NULL,
-  `content` varchar(255) NOT NULL,
-  `read` tinyint(1) DEFAULT 0,
+  `conversationId` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `read` tinyint(1) NOT NULL DEFAULT 0,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `messages`
+--
+
+INSERT INTO `messages` (`id`, `senderId`, `receiverId`, `conversationId`, `content`, `read`, `createdAt`, `updatedAt`) VALUES
+(5, 2, 1, 6, 'Hello  sir, can  i get  additional materials on pitching', 1, '2025-06-18 01:49:52', '2025-06-18 02:03:40'),
+(6, 1, 2, 6, 'okay soon', 1, '2025-06-18 02:03:55', '2025-06-18 02:04:11'),
+(7, 2, 1, 6, 'thanks, can  we arrange meeting this  weekend', 1, '2025-06-18 02:04:42', '2025-07-07 11:37:08'),
+(8, 2, 1, 6, 'and visit my  work place', 1, '2025-06-18 02:05:08', '2025-07-07 11:37:08'),
+(9, 2, 1, 6, 'hi', 1, '2025-07-07 11:36:57', '2025-07-07 11:37:08');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reports`
+--
+
+CREATE TABLE `reports` (
+  `id` int(11) NOT NULL,
+  `mentorId` int(11) NOT NULL,
+  `menteeId` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `status` enum('pending','submitted','reviewed') NOT NULL DEFAULT 'pending',
+  `dueDate` datetime NOT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -136,17 +176,53 @@ CREATE TABLE `messages` (
 
 CREATE TABLE `resources` (
   `id` int(11) NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `description` varchar(255) DEFAULT NULL,
-  `type` varchar(255) DEFAULT NULL,
+  `createdById` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `type` varchar(255) NOT NULL,
+  `content` text DEFAULT NULL,
   `category` varchar(255) DEFAULT NULL,
-  `content` varchar(255) DEFAULT NULL,
   `fileUrl` varchar(255) DEFAULT NULL,
-  `externalUrl` varchar(255) DEFAULT NULL,
-  `thumbnail` varchar(255) DEFAULT NULL,
-  `author` varchar(255) DEFAULT NULL,
   `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
-  `visibility` enum('public','mentors','mentees','private') NOT NULL DEFAULT 'public',
+  `publishDate` datetime NOT NULL DEFAULT current_timestamp(),
+  `isDraft` tinyint(1) NOT NULL DEFAULT 0,
+  `isFeatured` tinyint(1) NOT NULL DEFAULT 0,
+  `createdAt` datetime NOT NULL DEFAULT current_timestamp(),
+  `updatedAt` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `resources`
+--
+
+INSERT INTO `resources` (`id`, `createdById`, `title`, `description`, `type`, `content`, `category`, `fileUrl`, `tags`, `publishDate`, `isDraft`, `isFeatured`, `createdAt`, `updatedAt`) VALUES
+(4, 1, 'Divine Self Improvement', 'This is  the best self improvement Guide from Shaolin', 'PDF', NULL, 'marketing', '/uploads/resource-1747639992205.pdf', '[\"growth\",\"awareness\",\"awakening\"]', '2025-05-19 07:33:12', 0, 0, '2025-05-19 07:33:12', '2025-05-19 07:33:12');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `resourceshares`
+--
+
+CREATE TABLE `resourceshares` (
+  `resourceId` int(11) NOT NULL,
+  `userId` int(11) NOT NULL,
+  `createdAt` datetime NOT NULL DEFAULT current_timestamp(),
+  `updatedAt` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reviews`
+--
+
+CREATE TABLE `reviews` (
+  `id` int(11) NOT NULL,
+  `mentorId` int(11) NOT NULL,
+  `menteeId` int(11) NOT NULL,
+  `rating` int(11) NOT NULL,
+  `comment` text DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -154,18 +230,18 @@ CREATE TABLE `resources` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `SequelizeMeta`
+-- Table structure for table `sequelizemeta`
 --
 
-CREATE TABLE `SequelizeMeta` (
+CREATE TABLE `sequelizemeta` (
   `name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Dumping data for table `SequelizeMeta`
+-- Dumping data for table `sequelizemeta`
 --
 
-INSERT INTO `SequelizeMeta` (`name`) VALUES
+INSERT INTO `sequelizemeta` (`name`) VALUES
 ('20250330044205-create-users.js'),
 ('20250330120950-create-conversations.js'),
 ('20250330121657-create-events.js'),
@@ -173,7 +249,57 @@ INSERT INTO `SequelizeMeta` (`name`) VALUES
 ('20250330123326-create-mentorships.js'),
 ('20250330123644-create-messages.js'),
 ('20250330123821-create-resources.js'),
-('20250330124238-create-success_stories.js');
+('20250330124238-create-success_stories.js'),
+('20250517190918-create-session.js'),
+('20250517192459-create-reviews.js'),
+('20250517201020-create-reports.js'),
+('20250517210251-create-resource-shares.js'),
+('20250519223937-create-session-resource.js');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sessions`
+--
+
+CREATE TABLE `sessions` (
+  `id` int(11) NOT NULL,
+  `mentorId` int(11) NOT NULL,
+  `menteeId` int(11) NOT NULL,
+  `startTime` datetime NOT NULL,
+  `endTime` datetime NOT NULL,
+  `topic` varchar(255) NOT NULL,
+  `type` enum('virtual','in-person') NOT NULL,
+  `agenda` text DEFAULT NULL,
+  `status` enum('upcoming','in-progress','completed','cancelled') NOT NULL DEFAULT 'upcoming',
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `sessions`
+--
+
+INSERT INTO `sessions` (`id`, `mentorId`, `menteeId`, `startTime`, `endTime`, `topic`, `type`, `agenda`, `status`, `createdAt`, `updatedAt`) VALUES
+(2, 1, 2, '2025-07-11 07:30:00', '2025-07-11 08:00:00', 'Know your possible investors', 'virtual', 'Get started by  analyzing where  investors are for your  business', 'upcoming', '2025-05-20 00:41:14', '2025-07-07 13:11:01');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `session_resources`
+--
+
+CREATE TABLE `session_resources` (
+  `sessionId` int(11) NOT NULL,
+  `resourceId` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `session_resources`
+--
+
+INSERT INTO `session_resources` (`sessionId`, `resourceId`) VALUES
+(2, 4);
 
 -- --------------------------------------------------------
 
@@ -233,12 +359,19 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `email`, `password`, `firstName`, `lastName`, `role`, `profileImage`, `bio`, `skills`, `interests`, `location`, `socialLinks`, `isVerified`, `resetPasswordToken`, `resetPasswordExpires`, `industries`, `businessStage`, `preferredBusinessStages`, `experienceYears`, `availability`, `createdAt`, `updatedAt`) VALUES
-(1, 'mentor@adz.com', '$2b$10$5VKJ3RtZ55g1hRcBjl6LbuuH/eJ0azNN086.LEK23yzHQmlfm7B.y', 'john', 'son', 'mentor', '/uploads/profile-1-1747328377287.webp', 'The bestof the best', '[\"Software Development\",\"Project Management\",\"Startups\",\"Mobile App Development\",\"Web Development\",\"E-learning & EdTech\",\"Product Management\",\"Fundraising\",\"Product Development\",\"Financial Planning\"]', '\"\"', 'Mbeya, Tanzania', NULL, 0, NULL, NULL, '[\"Technology\",\"Education\",\"Agriculture\"]', NULL, '[\"Idea\",\"Planning\",\"Development\",\"Testing\"]', '5+ Years', 'flexible', '2025-04-07 16:21:10', '2025-05-15 16:59:37'),
-(2, 'user@adz.com', '$2b$10$FhZv.fn9bNNh8IcxzDkGkuWe6R4SET2LIwf8/cmad50QcE4Up90Jq', 'user', 'yem', 'mentee', '/uploads/profile-2-1747326287638.webp', 'Work  hard', '[]', '[\"Fundraising\",\"Funding Opportunities\",\"Software Development\",\"Project Management\"]', 'mbeya,Tanzania', NULL, 0, NULL, NULL, '[\"Technology\",\"Education\"]', '[\"Idea\"]', '\"\"', '', '', '2025-04-07 16:25:29', '2025-05-15 16:24:48');
+(1, 'mentor@adz.com', '$2b$10$5VKJ3RtZ55g1hRcBjl6LbuuH/eJ0azNN086.LEK23yzHQmlfm7B.y', 'john', 'son', 'mentor', '/uploads/profile-1-1750206665014.webp', 'The bestof the best', '[\"Software Development\",\"Project Management\",\"Startups\",\"Mobile App Development\",\"Web Development\",\"E-learning & EdTech\",\"Product Management\",\"Fundraising\",\"Product Development\",\"Financial Planning\"]', '\"\"', 'Mbeya, Tanzania', NULL, 0, NULL, NULL, '[\"Technology\",\"Education\",\"Agriculture\"]', NULL, '[\"Idea\",\"Planning\",\"Development\",\"Testing\"]', '5+ Years', 'flexible', '2025-04-07 16:21:10', '2025-06-18 00:31:05'),
+(2, 'user@adz.com', '$2b$10$FhZv.fn9bNNh8IcxzDkGkuWe6R4SET2LIwf8/cmad50QcE4Up90Jq', 'user', 'yem', 'mentee', '/uploads/profile-2-1751903783247.webp', 'Work  hard', '[]', '[\"Fundraising\",\"Funding Opportunities\",\"Software Development\",\"Project Management\"]', 'mbeya,Tanzania', NULL, 0, NULL, NULL, '[\"Technology\",\"Education\"]', '[\"Idea\"]', NULL, '', '', '2025-04-07 16:25:29', '2025-07-07 15:56:23'),
+(3, 'admin@adz.com', '$2b$10$YRyRHEHGqNQuU9mEhXWZ3OrH2tSBag01uExbPeNKBHsNUy6EgKGIm', 'admin', 'admin', 'admin', NULL, '', NULL, NULL, '', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-07 16:44:38', '2025-07-07 16:44:38');
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `conversations`
+--
+ALTER TABLE `conversations`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `events`
@@ -266,21 +399,62 @@ ALTER TABLE `mentorships`
 -- Indexes for table `messages`
 --
 ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
   ADD KEY `senderId` (`senderId`),
-  ADD KEY `receiverId` (`receiverId`);
+  ADD KEY `receiverId` (`receiverId`),
+  ADD KEY `conversationId` (`conversationId`);
+
+--
+-- Indexes for table `reports`
+--
+ALTER TABLE `reports`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `mentorId` (`mentorId`),
+  ADD KEY `menteeId` (`menteeId`);
 
 --
 -- Indexes for table `resources`
 --
 ALTER TABLE `resources`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `createdById` (`createdById`);
 
 --
--- Indexes for table `SequelizeMeta`
+-- Indexes for table `resourceshares`
 --
-ALTER TABLE `SequelizeMeta`
+ALTER TABLE `resourceshares`
+  ADD PRIMARY KEY (`resourceId`,`userId`),
+  ADD KEY `userId` (`userId`);
+
+--
+-- Indexes for table `reviews`
+--
+ALTER TABLE `reviews`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `mentorId` (`mentorId`),
+  ADD KEY `menteeId` (`menteeId`);
+
+--
+-- Indexes for table `sequelizemeta`
+--
+ALTER TABLE `sequelizemeta`
   ADD PRIMARY KEY (`name`),
   ADD UNIQUE KEY `name` (`name`);
+
+--
+-- Indexes for table `sessions`
+--
+ALTER TABLE `sessions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `mentorId` (`mentorId`),
+  ADD KEY `menteeId` (`menteeId`);
+
+--
+-- Indexes for table `session_resources`
+--
+ALTER TABLE `session_resources`
+  ADD PRIMARY KEY (`sessionId`,`resourceId`),
+  ADD KEY `resourceId` (`resourceId`);
 
 --
 -- Indexes for table `success_stories`
@@ -302,6 +476,12 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `conversations`
+--
+ALTER TABLE `conversations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT for table `events`
 --
 ALTER TABLE `events`
@@ -314,10 +494,34 @@ ALTER TABLE `mentorships`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `reports`
+--
+ALTER TABLE `reports`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `resources`
 --
 ALTER TABLE `resources`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `reviews`
+--
+ALTER TABLE `reviews`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sessions`
+--
+ALTER TABLE `sessions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `success_stories`
@@ -329,7 +533,7 @@ ALTER TABLE `success_stories`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
@@ -352,15 +556,57 @@ ALTER TABLE `event_registrations`
 -- Constraints for table `mentorships`
 --
 ALTER TABLE `mentorships`
-  ADD CONSTRAINT `mentorships_ibfk_1` FOREIGN KEY (`mentorId`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `mentorships_ibfk_2` FOREIGN KEY (`menteeId`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `mentorships_ibfk_1` FOREIGN KEY (`mentorId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `mentorships_ibfk_2` FOREIGN KEY (`menteeId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `messages`
 --
 ALTER TABLE `messages`
-  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`senderId`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiverId`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`senderId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiverId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `messages_ibfk_3` FOREIGN KEY (`conversationId`) REFERENCES `conversations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `reports`
+--
+ALTER TABLE `reports`
+  ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`mentorId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`menteeId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `resources`
+--
+ALTER TABLE `resources`
+  ADD CONSTRAINT `resources_ibfk_1` FOREIGN KEY (`createdById`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `resourceshares`
+--
+ALTER TABLE `resourceshares`
+  ADD CONSTRAINT `resourceshares_ibfk_1` FOREIGN KEY (`resourceId`) REFERENCES `resources` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `resourceshares_ibfk_2` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `reviews`
+--
+ALTER TABLE `reviews`
+  ADD CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`mentorId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`menteeId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `sessions`
+--
+ALTER TABLE `sessions`
+  ADD CONSTRAINT `sessions_ibfk_1` FOREIGN KEY (`mentorId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `sessions_ibfk_2` FOREIGN KEY (`menteeId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `session_resources`
+--
+ALTER TABLE `session_resources`
+  ADD CONSTRAINT `session_resources_ibfk_1` FOREIGN KEY (`sessionId`) REFERENCES `sessions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `session_resources_ibfk_2` FOREIGN KEY (`resourceId`) REFERENCES `resources` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `success_stories`
