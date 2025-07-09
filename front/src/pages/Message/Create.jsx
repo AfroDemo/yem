@@ -194,7 +194,7 @@ export default function NewMessagePage() {
         throw new Error("Failed to create or retrieve conversation");
       }
       await messageService.sendMessage(conversation.id, message);
-      navigate("/dashboard/messages");
+      navigate("/mentor/messages");
     } catch (error) {
       setError(
         error.error === "Not authorized"

@@ -1,9 +1,13 @@
-export function safeJSONParse(jsonString, defaultValue = []) {
-  if (!jsonString || jsonString.trim() === '') return defaultValue;
+// utils/helpers.js
+export const safeJSONParse = (value, defaultValue = []) => {
   try {
-    return JSON.parse(jsonString);
+    if (typeof value === "string") {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : defaultValue;
+    }
+    return Array.isArray(value) ? value : defaultValue;
   } catch (error) {
-    console.warn('Failed to parse JSON:', jsonString, error);
+    console.error("Error parsing JSON:", error, value);
     return defaultValue;
   }
-}
+};
