@@ -68,7 +68,6 @@ export function MenteeCard({
     <>
       <div className="border rounded-lg p-6 bg-white shadow-sm">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Left column with avatar and basic info */}
           <div className="flex flex-col items-center text-center md:text-left md:items-start">
             <div
               className="relative h-20 w-20 rounded-full overflow-hidden mb-2 cursor-pointer"
@@ -102,9 +101,7 @@ export function MenteeCard({
             </div>
           </div>
 
-          {/* Right column with details */}
           <div className="flex-1 space-y-4">
-            {/* Header with actions */}
             <div className="flex flex-col md:flex-row justify-between">
               <div>
                 <p className="text-sm text-gray-500">Location: {location}</p>
@@ -149,7 +146,6 @@ export function MenteeCard({
               </div>
             </div>
 
-            {/* Progress bar */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium">Progress</p>
@@ -163,7 +159,6 @@ export function MenteeCard({
               </div>
             </div>
 
-            {/* Goals list */}
             <div className="space-y-1">
               <p className="text-sm font-medium">Goals</p>
               <div className="grid grid-cols-1 gap-1">

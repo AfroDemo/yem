@@ -104,7 +104,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Mentee Dashboard</h1>
@@ -117,7 +116,6 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {/* Dashboard Metrics */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -157,39 +155,9 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
-        {/* <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Average Mentor Rating
-            </CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.averageMentorRating.toFixed(1)}
-            </div>
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3 w-3 ${
-                    i < Math.round(metrics.averageMentorRating)
-                      ? "text-yellow-400 fill-yellow-400"
-                      : "text-gray-400"
-                  }`}
-                />
-              ))}
-              <span className="text-xs text-muted-foreground ml-1">
-                ({metrics.reviewCount} reviews)
-              </span>
-            </div>
-          </CardContent>
-        </Card> */}
       </div>
 
-      {/* Sessions, Messages, and Connections */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-        {/* Today's Sessions */}
         <Card>
           <CardHeader>
             <CardTitle>Today's Sessions</CardTitle>
@@ -231,7 +199,6 @@ export default function Dashboard() {
           </CardFooter>
         </Card>
 
-        {/* Recent Messages */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Messages</CardTitle>
@@ -269,112 +236,36 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Progress and Resources */}
-      {/* <div className="grid gap-6 md:grid-cols-2"> */}
-        {/* Mentee Progress */}
-        {/* <Card>
-          <CardHeader>
-            <CardTitle>Your Progress</CardTitle>
-            <CardDescription>Track your development and goals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {menteeProgress.length > 0 ? (
-                menteeProgress.map((progress) => (
-                  <MenteeProgress
-                    key={progress.id}
-                    name={`${user.firstName} ${user.lastName}`}
-                    avatar={
-                      user.profileImage || "/placeholder.svg?height=40&width=40"
-                    }
-                    progress={progress.progress}
-                    goals={progress.goals}
-                  />
-                ))
-              ) : (
-                <p className="text-muted-foreground">
-                  No progress data available.
-                </p>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/mentee/progress">View Detailed Progress</Link>
-            </Button>
-          </CardFooter>
-        </Card> */}
-
-        {/* Recommended Resources */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recommended Resources</CardTitle>
-            <CardDescription>
-              Personalized resources based on your interests
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {resources.length > 0 ? (
-              resources.map((resource) => (
-                <ResourceCard
-                  key={resource.id}
-                  title={resource.title}
-                  type={resource.type}
-                  category={resource.category}
-                />
-              ))
-            ) : (
-              <p className="text-muted-foreground">No resources available.</p>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/dashboard/resources">View All Resources</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      {/* </div> */}
-
-      {/* Upcoming Reports */}
-      {/* <Card>
+      <Card>
         <CardHeader>
-          <CardTitle>Upcoming Reports</CardTitle>
-          <CardDescription>Reports or assignments due soon</CardDescription>
+          <CardTitle>Recommended Resources</CardTitle>
+          <CardDescription>
+            Personalized resources based on your interests
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {reports.length > 0 ? (
-            reports.map((report) => (
-              <ReportItem
-                key={report.id}
-                mentor={
-                  report.mentor
-                    ? `${report.mentor.firstName} ${report.mentor.lastName}`
-                    : "Unknown Mentor"
-                }
-                dueDate={
-                  report.dueDate
-                    ? new Date(report.dueDate).toLocaleDateString()
-                    : "N/A"
-                }
-                type={report.type || "Unknown"}
-                status={report.status || "pending"}
+          {resources.length > 0 ? (
+            resources.map((resource) => (
+              <ResourceCard
+                key={resource.id}
+                title={resource.title}
+                type={resource.type}
+                category={resource.category}
               />
             ))
           ) : (
-            <p className="text-muted-foreground">No upcoming reports.</p>
+            <p className="text-muted-foreground">No resources available.</p>
           )}
         </CardContent>
         <CardFooter>
           <Button variant="outline" className="w-full" asChild>
-            <Link to="/mentee/reports">View All Reports</Link>
+            <Link to="/dashboard/resources">View All Resources</Link>
           </Button>
         </CardFooter>
-      </Card> */}
+      </Card>
     </div>
   );
 }
-
-// Reusable Components
 
 function SessionCard({ name, time, topic, status, avatar }) {
   return (
